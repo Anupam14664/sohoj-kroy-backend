@@ -10,8 +10,8 @@ class DeliveryOptionController extends Controller
 {
 public function index()
 {
-    $deliveryOptions = DeliveryOption::where('is_active', true)
-        // ->whereHas('freeDeliveryProducts')
+    $deliveryOptions = DeliveryOption::where('is_active', 1)
+        ->whereHas('freeDeliveryProducts')
         ->with('freeDeliveryProducts')
         ->get();
 

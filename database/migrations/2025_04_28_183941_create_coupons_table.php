@@ -20,6 +20,7 @@ return new class extends Migration
             $table->date('end_date');
             $table->decimal('min_purchase', 10, 2)->default(0);
             $table->boolean('is_active')->default(true);
+            $table->boolean('apply_to_all')->default(false);
             $table->timestamps();
         });
     }

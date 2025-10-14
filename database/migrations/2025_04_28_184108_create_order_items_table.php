@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('size_name')->nullable();
             $table->foreignId('color_id')->nullable()->constrained()->onDelete('set null');
             $table->string('color_name')->nullable();
+            $table->unsignedBigInteger('variant_option_id')->nullable();
             $table->timestamps();
         });
     }

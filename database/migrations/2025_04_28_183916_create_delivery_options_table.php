@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->decimal('charge', 10, 2);
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_free_for_products')->default(false);
             $table->timestamps();
         });
     }

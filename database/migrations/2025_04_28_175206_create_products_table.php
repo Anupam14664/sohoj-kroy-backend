@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description');
+            $table->text('short_description')->nullable();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('size_id')->nullable();
             $table->integer('total_stock')->default(0);
@@ -27,6 +28,8 @@ return new class extends Migration
             $table->boolean('is_offer')->default(false);
             $table->boolean('is_campaign')->default(false);
             $table->string('main_image')->nullable();
+            $table->boolean('status')->default(true);
+            $table->json('keyword_tags')->nullable();
             $table->timestamps();
         });
     }

@@ -72,41 +72,48 @@ class Product extends Model
         $this->save();
     }
     public function size()
-{
-    return $this->belongsTo(Size::class);
-}
-public function reviews()
-{
-    return $this->hasMany(Review::class)->where('is_approved', true);
-}
-
-public function allReviews()
-{
-    return $this->hasMany(Review::class);
-}
-public function scopeActive($query)
-{
-    return $query->where('status', true);
-}
-
-public function getImageUrlAttribute()
-{
-    if (!$this->main_image) {
-        return null;
+    {
+        return $this->belongsTo(Size::class);
+    }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class)->where('is_approved', true);
     }
 
-    if (filter_var($this->main_image, FILTER_VALIDATE_URL)) {
-        return $this->main_image;
+    public function allReviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+    public function scopeActive($query)
+    {
+        return $query->where('status', true);
     }
 
-    return asset('storage/' . $this->main_image);
-}
+    public function getImageUrlAttribute()
+    {
+        if (!$this->main_image) {
+            return null;
+        }
 
-public function scopeLowStock($query, $threshold = 5)
-{
-    return $query->where('total_stock', '<', $threshold)
-                ->where('total_stock', '>', 0)
-                ->orderBy('total_stock', 'asc');
-}
+        if (filter_var($this->main_image, FILTER_VALIDATE_URL)) {
+            return $this->main_image;
+        }
+
+        return asset('storage/' . $this->main_image);
+    }
+
+    public function scopeLowStock($query, $threshold = 5)
+    {
+        return $query->where('total_stock', '<', $threshold)
+                    ->where('total_stock', '>', 0)
+                    ->orderBy('total_stock', 'asc');
+    }
+
+    public function freeDeliveryOptions()
+    {
+        return $this->belongsToMany(DeliveryOption::class, 'free_delivery_products')
+                    ->withTimestamps();
+    }
+
 
 }

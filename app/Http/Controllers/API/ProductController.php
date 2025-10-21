@@ -2,17 +2,25 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\Review;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\DeliveryOption;
+use App\Http\Controllers\Controller;
 
 class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['images', 'category', 'variants.color', 'variants.options.size'])
+        $products = Product::with([
+                'images',
+                'category',
+                'variants.color',
+                'variants.options.size',
+                'freeDeliveryOptions'
+            ])
             ->withCount(['reviews' => function ($q) {
                 $q->where('is_approved', true);
             }])
@@ -21,16 +29,30 @@ class ProductController extends Controller
             ->latest()
             ->paginate(12);
 
-        // Add full URL to all images
+        $allActiveDeliveryOptions = DeliveryOption::where('is_active', true)->get();
+
         $this->addFullImageUrls($products);
 
+        $products->getCollection()->transform(function ($product) use ($allActiveDeliveryOptions) {
+            if ($product->freeDeliveryOptions->isNotEmpty()) {
 
+                $product->delivery_methods = $product->freeDeliveryOptions;
+            } else {
+
+                $product->delivery_methods = $allActiveDeliveryOptions->where('is_free_for_products', false)->values();
+            }
+
+            // $product->has_free_delivery = $product->freeDeliveryOptions->isNotEmpty();
+
+            return $product;
+        });
 
         return response()->json([
             'success' => true,
             'data' => $products
         ]);
     }
+
 
     public function show(Product $product)
     {
@@ -51,7 +73,7 @@ class ProductController extends Controller
 
         $product->loadAvg('reviews', 'rating');
 
-        $ratingProgress = \App\Models\Review::selectRaw('rating, COUNT(*) as total')
+        $ratingProgress = Review::selectRaw('rating, COUNT(*) as total')
             ->where('product_id', $product->id)
             ->where('is_approved', true)
             ->groupBy('rating')

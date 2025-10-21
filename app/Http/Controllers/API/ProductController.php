@@ -62,7 +62,8 @@ class ProductController extends Controller
             'variants.options.size',
             'variants' => function($query) {
                 $query->withCount('options');
-            }
+            },
+            'freeDeliveryOptions',
         ]);
 
         $product->makeHidden('Purchase_price');
@@ -95,7 +96,6 @@ class ProductController extends Controller
                 : 0;
         }
 
-        // Add full URL to all images
         if ($product->main_image) {
             $product->main_image = $this->getFullImageUrl($product->main_image);
         }
@@ -106,7 +106,6 @@ class ProductController extends Controller
                 return $image;
             });
         }
-
 
         if ($product->category && $product->category->image) {
             $product->category->image = $this->getFullImageUrl($product->category->image);
@@ -121,7 +120,6 @@ class ProductController extends Controller
             });
         }
 
-        // Calculate inventory summary
         $inventorySummary = [
             'total_variants' => $product->variants->count(),
             'total_options' => $product->variants->sum('options_count'),
@@ -133,14 +131,26 @@ class ProductController extends Controller
             })
         ];
 
+        $allActiveDeliveryOptions = DeliveryOption::where('is_active', true)->get();
+
+        if ($product->freeDeliveryOptions->isNotEmpty()) {
+            $deliveryMethods = $product->freeDeliveryOptions;
+            $product->has_free_delivery = true;
+        } else {
+            $deliveryMethods = $allActiveDeliveryOptions->where('is_free_for_products', false)->values();
+            $product->has_free_delivery = false;
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 'product' => $product,
-                'inventory' => $inventorySummary
+                'inventory' => $inventorySummary,
+                'delivery_methods' => $deliveryMethods
             ]
         ]);
     }
+
 
 
     protected function getFullImageUrl($path)

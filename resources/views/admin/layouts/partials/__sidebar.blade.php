@@ -375,6 +375,7 @@
 								<i class="fas fa-cog"></i>
 								<p>General Settings</p>
 							</a>
+
 							{{-- <div class="collapse" id="settings">
 								<ul class="nav nav-collapse">
                                     <li>
@@ -386,7 +387,14 @@
 								</ul>
 							</div> --}}
 						</li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.download.database') }}" class="btn btn-success">
+                                <i class="fa fa-download"></i> Download Database
+                            </a>
+                        </li>
 					</ul>
+
+
 				</div>
 			</div>
 		</div>

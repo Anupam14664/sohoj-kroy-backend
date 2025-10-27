@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CKEditorController;
+use App\Http\Controllers\Admin\DatabaseController;
 use App\Http\Controllers\Admin\AdminSizeController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AdminColorController;
@@ -213,6 +214,8 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
          'destroy' => 'admin.banners.destroy',
      ]);
 
+     Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])
+    ->name('admin.download.database');
 
 
 });

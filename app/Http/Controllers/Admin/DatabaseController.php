@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Spatie\DbDumper\Databases\MySql;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -65,22 +64,20 @@ class DatabaseController extends Controller
     }
 
     public function downloadDatabase()
-        {
-            $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
-            $filePath = storage_path('app/' . $fileName);
+    {
+        $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
 
-            try {
-                MySql::create()
-                    ->setDbName(env('DB_DATABASE'))
-                    ->setUserName(env('DB_USERNAME'))
-                    ->setPassword(env('DB_PASSWORD'))
-                    ->setHost(env('DB_HOST'))
-                    ->dumpToFile($filePath);
+        $command = sprintf(
+            'mysqldump --user=%s --password=%s --host=%s %s > %s',
+            env('DB_USERNAME'),
+            env('DB_PASSWORD'),
+            env('DB_HOST'),
+            env('DB_DATABASE'),
+            storage_path($fileName)
+        );
 
-                return response()->download($filePath)->deleteFileAfterSend(true);
+        system($command);
 
-            } catch (\Exception $e) {
-                return back()->with('error', 'Database backup failed: ' . $e->getMessage());
-            }
-        }
+        return response()->download(storage_path($fileName))->deleteFileAfterSend(true);
+    }
 }

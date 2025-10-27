@@ -65,19 +65,33 @@ class DatabaseController extends Controller
 
     public function downloadDatabase()
     {
+        $database   = env('DB_DATABASE');
+        $username   = env('DB_USERNAME');
+        $password   = env('DB_PASSWORD');
+        $host       = env('DB_HOST');
+        $port       = env('DB_PORT', 3306);
+
         $fileName = 'backup_' . date('y-m-d') . '.sql';
+        $filePath = storage_path($fileName);
 
         $command = sprintf(
-            'mysqldump --user=%s --password=%s --host=%s %s > %s',
-            env('DB_USERNAME'),
-            env('DB_PASSWORD'),
-            env('DB_HOST'),
-            env('DB_DATABASE'),
-            storage_path($fileName)
+            'mysqldump -h %s -P %s -u %s --password="%s" %s > %s',
+            escapeshellarg($host),
+            escapeshellarg($port),
+            escapeshellarg($username),
+            $password,
+            escapeshellarg($database),
+            escapeshellarg($filePath)
         );
 
-        system($command);
+        $result = null;
+        $output = null;
+        exec($command, $output, $result);
 
-        return response()->download(storage_path($fileName))->deleteFileAfterSend(true);
+        if ($result !== 0 || !file_exists($filePath)) {
+            return back()->with('error', 'Database backup failed! Please check server permissions or mysqldump path.');
+        }
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

@@ -64,18 +64,23 @@ class DatabaseController extends Controller
         //
     }
 
-public function downloadDatabase()
-{
-    $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
-    $filePath = storage_path('app/' . $fileName);
+    public function downloadDatabase()
+        {
+            $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $filePath = storage_path('app/' . $fileName);
 
-    MySql::create()
-        ->setDbName(env('DB_DATABASE'))
-        ->setUserName(env('DB_USERNAME'))
-        ->setPassword(env('DB_PASSWORD'))
-        ->setHost(env('DB_HOST'))
-        ->dumpToFile($filePath);
+            try {
+                MySql::create()
+                    ->setDbName(env('DB_DATABASE'))
+                    ->setUserName(env('DB_USERNAME'))
+                    ->setPassword(env('DB_PASSWORD'))
+                    ->setHost(env('DB_HOST'))
+                    ->dumpToFile($filePath);
 
-    return response()->download($filePath)->deleteFileAfterSend(true);
-}
+                return response()->download($filePath)->deleteFileAfterSend(true);
+
+            } catch (\Exception $e) {
+                return back()->with('error', 'Database backup failed: ' . $e->getMessage());
+            }
+        }
 }

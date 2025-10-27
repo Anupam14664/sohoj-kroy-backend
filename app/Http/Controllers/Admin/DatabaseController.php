@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Spatie\DbDumper\Databases\MySql;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -63,35 +64,18 @@ class DatabaseController extends Controller
         //
     }
 
-    public function downloadDatabase()
-    {
-        $database   = env('DB_DATABASE');
-        $username   = env('DB_USERNAME');
-        $password   = env('DB_PASSWORD');
-        $host       = env('DB_HOST');
-        $port       = env('DB_PORT', 3306);
+public function downloadDatabase()
+{
+    $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+    $filePath = storage_path('app/' . $fileName);
 
-        $fileName = 'backup_' . date('y-m-d') . '.sql';
-        $filePath = storage_path($fileName);
+    MySql::create()
+        ->setDbName(env('DB_DATABASE'))
+        ->setUserName(env('DB_USERNAME'))
+        ->setPassword(env('DB_PASSWORD'))
+        ->setHost(env('DB_HOST'))
+        ->dumpToFile($filePath);
 
-        $command = sprintf(
-            'mysqldump -h %s -P %s -u %s --password="%s" %s > %s',
-            escapeshellarg($host),
-            escapeshellarg($port),
-            escapeshellarg($username),
-            $password,
-            escapeshellarg($database),
-            escapeshellarg($filePath)
-        );
-
-        $result = null;
-        $output = null;
-        exec($command, $output, $result);
-
-        if ($result !== 0 || !file_exists($filePath)) {
-            return back()->with('error', 'Database backup failed! Please check server permissions or mysqldump path.');
-        }
-
-        return response()->download($filePath)->deleteFileAfterSend(true);
-    }
+    return response()->download($filePath)->deleteFileAfterSend(true);
+}
 }

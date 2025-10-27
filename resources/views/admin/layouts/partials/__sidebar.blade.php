@@ -388,7 +388,7 @@
 							</div> --}}
 						</li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.download.database') }}" class="btn btn-success">
+                            <a href="{{ route('admin.download.database') }}" class="btn btn-warning">
                                 <i class="fa fa-download"></i> Download Database
                             </a>
                         </li>

@@ -112,7 +112,7 @@ class AdminProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0|lt:regular_price',
             'main_image' => 'required|image|max:6144',
             'gallery_images' => 'required|array|min:1',
-            'gallery_images.*' => 'image|mimes:jpeg,png,jpg|max:6144',
+            'gallery_images.*' => 'image|mimes:jpeg,png,jpg|max:51200',
             'featured' => 'boolean',
             'Offer' => 'boolean',
             'campaign' => 'boolean',
@@ -123,7 +123,7 @@ class AdminProductController extends Controller
             'variants.*.color_id' => 'nullable|exists:colors,id',
             'variants.*.image' => 'required_with:variants|image|max:6144',
             'variants.*.options' => 'required_with:variants|array',
-            'variants.*.options.*.size_id' => 'required_with:variants.*.options|exists:sizes,id',
+            'variants.*.options.*.size_id' => 'nullable|exists:sizes,id',
             'variants.*.options.*.price' => 'required_with:variants.*.options|numeric|min:0',
             'variants.*.options.*.stock' => 'required_with:variants.*.options|integer|min:0',
             'variants.*.options.*.sku' => 'required_with:variants.*.options|string',
@@ -243,173 +243,203 @@ public function show(Product $product)
         return view('admin.pages.products.edit', compact('product', 'categories', 'colors', 'sizes'));
     }
 
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'sku' => 'required|unique:products,sku,' . $product->id,
-            'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|unique:products,slug,'.$product->id.'|max:255',
-            'short_description' => 'nullable|string',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'size_id' => 'nullable|exists:sizes,id',
-            'total_stock' => 'required|integer|min:0',
-            'Purchase_price' => 'required|numeric|min:0',
-            'regular_price' => 'required|numeric|min:0|gt:Purchase_price',
-            'discount_price' => 'nullable|numeric|min:0|lt:regular_price',
-            'main_image' => 'sometimes|image|max:6144',
-            'gallery_images' => 'sometimes|array|min:1',
-            'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:6144',
-            'featured' => 'boolean',
-            'Offer' => 'boolean',
-            'campaign' => 'boolean',
-            'status' => 'boolean',
-            'keyword_tags' => 'nullable|string',
-            'keyword_tags.*' => 'string|max:255',
-            'variants' => 'sometimes|array',
-            'variants.*.id' => 'sometimes|exists:product_variants,id',
-            'variants.*.color_id' => 'required_with:variants|exists:colors,id',
-            'variants.*.image' => 'sometimes|image|max:2048',
-            'variants.*.options' => 'required_with:variants|array',
-            'variants.*.options.*.id' => 'sometimes|exists:product_variant_options,id',
-            'variants.*.options.*.size_id' => 'required_with:variants.*.options|exists:sizes,id',
-            'variants.*.options.*.price' => 'required_with:variants.*.options|numeric|min:0',
-            'variants.*.options.*.stock' => 'required_with:variants.*.options|integer|min:0',
-            'variants.*.options.*.sku' => 'required_with:variants.*.options|string',
-            'deleted_variants' => 'sometimes|array',
-            'deleted_variants.*' => 'exists:product_variants,id',
-            'deleted_gallery_images' => 'sometimes|array',
-            'deleted_gallery_images.*' => 'exists:product_images,id',
+public function update(Request $request, Product $product)
+{
+    $validated = $request->validate([
+        'sku' => 'required|unique:products,sku,' . $product->id,
+        'name' => 'required|string|max:255',
+        'slug' => 'nullable|string|unique:products,slug,' . $product->id . '|max:255',
+        'short_description' => 'nullable|string',
+        'description' => 'required|string',
+        'category_id' => 'required|exists:categories,id',
+        'size_id' => 'nullable|exists:sizes,id',
+        'total_stock' => 'required|integer|min:0',
+        'Purchase_price' => 'required|numeric|min:0',
+        'regular_price' => 'required|numeric|min:0|gt:Purchase_price',
+        'discount_price' => 'nullable|numeric|min:0|lt:regular_price',
+        'main_image' => 'sometimes|image|max:6144',
+        'gallery_images' => 'sometimes|array|min:1',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:6144',
+        'featured' => 'boolean',
+        'Offer' => 'boolean',
+        'campaign' => 'boolean',
+        'status' => 'boolean',
+        'keyword_tags' => 'nullable|string',
+        'keyword_tags.*' => 'string|max:255',
+        'variants' => 'sometimes|array',
+        'variants.*.id' => 'sometimes|exists:product_variants,id',
+        'variants.*.color_id' => 'nullable|exists:colors,id',
+        'variants.*.image' => 'sometimes|image|max:2048',
+        'variants.*.options' => 'required_with:variants|array',
+        'variants.*.options.*.id' => 'sometimes|exists:product_variant_options,id',
+        'variants.*.options.*.size_id' => 'nullable|exists:sizes,id',
+        'variants.*.options.*.price' => 'required_with:variants.*.options|numeric|min:0',
+        'variants.*.options.*.stock' => 'required_with:variants.*.options|integer|min:0',
+        'variants.*.options.*.sku' => 'required_with:variants.*.options|string',
+        'deleted_variants' => 'sometimes|array',
+        'deleted_variants.*' => 'exists:product_variants,id',
+        'deleted_gallery_images' => 'sometimes|array',
+        'deleted_gallery_images.*' => 'exists:product_images,id',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        // ✅ Handle main image (delete old one if replaced)
+        if ($request->hasFile('main_image')) {
+            if ($product->main_image && Storage::disk('public')->exists($product->main_image)) {
+                Storage::disk('public')->delete($product->main_image);
+            }
+            $mainImagePath = $request->file('main_image')->store('products', 'public');
+        } else {
+            $mainImagePath = $product->main_image;
+        }
+
+        // ✅ Handle keyword tags
+        $keywordTags = $request->filled('keyword_tags')
+            ? array_map('trim', explode(',', $request->keyword_tags))
+            : [];
+
+        $slug = $request->slug ?: Str::slug($validated['name']);
+
+        // ✅ Update product
+        $product->update([
+            'sku' => $validated['sku'],
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'short_description' => $validated['short_description'],
+            'description' => $validated['description'],
+            'category_id' => $validated['category_id'],
+            'size_id' => $validated['size_id'] ?? null,
+            'total_stock' => $validated['total_stock'],
+            'buy_price' => $validated['Purchase_price'],
+            'regular_price' => $validated['regular_price'],
+            'discount_price' => $validated['discount_price'] ?? null,
+            'main_image' => $mainImagePath,
+            'is_featured' => $request->has('featured'),
+            'is_offer' => $request->has('Offer'),
+            'is_campaign' => $request->has('campaign'),
+            'status' => $request->has('status'),
+            'keyword_tags' => $keywordTags,
         ]);
 
-        try {
-            DB::beginTransaction();
+        // ✅ Delete gallery images (DB + storage)
+        if ($request->has('deleted_gallery_images')) {
+            $imagesToDelete = ProductImage::whereIn('id', $request->deleted_gallery_images)
+                ->where('product_id', $product->id)
+                ->get();
 
-            // Handle main image upload if new one is provided
-            $mainImagePath = $request->hasFile('main_image')
-                ? $request->file('main_image')->store('products', 'public')
-                : $product->main_image;
-
-
-                $keywordTags = $request->filled('keyword_tags') ? array_map('trim', explode(',', $request->keyword_tags)): [];
-                $slug = $request->slug ?: Str::slug($validated['name']);
-            // Update product
-            $product->update([
-                'sku' => $validated['sku'],
-                'name' => $validated['name'],
-                'slug' => $slug,
-                'short_description' => $validated['short_description'],
-                'description' => $validated['description'],
-                'category_id' => $validated['category_id'],
-                'size_id' => $validated['size_id'] ?? null,
-                'total_stock' => $validated['total_stock'],
-                'buy_price' => $validated['Purchase_price'],
-                'regular_price' => $validated['regular_price'],
-                'discount_price' => $validated['discount_price'] ?? null,
-                'main_image' => $mainImagePath,
-                'is_featured' => $request->has('featured'),
-                'is_offer' => $request->has('Offer'),
-                'is_campaign' => $request->has('campaign'),
-                'status' => $request->has('status'),
-                'keyword_tags' => $keywordTags,
-            ]);
-
-            // Handle gallery images - delete marked images first
-            if ($request->has('deleted_gallery_images')) {
-                ProductImage::whereIn('id', $request->deleted_gallery_images)
-                    ->where('product_id', $product->id)
-                    ->delete();
-            }
-
-            // Add new gallery images
-            if ($request->hasFile('gallery_images')) {
-                $existingImagesCount = $product->images()->count();
-
-                foreach ($request->file('gallery_images') as $index => $file) {
-                    $path = $file->store('products/gallery', 'public');
-
-                    ProductImage::create([
-                        'product_id' => $product->id,
-                        'image_path' => $path,
-                        'sort_order' => $existingImagesCount + $index
-                    ]);
+            foreach ($imagesToDelete as $image) {
+                if (Storage::disk('public')->exists($image->image_path)) {
+                    Storage::disk('public')->delete($image->image_path);
                 }
+                $image->delete();
             }
+        }
 
-            // Handle deleted variants
-            if ($request->has('deleted_variants')) {
-                ProductVariant::whereIn('id', $request->deleted_variants)
-                    ->where('product_id', $product->id)
-                    ->delete();
+        // ✅ Add new gallery images
+        if ($request->hasFile('gallery_images')) {
+            $existingImagesCount = $product->images()->count();
+
+            foreach ($request->file('gallery_images') as $index => $file) {
+                $path = $file->store('products/gallery', 'public');
+
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $path,
+                    'sort_order' => $existingImagesCount + $index,
+                ]);
             }
+        }
 
-            // Handle variants if exists
-            if ($request->has('variants')) {
-                foreach ($request->variants as $variantData) {
-                    // Update existing variant or create new one
-                    if (isset($variantData['id'])) {
-                        $variant = ProductVariant::find($variantData['id']);
+        // ✅ Handle deleted variants
+        if ($request->has('deleted_variants')) {
+            $variantsToDelete = ProductVariant::whereIn('id', $request->deleted_variants)
+                ->where('product_id', $product->id)
+                ->get();
 
-                        // Update variant image if new one is provided
-                        $variantImagePath = isset($variantData['image'])
-                            ? $variantData['image']->store('products/variants', 'public')
-                            : $variant->image;
+            foreach ($variantsToDelete as $variant) {
+                // Delete variant image from storage
+                if ($variant->image && Storage::disk('public')->exists($variant->image)) {
+                    Storage::disk('public')->delete($variant->image);
+                }
 
-                        $variant->update([
-                            'color_id' => $variantData['color_id'],
-                            'image' => $variantImagePath,
-                        ]);
-                    } else {
+                // Delete related options
+                $variant->options()->delete();
+                $variant->delete();
+            }
+        }
+
+        // ✅ Handle variants
+        if ($request->has('variants')) {
+            foreach ($request->variants as $variantData) {
+                // Update or create variant
+                if (isset($variantData['id'])) {
+                    $variant = ProductVariant::find($variantData['id']);
+
+                    if (isset($variantData['image'])) {
+                        // Delete old image before replacing
+                        if ($variant->image && Storage::disk('public')->exists($variant->image)) {
+                            Storage::disk('public')->delete($variant->image);
+                        }
                         $variantImagePath = $variantData['image']->store('products/variants', 'public');
-
-                        $variant = ProductVariant::create([
-                            'product_id' => $product->id,
-                            'color_id' => $variantData['color_id'],
-                            'image' => $variantImagePath,
-                        ]);
+                    } else {
+                        $variantImagePath = $variant->image;
                     }
 
-                    // Handle variant options
-                    foreach ($variantData['options'] as $optionData) {
-                        if (isset($optionData['id'])) {
-                            // Update existing option
-                            ProductVariantOption::where('id', $optionData['id'])
-                                ->where('variant_id', $variant->id)
-                                ->update([
-                                    'size_id' => $optionData['size_id'],
-                                    'price' => $optionData['price'],
-                                    'stock' => $optionData['stock'],
-                                    'sku' => $optionData['sku'],
-                                ]);
-                        } else {
-                            // Create new option
-                            ProductVariantOption::create([
-                                'variant_id' => $variant->id,
-                                'size_id' => $optionData['size_id'],
+                    $variant->update([
+                        'color_id' => $variantData['color_id'],
+                        'image' => $variantImagePath,
+                    ]);
+                } else {
+                    $variantImagePath = $variantData['image']->store('products/variants', 'public');
+
+                    $variant = ProductVariant::create([
+                        'product_id' => $product->id,
+                        'color_id' => $variantData['color_id'],
+                        'image' => $variantImagePath,
+                    ]);
+                }
+
+                // Handle options (update or create)
+                foreach ($variantData['options'] as $optionData) {
+                    if (isset($optionData['id'])) {
+                        ProductVariantOption::where('id', $optionData['id'])
+                            ->where('variant_id', $variant->id)
+                            ->update([
+                                'size_id' => $optionData['size_id'] ?? null,
                                 'price' => $optionData['price'],
                                 'stock' => $optionData['stock'],
                                 'sku' => $optionData['sku'],
                             ]);
-                        }
+                    } else {
+                        ProductVariantOption::create([
+                            'variant_id' => $variant->id,
+                            'size_id' => $optionData['size_id'] ?? null,
+                            'price' => $optionData['price'],
+                            'stock' => $optionData['stock'],
+                            'sku' => $optionData['sku'],
+                        ]);
                     }
                 }
-
-                // Update total stock based on variants
-                $product->update(['total_stock' => $product->variants->sum(function($v) {
-                    return $v->options->sum('stock');
-                })]);
             }
 
-            DB::commit();
-
-            return redirect()->route('admin.products.index')
-                ->with('success', 'Product updated successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Product update failed: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Error updating product: ' . $e->getMessage());
+            // ✅ Update total stock based on variant options
+            $product->update([
+                'total_stock' => $product->variants->sum(fn($v) => $v->options->sum('stock')),
+            ]);
         }
+
+        DB::commit();
+
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Product updated successfully');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Product update failed: ' . $e->getMessage());
+        return back()->withInput()->with('error', 'Error updating product: ' . $e->getMessage());
     }
+}
 
     public function destroy(Product $product)
     {

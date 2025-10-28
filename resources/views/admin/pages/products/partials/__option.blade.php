@@ -1,6 +1,6 @@
 <div class="option-row row mb-2 mt-4">
     <div class="col-md-3">
-        <select name="variants[{{ $variantIndex }}][options][{{ $optionIndex }}][size_id]" class="form-control" required>
+        <select name="variants[{{ $variantIndex }}][options][{{ $optionIndex }}][size_id]" class="form-control">
             <option value="">Select Size</option>
             @foreach($sizes as $size)
                 <option value="{{ $size->id }}"

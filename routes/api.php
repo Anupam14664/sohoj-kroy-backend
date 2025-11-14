@@ -5,6 +5,7 @@ use App\Models\GeneralSetting;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CartController;
+use App\Http\Controllers\API\PageController;
 use App\Http\Controllers\API\SizeController;
 use App\Http\Controllers\API\ColorController;
 use App\Http\Controllers\API\OrderController;
@@ -97,5 +98,10 @@ Route::get('/sizes', [SizeController::class, 'index']);
 Route::get('banners/home', [BannerController::class, 'homeBanners']);
 Route::get('banners/offer', [BannerController::class, 'offerBanners']);
 Route::get('banners/campaign', [BannerController::class, 'campaignBanners']);
+
+// landing page
+Route::get('/pages', [PageController::class, 'index']);
+Route::get('/pages/{slag}', [PageController::class, 'show']);
+
 
 });

@@ -2,10 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CKEditorController;
 use App\Http\Controllers\Admin\DatabaseController;
 use App\Http\Controllers\Admin\AdminSizeController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AdminColorController;
 use App\Http\Controllers\Admin\AdminOrderController;
@@ -30,14 +33,14 @@ Route::post('logout', [AuthController::class, 'logout'])->name('admin.logout');
 // Protect Admin Routes
 Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('can:view dashboard')->name('admin.dashboard');
 
       // For profile route
       Route::get('/profile', [AuthController::class, 'profileEdit'])->name('admin.profile');
       Route::post('/profile', [AuthController::class, 'profileUpdate'])->name('admin.profile.update');
 
     // Categories
-    Route::resource('categories', AdminCategoryController::class)->names([
+    Route::resource('categories', AdminCategoryController::class)->middleware('can:manage categories')->names([
         'index' => 'admin.categories.index',
         'create' => 'admin.categories.create',
         'store' => 'admin.categories.store',
@@ -48,7 +51,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);
 
     //Homepage section
-    Route::resource('homepage-sections', HomepageSectionController::class)->names([
+    Route::resource('homepage-sections', HomepageSectionController::class)->middleware('can:manage home-section')->names([
         'index' => 'admin.homepage-sections.index',
         'create' => 'admin.homepage-sections.create',
         'store' => 'admin.homepage-sections.store',
@@ -59,7 +62,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);
 
     // Products
-    Route::resource('products', AdminProductController::class)->names([
+    Route::resource('products', AdminProductController::class)->middleware('can:manage products')->names([
         'index' => 'admin.products.index',
         'create' => 'admin.products.create',
         'store' => 'admin.products.store',
@@ -68,19 +71,19 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.products.update',
         'destroy' => 'admin.products.destroy'
     ]);
-    Route::delete('products/images/{image}', [AdminProductController::class, 'deleteImage'])->name('admin.products.images.destroy');
-    Route::get('admin/products/variant', [AdminProductController::class, 'variant'])->name('admin.products.variant');
+    Route::delete('products/images/{image}', [AdminProductController::class, 'deleteImage'])->middleware('can:manage products')->name('admin.products.images.destroy');
+    Route::get('admin/products/variant', [AdminProductController::class, 'variant'])->middleware('can:manage products')->name('admin.products.variant');
 
-    Route::get('admin/products/option', [AdminProductController::class, 'option'])->name('admin.products.option');
+    Route::get('admin/products/option', [AdminProductController::class, 'option'])->middleware('can:manage products')->name('admin.products.option');
 
 
 
 
     // Orders
 
-    Route::get('orders/incomplete', [AdminOrderController::class, 'incompleteOrders'])->name('admin.orders.incomplete');
-    Route::get('/orders/couriers', [AdminOrderController::class, 'shippedOrders'])->name('admin.orders.shipped');
-    Route::resource('orders', AdminOrderController::class)->names([
+    Route::get('orders/incomplete', [AdminOrderController::class, 'incompleteOrders'])->middleware('can:manage orders')->name('admin.orders.incomplete');
+    Route::get('/orders/couriers', [AdminOrderController::class, 'shippedOrders'])->middleware('can:manage orders')->name('admin.orders.shipped');
+    Route::resource('orders', AdminOrderController::class)->middleware('can:manage orders')->names([
        'index' => 'admin.orders.index',
        'create' => 'admin.orders.create',
         'store' => 'admin.orders.store',
@@ -89,34 +92,33 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.orders.update',
         'destroy' => 'admin.orders.destroy',
     ]);
-    Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->name('admin.orders.update.items');
-    Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->name('admin.orders.update.delivery');
-    Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
-    Route::get('/orders/download/{order}', [AdminOrderController::class, 'download'])->name('admin.orders.download');
-    Route::get('/orders/sku-search', [AdminOrderController::class, 'skuSearch'])->name('admin.orders.sku-search');
-    Route::get('/product/search', [AdminOrderController::class, 'search'])->name('admin.product.search');
-    Route::get('/product/{product}/variants', [AdminOrderController::class, 'getVariants']);
-    Route::post('/orders/export', [AdminOrderController::class, 'export'])->name('admin.orders.export');
-    Route::post('orders/bulk-delete', [AdminOrderController::class, 'bulkDelete'])->name('admin.orders.bulk-delete');
-    Route::post('/orders/export-order', [AdminOrderController::class, 'exportOrder'])->name('admin.orders.export.order');
+    Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->middleware('can:manage orders')->name('admin.orders.update.items');
+    Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->middleware('can:manage orders')->name('admin.orders.update.delivery');
+    Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->middleware('can:manage orders')->name('admin.orders.update-status');
+    Route::get('/orders/download/{order}', [AdminOrderController::class, 'download'])->middleware('can:manage orders')->name('admin.orders.download');
+    Route::get('/orders/sku-search', [AdminOrderController::class, 'skuSearch'])->middleware('can:manage orders')->name('admin.orders.sku-search');
+    Route::get('/product/search', [AdminOrderController::class, 'search'])->middleware('can:manage product')->name('admin.product.search');
+    Route::get('/product/{product}/variants', [AdminOrderController::class, 'getVariants'])->middleware('can:manage product');
+    Route::post('/orders/export', [AdminOrderController::class, 'export'])->middleware('can:manage orders')->name('admin.orders.export');
+    Route::post('orders/bulk-delete', [AdminOrderController::class, 'bulkDelete'])->middleware('can:manage orders')->name('admin.orders.bulk-delete');
+    Route::post('/orders/export-order', [AdminOrderController::class, 'exportOrder'])->middleware('can:manage orders')->name('admin.orders.export.order');
 
 
 
 
 
-    Route::get('/customers', [AdminOrderController::class, 'customerList'])->name('admin.customers.index');
-    Route::get('customers/orders/{phone}', [AdminOrderController::class, 'customerOrdersDetail'])
-    ->name('admin.customers.orders_detail');
+    Route::get('/customers', [AdminOrderController::class, 'customerList'])->middleware('can:manage customers')->name('admin.customers.index');
+    Route::get('customers/orders/{phone}', [AdminOrderController::class, 'customerOrdersDetail'])->middleware('can:manage customers')->name('admin.customers.orders_detail');
 
 
-    Route::post('/customers/block', [AdminOrderController::class, 'blockCustomer'])->name('admin.customers.block');
-    Route::post('/customers/unblock', [AdminOrderController::class, 'unblockCustomer'])->name('admin.customers.unblock');
-    Route::get('/customers/blocked', [AdminOrderController::class, 'blockedCustomers'])->name('admin.customers.blocked');
-    Route::post('/customers/export', [AdminOrderController::class, 'exportCustomers'])->name('admin.customers.export');
+    Route::post('/customers/block', [AdminOrderController::class, 'blockCustomer'])->middleware('can:manage customers')->name('admin.customers.block');
+    Route::post('/customers/unblock', [AdminOrderController::class, 'unblockCustomer'])->middleware('can:manage customers')->name('admin.customers.unblock');
+    Route::get('/customers/blocked', [AdminOrderController::class, 'blockedCustomers'])->middleware('can:manage customers')->name('admin.customers.blocked');
+    Route::post('/customers/export', [AdminOrderController::class, 'exportCustomers'])->middleware('can:manage customers')->name('admin.customers.export');
 
 
     // Coupons
-    Route::resource('coupons', AdminCouponController::class)->names([
+    Route::resource('coupons', AdminCouponController::class)->middleware('can:manage coupons')->names([
         'index' => 'admin.coupons.index',
         'create' => 'admin.coupons.create',
         'store' => 'admin.coupons.store',
@@ -125,10 +127,10 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'destroy' => 'admin.coupons.destroy'
     ]);
     Route::get('coupons/search-products', [AdminCouponController::class, 'searchProducts'])
-    ->name('admin.coupons.search-products');
+    ->middleware('can:manage coupons')->name('admin.coupons.search-products');
 
     // Delivery Options
-    Route::resource('delivery-options', AdminDeliveryOptionController::class)->names([
+    Route::resource('delivery-options', AdminDeliveryOptionController::class)->middleware('can:manage delivery')->names([
         'index' => 'admin.delivery-options.index',
         'create' => 'admin.delivery-options.create',
         'store' => 'admin.delivery-options.store',
@@ -138,16 +140,14 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'destroy' => 'admin.delivery-options.destroy'
     ]);
 
-    Route::prefix('delivery-options')->group(function () {
-        Route::get('/{deliveryOption}/manage-products', [AdminDeliveryOptionController::class, 'manageProducts'])
-            ->name('admin.delivery-options.manage-products');
+    Route::prefix('delivery-options')->middleware('can:manage delivery')->group(function () {
+    Route::get('/{deliveryOption}/manage-products', [AdminDeliveryOptionController::class, 'manageProducts'])->name('admin.delivery-options.manage-products');
 
-        Route::put('/{deliveryOption}/update-products', [AdminDeliveryOptionController::class, 'updateProducts'])
-            ->name('admin.delivery-options.update-products');
+        Route::put('/{deliveryOption}/update-products', [AdminDeliveryOptionController::class, 'updateProducts'])->name('admin.delivery-options.update-products');
     });
 
     // Colors
-    Route::resource('colors', AdminColorController::class)->names([
+    Route::resource('colors', AdminColorController::class)->middleware('can:manage colors')->names([
         'index' => 'admin.colors.index',
         'create' => 'admin.colors.create',
         'store' => 'admin.colors.store',
@@ -158,7 +158,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);
 
     // Sizes
-    Route::resource('sizes', AdminSizeController::class)->names([
+    Route::resource('sizes', AdminSizeController::class)->middleware('can:manage sizes')->names([
         'index' => 'admin.sizes.index',
         'create' => 'admin.sizes.create',
         'store' => 'admin.sizes.store',
@@ -169,7 +169,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);
 
     // Reviews
-    Route::resource('reviews', AdminReviewController::class)->names([
+    Route::resource('reviews', AdminReviewController::class)->middleware('can:manage reviews')->names([
         'index' => 'admin.reviews.index',
         'create' => 'admin.reviews.create',
         'store' => 'admin.reviews.store',
@@ -178,13 +178,13 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.reviews.update',
         'destroy' => 'admin.reviews.destroy'
     ]);
-    Route::post('reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('admin.reviews.approve');
+    Route::post('reviews/{review}/approve', [AdminReviewController::class, 'approve'])->middleware('can:manage reviews')->name('admin.reviews.approve');
 
 
     // General Settings
-    Route::get('general-settings', [GeneralSettingsController::class, 'index'])->name('admin.general.settings');
-    Route::post('general-settings', [GeneralSettingsController::class, 'update'])->name('admin.general.settings.update');
-    Route::get('social-links', [GeneralSettingsController::class, 'socialLinks'])->name('admin.socials.links');
+    Route::get('general-settings', [GeneralSettingsController::class, 'index'])->middleware('can:manage general-settings')->name('admin.general.settings');
+    Route::post('general-settings', [GeneralSettingsController::class, 'update'])->middleware('can:manage general-settings')->name('admin.general.settings.update');
+    // Route::get('social-links', [GeneralSettingsController::class, 'socialLinks'])->name('admin.socials.links');
 
 
     // CKE Editor
@@ -193,7 +193,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
 
     // couriers
 
-    Route::resource('couriers', CourierServiceController::class)->names([
+    Route::resource('couriers', CourierServiceController::class)->middleware('can:manage couriers')->names([
         'index' => 'admin.couriers.index',
         'create' => 'admin.couriers.create',
         'store' => 'admin.couriers.store',
@@ -204,7 +204,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);;
 
     // banners
-    Route::resource('banners', BannerController::class)->names([
+    Route::resource('banners', BannerController::class)->middleware('can:manage banners')->names([
         'index' => 'admin.banners.index',
         'create' => 'admin.banners.create',
          'store' => 'admin.banners.store',
@@ -214,8 +214,43 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
          'destroy' => 'admin.banners.destroy',
      ]);
 
-     Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])
-    ->name('admin.download.database');
 
+
+    // Landing Page
+    Route::post('pages/upload-media', [PageController::class, 'uploadMedia'])->name('admin.pages.upload.media');
+    Route::resource('pages', PageController::class)->middleware('can:manage pages')->names([
+        'index' => 'admin.pages.index',
+        'create' => 'admin.pages.create',
+         'store' => 'admin.pages.store',
+         'show' => 'admin.pages.show',
+         'edit' => 'admin.pages.edit',
+         'update' => 'admin.pages.update',
+         'destroy' => 'admin.pages.destroy',
+     ]);
+
+    Route::get('products/search', [PageController::class, 'search'])->name('admin.products.search');
+
+
+
+    //  roles
+    Route::resource('roles', RoleController::class)->middleware('can:manage roles')->names([
+        'index' => 'admin.roles.index',
+        'create' => 'admin.roles.create',
+        'store' => 'admin.roles.store',
+        'edit' => 'admin.roles.edit',
+        'update' => 'admin.roles.update',
+        'destroy' => 'admin.roles.destroy',
+    ]);
+    Route::resource('admins', AdminUserController::class)->middleware('can:manage admins')->names([
+        'index' => 'admin.admins.index',
+        'create' => 'admin.admins.create',
+        'store' => 'admin.admins.store',
+        'edit' => 'admin.admins.edit',
+        'update' => 'admin.admins.update',
+        'destroy' => 'admin.admins.destroy',
+    ]);
+
+    Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])->middleware('can:manage downloadDB')
+    ->name('admin.download.database');
 
 });

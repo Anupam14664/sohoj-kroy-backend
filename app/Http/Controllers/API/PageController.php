@@ -74,7 +74,7 @@ public function show($slug)
         ]);
 
         // Remove internal fields
-        $product->makeHidden(['Purchase_price']);
+        $product->makeHidden(['buy_price']);
 
         // ---------- Fix Product Main Image ----------
         if ($product->main_image) {

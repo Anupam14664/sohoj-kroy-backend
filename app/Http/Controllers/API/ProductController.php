@@ -66,7 +66,7 @@ class ProductController extends Controller
             'freeDeliveryOptions',
         ]);
 
-        $product->makeHidden('Purchase_price');
+        $product->makeHidden('buy_price');
 
         $product->loadCount(['reviews' => function ($q) {
             $q->where('is_approved', true);

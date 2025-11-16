@@ -42,7 +42,13 @@ public function show($slug)
     }
 
     $generalSetting = GeneralSetting::first();
-    $logo = $generalSetting ? $generalSetting->logo : null;
+        $headerData = [
+            'logo' => $generalSetting && $generalSetting->logo ? asset('storage/' . $generalSetting->logo) : null,
+            'contact_number_1' => $generalSetting->contact_number_1 ?? null,
+            'contact_number_2' => $generalSetting->contact_number_2 ?? null,
+            'whatsapp' => $generalSetting->whatsapp_url ?? null,
+            'messenger' => $generalSetting->messenger_url ?? null,
+        ];
 
     $deliveryOptions = [];
 
@@ -151,7 +157,7 @@ public function show($slug)
     return response()->json([
         'success' => true,
         'data' => [
-            'header_logo' => $logo ? asset('storage/' . $logo) : null,
+            'header' => $headerData,
             'page' => $page,
             'delivery_options' => $deliveryOptions
         ]

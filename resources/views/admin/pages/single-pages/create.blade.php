@@ -49,6 +49,7 @@
                     <div class="list-group-item draggable-section" data-type="product_highlight">Product Highlight</div>
                     <div class="list-group-item draggable-section" data-type="certification">Certification</div>
                     <div class="list-group-item draggable-section" data-type="customer_review">Customer Review</div>
+                    <div class="list-group-item draggable-section" data-type="exclusive_product">Exclusive Product</div>
                     <div class="list-group-item draggable-section" data-type="faq">FAQ</div>
                 </div>
             </div>
@@ -137,6 +138,16 @@
             switch(type){
                 case 'hero_product_banner':
                     html += `
+                        <div class="mt-2">
+                            <label>Heading</label>
+                            <input type="text" id="heroHeading" class="form-control" value="${card._settings.heading || ''}">
+                        </div>
+
+                        <div class="mt-2">
+                            <label>Description</label>
+                            <textarea id="heroDescription" class="form-control">${card._settings.description || ''}</textarea>
+                        </div>
+
                         <div class="mt-2 countdown-wrapper">
                             <label>Countdown Date</label>
                             <input type="date" id="countdownDate" class="form-control countdown-date"
@@ -222,6 +233,35 @@
                         ${uploadInput('whyImage')}
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
                         <button id="addWhy" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Item</button>`;
+                    break;
+
+                case 'exclusive_product':
+                    html += `
+
+                        <div class="mb-2">
+                            <label>Product Image</label>
+                            <input type="file" id="exclusiveImage" class="form-control">
+                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                        </div>
+                        <div class="mb-2">
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading || ''}">
+                        </div>
+
+                        <div class="mb-2">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control">${card._settings.description || ''}</textarea>
+                        </div>
+
+                        <div class="mb-2">
+                            <label>CTA 1 Text</label>
+                            <input type="text" id="cta1Text" class="form-control" value="${card._settings.cta1Text || ''}">
+                        </div>
+                        <div class="mb-2">
+                            <label>CTA 2 Text</label>
+                            <input type="text" id="cta2Text" class="form-control" value="${card._settings.cta2Text || ''}">
+                        </div>
+                    `;
                     break;
 
                 case 'faq':
@@ -337,6 +377,30 @@
                 }
             }
 
+            if(type === 'exclusive_product'){
+                const input = document.getElementById('exclusiveImage');
+                input.onchange = async (e)=>{
+                    const f = e.target.files[0];
+                    if(!f) return;
+
+                    const fd = new FormData();
+                    fd.append('file', f);
+
+                    const res = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: {'X-CSRF-TOKEN': csrf},
+                        body: fd
+                    });
+
+                    const d = await res.json();
+                    if(d.success){
+                        card._settings.image = d.url;
+                        // openSettings(card);
+                    }
+                }
+            }
+
+
             if(type==='faq'){
                 const list=document.getElementById('faqList');
                 card._settings.faqs=card._settings.faqs||[];
@@ -351,8 +415,12 @@
                 if (document.getElementById('cta')) card._settings.cta = document.getElementById('cta').value;
                 if (document.getElementById('heading')) card._settings.heading = document.getElementById('heading').value;
                 if (document.getElementById('description')) card._settings.description = document.getElementById('description').value;
+                if (document.getElementById('cta1Text')) card._settings.cta1Text = document.getElementById('cta1Text').value;
+                if (document.getElementById('cta2Text')) card._settings.cta2Text = document.getElementById('cta2Text').value;
 
                 if (card.dataset.type === 'hero_product_banner') {
+                    card._settings.heading = document.getElementById('heroHeading').value;
+                    card._settings.description = document.getElementById('heroDescription').value;
                     const date = document.getElementById('countdownDate').value;
                     const time = document.getElementById('countdownTime').value;
                     if (date && time) {
@@ -363,6 +431,8 @@
                         card._settings.countdownDate = null;
                     }
                 }
+
+
 
                 settingsPane.innerHTML = '<p class="text-success">Settings Saved</p>';
                 updateSectionsJSON();

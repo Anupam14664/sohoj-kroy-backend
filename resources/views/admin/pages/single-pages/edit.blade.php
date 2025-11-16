@@ -50,6 +50,7 @@
                     <div class="list-group-item draggable-section" data-type="product_highlight">Product Highlight</div>
                     <div class="list-group-item draggable-section" data-type="certification">Certification</div>
                     <div class="list-group-item draggable-section" data-type="customer_review">Customer Review</div>
+                    <div class="list-group-item draggable-section" data-type="exclusive_product">Exclusive Product</div>
                     <div class="list-group-item draggable-section" data-type="faq">FAQ</div>
                 </div>
             </div>
@@ -202,6 +203,15 @@
                     const timeValue = countdownDate ? countdownDate.split('T')[1]?.slice(0,5) : '';
 
                     html += `
+                        <div class="mt-2">
+                            <label>Heading</label>
+                            <input type="text" id="heroHeading" class="form-control" value="${card._settings.heading || ''}">
+                        </div>
+
+                        <div class="mt-2">
+                            <label>Description</label>
+                            <textarea id="heroDescription" class="form-control">${card._settings.description || ''}</textarea>
+                        </div>
                         <div class="mt-2 countdown-wrapper">
                             <label>Countdown Date</label>
                             <input type="date" id="countdownDate" class="form-control countdown-date" value="${dateValue}">
@@ -276,6 +286,35 @@
                         ${uploadInput('whyImage')}
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
                         <button id="addWhy" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Item</button>`;
+                    break;
+
+                case 'exclusive_product':
+                    html += `
+
+                        <div class="mb-2">
+                            <label>Product Image</label>
+                            <input type="file" id="exclusiveImage" class="form-control">
+                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                        </div>
+                        <div class="mb-2">
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading || ''}">
+                        </div>
+
+                        <div class="mb-2">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control">${card._settings.description || ''}</textarea>
+                        </div>
+
+                        <div class="mb-2">
+                            <label>CTA 1 Text</label>
+                            <input type="text" id="cta1Text" class="form-control" value="${card._settings.cta1Text || ''}">
+                        </div>
+                        <div class="mb-2">
+                            <label>CTA 2 Text</label>
+                            <input type="text" id="cta2Text" class="form-control" value="${card._settings.cta2Text || ''}">
+                        </div>
+                    `;
                     break;
 
                 case 'faq':

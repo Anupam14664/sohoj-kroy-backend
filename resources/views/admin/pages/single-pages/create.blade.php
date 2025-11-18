@@ -212,7 +212,7 @@
 
                 case 'product_highlight':
                     html += `
-                    <div class="mb-2">
+                        <div class="mb-2">
                             <label>Product Image</label>
                             <input type="file" id="highlightImage" class="form-control">
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}

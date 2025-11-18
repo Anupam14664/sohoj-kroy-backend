@@ -269,6 +269,11 @@
 
                 case 'product_highlight':
                     html += `
+                        <div class="mb-2">
+                            <label>Product Image</label>
+                            <input type="file" id="highlightImage" class="form-control">
+                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                        </div>
                         <div class="mb-2"><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
                         <div class="mb-2"><label>Description</label><textarea id="description" class="form-control">${card._settings.description||''}</textarea></div>
                         <div class="mb-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>
@@ -515,6 +520,26 @@
                         document.getElementById('newPoint').value='';
                     }
                 }
+                const input = document.getElementById('highlightImage');
+                    input.onchange = async (e)=>{
+                        const f = e.target.files[0];
+                        if(!f) return;
+
+                        const fd = new FormData();
+                        fd.append('file', f);
+
+                        const res = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {'X-CSRF-TOKEN': csrf},
+                            body: fd
+                        });
+
+                        const d = await res.json();
+                        if(d.success){
+                            card._settings.image = d.url;
+                            openSettings(card);
+                        }
+                    }
             }
 
             if(type==='faq'){

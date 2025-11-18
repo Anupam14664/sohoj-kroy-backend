@@ -321,7 +321,7 @@
                     html += `<div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
                         <div id="faqList"></div>
                         <input type="text" id="faqQ" class="form-control mt-1" placeholder="Question">
-                        <input type="text" id="faqA" class="form-control mt-1" placeholder="Answer">
+                        <textarea id="faqA" class="form-control mt-1" rows="3" placeholder="Answer"></textarea>
                         <button id="addFaq" type="button" class="btn btn-sm btn-outline-primary mt-1">Add FAQ</button>`;
                     break;
             }
@@ -448,8 +448,29 @@
                     }
                 };
             }
+            if (type === 'premium_product_promotion') {
+                const input = document.getElementById('featuredImage');
+                input.onchange = async (e)=>{
+                    const f = e.target.files[0];
+                    if(!f) return;
 
-            if(type === 'featured_product' || type === 'premium_product_promotion'){
+                    const fd = new FormData();
+                    fd.append('file', f);
+
+                    const res = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers:{'X-CSRF-TOKEN': csrf},
+                        body: fd
+                    });
+
+                    const d = await res.json();
+                    if(d.success){
+                        card._settings.image = d.url;
+                        openSettings(card);
+                    }
+                };
+            }
+            if(type === 'featured_product'){
                 const input = document.getElementById('featuredImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];

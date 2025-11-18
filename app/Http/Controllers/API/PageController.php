@@ -48,6 +48,7 @@ public function show($slug)
             'contact_number_2' => $generalSetting->contact_number_2 ?? null,
             'whatsapp' => $generalSetting->whatsapp_url ?? null,
             'messenger' => $generalSetting->messenger_url ?? null,
+            'facebook_url' => $generalSetting->messenger_url ?? null,
         ];
 
     $deliveryOptions = [];

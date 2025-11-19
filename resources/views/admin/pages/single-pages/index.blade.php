@@ -15,7 +15,7 @@
                     <tr>
                         <th>#</th>
                         <th>Page Name</th>
-                        <th>Slug</th>
+                        <th>Page Url</th>
                         <th>Status</th>
                         <th>Last Updated</th>
                         <th>Action</th>
@@ -26,7 +26,20 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $page->name }}</td>
-                            <td>{{ $page->slug }}</td>
+                            <td>
+                                @php
+                                    $fullUrl = config('app.main_domain') . '/landing/' . $page->slug;
+
+                                    $shortUrl = substr($fullUrl, 0, 15) . '....' . substr($fullUrl, -20);
+                                @endphp
+
+                            <span>{{ $shortUrl }}</span>
+                                <button class="btn btn-sm copy-btn" data-url="{{ $fullUrl }}" title="Copy URL" style="border:none;">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                            </td>
+
+
                             <td>
                                 @if($page->status == 1)
                                     <span class="badge bg-success">Active</span>
@@ -56,3 +69,30 @@
 
 </div>
 @endsection
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const url = this.getAttribute('data-url');
+            const icon = this.querySelector('i');
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(url);
+
+            // Change icon to check
+            icon.classList.remove('fa-copy');
+            icon.classList.add('fa-check');
+            icon.style.color = "green";
+
+            // After 1 sec restore icon
+            setTimeout(() => {
+                icon.classList.remove('fa-check');
+                icon.classList.add('fa-copy');
+                icon.style.color = "";
+            }, 1000);
+        });
+    });
+});
+</script>
+

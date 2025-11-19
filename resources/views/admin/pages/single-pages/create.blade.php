@@ -193,7 +193,7 @@
                 case 'featured_product':
                     html += `
                         <div class="mb-2"><label>Single Image</label>
-                            <input type="file" id="featuredImage" class="form-control">
+                            <input type="file" id="premiumImage" class="form-control">
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2"><label>Heading</label>
@@ -348,7 +348,7 @@
             }
 
             if (type === 'premium_product_promotion') {
-                const input = document.getElementById('featuredImage');
+                const input = document.getElementById('premiumImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;

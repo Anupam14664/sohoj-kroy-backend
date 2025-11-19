@@ -28,6 +28,7 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
@@ -53,6 +54,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'main_domain' => env('MAIN_DOMAIN', 'https://sohojkroy.com'),
 
     /*
     |--------------------------------------------------------------------------

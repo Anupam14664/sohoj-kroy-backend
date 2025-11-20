@@ -209,7 +209,7 @@
 				{{-- Settings (Super Admin Only) --}}
 
 				@role('Super Admin')
-                @can('manage general-settings')
+                @can('manage settings')
 				<li class="nav-item">
 					<a href="{{route('admin.general.settings')}}">
 						<i class="fas fa-cog"></i>
@@ -235,7 +235,7 @@
                 @endcan --}}
 
                 @can('manage downloadDB')
-                <li class="nav-item">
+                <li class="nav-item mt-4 pt-4">
                     <a href="{{ route('admin.download.database') }}" class="btn btn-success">
                         <i class="fa fa-download"></i>
                         <span class="text-dark">Download Database</span>

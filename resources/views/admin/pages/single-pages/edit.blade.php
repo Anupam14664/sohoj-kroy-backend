@@ -352,47 +352,62 @@
                 };
             }
 
-            if(['product_feature','certification','customer_review'].includes(type)){
-                const input=document.getElementById('multiImage');
-                const preview=document.getElementById('imagePreview');
-                const status=document.getElementById('uploadStatus');
-                card._settings.images=card._settings.images||[];
+            if (['product_feature', 'certification', 'customer_review'].includes(type)) {
+                const input = document.getElementById('multiImage');
+                const preview = document.getElementById('imagePreview');
+                const status = document.getElementById('uploadStatus');
 
-                // Show existing images
-                preview.innerHTML = '';
-                card._settings.images.forEach((u, idx)=>{
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'position-relative';
-                    wrapper.innerHTML = `
-                        <img src="${u}" style="height:50px; object-fit:cover;">
-                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="padding:2px 5px;" data-idx="${idx}">×</button>
-                    `;
-                    wrapper.querySelector('button').onclick = function() {
-                        card._settings.images.splice(this.dataset.idx, 1);
-                        openSettings(card);
+                card._settings.images = card._settings.images || [];
+
+                // Function to render one image box
+                function renderImage(url, index = null) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'img-wrapper';
+
+                    const img = document.createElement('img');
+                    img.src = url;
+
+                    const close = document.createElement('div');
+                    close.className = 'img-close';
+                    close.innerHTML = '✖';
+
+                    close.onclick = () => {
+                        wrap.remove();
+                        card._settings.images = card._settings.images.filter(i => i !== url);
                     };
-                    preview.appendChild(wrapper);
-                });
 
-                input.onchange=async e=>{
-                    for(const f of e.target.files){
-                        const fd=new FormData(); fd.append('file',f);
-                        status.textContent='Uploading...';
-                        const res=await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
-                        const d=await res.json();
-                        if(d.success){
-                            card._settings.images.push(d.url);
-                            const wrapper = document.createElement('div');
-                            wrapper.className = 'position-relative';
-                            const img=document.createElement('img');
-                            img.src=d.url;
-                            img.style.height='50px';
-                            wrapper.appendChild(img);
-                            preview.appendChild(wrapper);
-                        }
-                        status.textContent='Uploaded';
-                    }
+                    wrap.appendChild(img);
+                    wrap.appendChild(close);
+                    preview.appendChild(wrap);
                 }
+
+                // Render existing images
+                preview.innerHTML = '';
+                card._settings.images.forEach(renderImage);
+
+                // Upload event
+                input.onchange = async e => {
+                    for (const f of e.target.files) {
+                        const fd = new FormData();
+                        fd.append('file', f);
+
+                        status.textContent = 'Uploading...';
+
+                        const res = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf },
+                            body: fd
+                        });
+
+                        const d = await res.json();
+
+                        if (d.success) {
+                            card._settings.images.push(d.url);
+                            renderImage(d.url);
+                        }
+                        status.textContent = 'Uploaded';
+                    }
+                };
             }
 
             if(type==='product_video_slide'){

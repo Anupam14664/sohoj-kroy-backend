@@ -193,7 +193,7 @@
                 case 'featured_product':
                     html += `
                         <div class="mb-2"><label>Single Image</label>
-                            <input type="file" id="premiumImage" class="form-control">
+                            <input type="file" id="featuredImage" class="form-control">
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2"><label>Heading</label>
@@ -205,7 +205,7 @@
                         </div>
 
                         <div class="mb-2"><label>CTA Text</label>
-                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                            <input type="text" id="cta" type="button" class="form-control" value="${card._settings.cta||''}">
                         </div>
                     `;
                     break;
@@ -277,8 +277,8 @@
                     break;
             }
 
-            html += `<div class="mt-3 d-flex gap-2"><button id="saveSettings" class="btn btn-primary btn-sm">Save</button>
-                    <button id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button></div>`;
+            html += `<div class="mt-3 d-flex gap-2"><button type="button" id="saveSettings" class="btn btn-primary btn-sm">Save</button>
+                    <button type="button" id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button></div>`;
             settingsPane.innerHTML = html;
 
             // ---------- Upload logic ----------
@@ -296,24 +296,62 @@
                 };
             }
 
-            if(['product_feature','certification','customer_review'].includes(type)){
-                const input=document.getElementById('multiImage');
-                const preview=document.getElementById('imagePreview');
-                const status=document.getElementById('uploadStatus');
-                card._settings.images=card._settings.images||[];
-                card._settings.images.forEach(u=>{
-                    const img=document.createElement('img'); img.src=u; img.style.height='50px'; preview.appendChild(img);
-                });
-                input.onchange=async e=>{
-                    for(const f of e.target.files){
-                        const fd=new FormData(); fd.append('file',f);
-                        status.textContent='Uploading...';
-                        const res=await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
-                        const d=await res.json();
-                        if(d.success){ card._settings.images.push(d.url); const img=document.createElement('img'); img.src=d.url; img.style.height='50px'; preview.appendChild(img); }
-                        status.textContent='Uploaded';
-                    }
+            if (['product_feature', 'certification', 'customer_review'].includes(type)) {
+                const input = document.getElementById('multiImage');
+                const preview = document.getElementById('imagePreview');
+                const status = document.getElementById('uploadStatus');
+
+                card._settings.images = card._settings.images || [];
+
+                // Function to render one image box
+                function renderImage(url, index = null) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'img-wrapper';
+
+                    const img = document.createElement('img');
+                    img.src = url;
+
+                    const close = document.createElement('div');
+                    close.className = 'img-close';
+                    close.innerHTML = '✖';
+
+                    close.onclick = () => {
+                        wrap.remove();
+                        card._settings.images = card._settings.images.filter(i => i !== url);
+                    };
+
+                    wrap.appendChild(img);
+                    wrap.appendChild(close);
+                    preview.appendChild(wrap);
                 }
+
+                // Render existing images
+                preview.innerHTML = '';
+                card._settings.images.forEach(renderImage);
+
+                // Upload event
+                input.onchange = async e => {
+                    for (const f of e.target.files) {
+                        const fd = new FormData();
+                        fd.append('file', f);
+
+                        status.textContent = 'Uploading...';
+
+                        const res = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf },
+                            body: fd
+                        });
+
+                        const d = await res.json();
+
+                        if (d.success) {
+                            card._settings.images.push(d.url);
+                            renderImage(d.url);
+                        }
+                        status.textContent = 'Uploaded';
+                    }
+                };
             }
 
             if(type==='product_video_slide'){
@@ -348,7 +386,7 @@
             }
 
             if (type === 'premium_product_promotion') {
-                const input = document.getElementById('premiumImage');
+                const input = document.getElementById('featuredImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;
@@ -495,12 +533,41 @@
             document.getElementById('sections_json').value=JSON.stringify(arr);
         }
 
-        document.getElementById('btnPreview').onclick=()=>{
-            updateSectionsJSON();
-            const json=document.getElementById('sections_json').value;
-            const w=window.open('','_blank');
-            w.document.write('<pre>'+JSON.stringify(JSON.parse(json),null,2)+'</pre>');
-        };
+        document.getElementById('btnPreview').onclick = () => {
+    updateSectionsJSON();
+    const json = document.getElementById('sections_json').value;
+
+    const w = window.open('', '_blank');
+
+    // Add close icon + styles + JSON preview
+    w.document.write(`
+        <style>
+            body{ font-family:Arial; margin:0; }
+            #closeBtn{
+                position:fixed;
+                top:10px;
+                right:10px;
+                background:#ff4d4d;
+                color:white;
+                border:none;
+                padding:6px 12px;
+                border-radius:4px;
+                cursor:pointer;
+                font-size:14px;
+                z-index:9999;
+            }
+            pre{ padding:20px; white-space:pre-wrap; }
+        </style>
+
+        <button id="closeBtn">✖ Close</button>
+        <pre>${JSON.stringify(JSON.parse(json), null, 2)}</pre>
+
+        <script>
+            document.getElementById('closeBtn').onclick = () => window.close();
+        <\/script>
+    `);
+};
+
     });
 </script>
 
@@ -544,6 +611,33 @@
             });
     });
 </script>
+
+
+<style>
+    .img-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .img-wrapper img {
+        height: 50px;
+        border-radius: 4px;
+    }
+    .img-close {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
 
 
 @endsection

@@ -182,8 +182,8 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
 
 
     // General Settings
-    Route::get('general-settings', [GeneralSettingsController::class, 'index'])->middleware('can:manage general-settings')->name('admin.general.settings');
-    Route::post('general-settings', [GeneralSettingsController::class, 'update'])->middleware('can:manage general-settings')->name('admin.general.settings.update');
+    Route::get('general-settings', [GeneralSettingsController::class, 'index'])->middleware('can:manage settings')->name('admin.general.settings');
+    Route::post('general-settings', [GeneralSettingsController::class, 'update'])->middleware('can:manage settings')->name('admin.general.settings.update');
     // Route::get('social-links', [GeneralSettingsController::class, 'socialLinks'])->name('admin.socials.links');
 
 

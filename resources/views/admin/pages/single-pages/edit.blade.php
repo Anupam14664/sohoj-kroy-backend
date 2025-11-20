@@ -332,8 +332,8 @@
             }
 
             html += `<div class="mt-3 d-flex gap-2">
-                    <button id="saveSettings" class="btn btn-primary btn-sm">Save</button>
-                    <button id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button>
+                    <button type="button" id="saveSettings" class="btn btn-primary btn-sm">Save</button>
+                    <button type="button" id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button>
                 </div>`;
             settingsPane.innerHTML = html;
 

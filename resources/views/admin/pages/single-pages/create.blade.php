@@ -205,7 +205,7 @@
                         </div>
 
                         <div class="mb-2"><label>CTA Text</label>
-                            <input type="text" id="cta" type="button" class="form-control" value="${card._settings.cta||''}">
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
                         </div>
                     `;
                     break;
@@ -277,7 +277,7 @@
                     break;
             }
 
-            html += `<div class="mt-3 d-flex gap-2"><button type="butid="saveSettings" ton" class="btn btn-primary btn-sm">Save</button>
+            html += `<div class="mt-3 d-flex gap-2"><button type="button" id="saveSettings" class="btn btn-primary btn-sm">Save</button>
                     <button type="button" id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button></div>`;
             settingsPane.innerHTML = html;
 

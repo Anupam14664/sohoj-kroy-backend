@@ -33,7 +33,7 @@
                 <tbody>
                     @forelse ($banners as $banner)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ ($banners->currentPage() - 1) * $banners->perPage() + $loop->iteration }}</td>
                         <td>{{ $banner->title }}</td>
                         <td>
                             <img src="{{ $banner->image }}" alt="{{ $banner->title }}" style="max-width: 100px; max-height: 50px;">

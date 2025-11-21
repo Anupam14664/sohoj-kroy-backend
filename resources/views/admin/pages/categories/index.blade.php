@@ -36,7 +36,7 @@
                 <tbody>
                     @forelse ($categories as $category)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ ($categories->currentPage() - 1) * $categories->perPage() + $loop->iteration }}</td>
                         <td>{{ $category->name }}</td>
                         <td>{{ $category->parent->name ?? '-' }}</td>
                         <td>{{ $category->slug }}</td>

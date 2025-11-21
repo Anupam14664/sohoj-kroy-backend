@@ -24,7 +24,7 @@
                 <tbody>
                     @forelse($pages as $page)
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ ($pages->currentPage() - 1) * $pages->perPage() + $loop->iteration }}</td>
                             <td>{{ $page->name }}</td>
                             <td>
                                 @php
@@ -65,7 +65,7 @@
         @include('admin.modal.deletemodal')
 
         <div class="card-footer">
-            {{ $pages->links() }}
+            {{ $pages->links('admin.layouts.partials.__pagination') }}
         </div>
     </div>
 

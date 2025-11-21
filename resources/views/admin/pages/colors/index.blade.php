@@ -28,7 +28,7 @@
                 <tbody>
                     @forelse($colors as $index=> $color)
                     <tr>
-                        <td>{{ $index + 1}}</td>
+                        <td> {{ ($colors->currentPage() - 1) * $colors->perPage() + $index + 1 }}</td>
                         <td>{{ $color->name }}</td>
                         <td>{{ $color->code }}</td>
                         <td>

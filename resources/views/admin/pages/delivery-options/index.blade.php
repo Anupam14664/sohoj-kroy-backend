@@ -28,7 +28,7 @@
                 <tbody>
                     @forelse($deliveryOptions as $option)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ ($deliveryOptions->currentPage() - 1) * $deliveryOptions->perPage() + $loop->iteration }}</td>
                         <td>{{ $option->name }}</td>
                         <td>{{ number_format($option->charge, 2) }}</td>
                         <td>

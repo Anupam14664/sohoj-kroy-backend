@@ -5,13 +5,14 @@
     <h1>Coupons</h1>
 
     <a href="{{ route('admin.coupons.create') }}" class="btn btn-primary mb-3">Create New Coupon</a>
-    
+
     @include('admin.layouts.partials.__alerts')
 
     <div class="table-responsive">
         <table class="table table-striped table-hover table-head-bg-primary mt-4">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Code</th>
                     <th>Type</th>
                     <th>Amount</th>
@@ -26,6 +27,7 @@
             <tbody>
                 @foreach($coupons as $coupon)
                 <tr>
+                    <td>{{ ($coupons->currentPage() - 1) * $coupons->perPage() + $loop->iteration }}</td>
                     <td>{{ $coupon->code }}</td>
                     <td>{{ ucfirst($coupon->type) }}</td>
                     <td>{{ $coupon->type === 'percentage' ? $coupon->amount.'%' : config('currency.symbol').$coupon->amount }}</td>

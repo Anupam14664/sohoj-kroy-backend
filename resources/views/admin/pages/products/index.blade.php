@@ -35,7 +35,7 @@
                     <tbody id="product-table">
                         @foreach($products as $index => $product)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
+                            <td>{{ ($products->currentPage() - 1) * $products->perPage() + $index + 1 }}</td>
                             <td>{{ $product->name }}</td>
                             <td>
                                 @if($product->main_image)

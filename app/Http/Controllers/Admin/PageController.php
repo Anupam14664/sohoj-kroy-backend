@@ -203,4 +203,22 @@ public function uploadMedia(Request $request)
         return response()->json($products);
     }
 
+        /**
+     * Delete a page by ID
+     */
+    public function destroy($id)
+    {
+        $page = Page::find($id);
+
+        if (!$page) {
+            return redirect()->route('admin.pages.index')->with('error', 'Page not found');
+        }
+
+        $page->delete();
+
+        return redirect()->route('admin.pages.index')->with('success', 'Page deleted successfully');
+    }
+
+
+
 }

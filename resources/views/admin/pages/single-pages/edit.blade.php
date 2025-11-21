@@ -62,7 +62,10 @@
                     <p class="text-muted" id="emptyMessage">Drag sections here</p>
                 </div>
                 <div class="mt-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Update Page</button>
+                    {{-- <button type="submit" class="btn btn-primary">Update Page</button> --}}
+                    <button type="button" id="savePageBtn" class="btn btn-primary">Update Page</button>
+                    @include('admin.modal.savecofirmmodal')
+
                     <a href="{{ route('admin.pages.index') }}" class="btn btn-secondary">Cancel</a>
                 </div>
             </div>
@@ -190,9 +193,23 @@
         // ---------- SETTINGS PANEL ----------
         function openSettings(card){
             const type = card.dataset.type;
+
+            const sizeNote = {
+                hero_product_banner: "Recommended: 1080×1080px (PNG or JPG)",
+                product_feature: "Recommended: 1080×1080px (PNG or JPG)",
+                customer_review: "Recommended: 1080×1350px (PNG or JPG)",
+                certification: "Recommended: 1220×1024px (PNG or JPG)",
+                premium_product_promotion: "Recommended: 1080×1080px PNG",
+                featured_product: "Recommended: 1080×1080 PNG",
+                product_highlight: "Recommended: 1080×1080 (PNG or JPG)",
+                exclusive_product: "Recommended: 1080×1080 PNG",
+                why_choose_us: "Recommended: 80×80 PNG"
+            };
+
             let html = `<h6 class="mb-2">Edit: ${type.replace(/_/g,' ')}</h6>`;
 
-            const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''}>`;
+            // Helper upload input function — add optional multiple param
+            const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''} accept="image/png, image/jpeg, image/jpg">`;
             const uploadPreview = (url) => url ? `<img src="${url}" class="img-fluid mt-2" style="max-height:100px;">` : '';
 
             // Section-specific fields
@@ -212,19 +229,23 @@
                             <label>Description</label>
                             <textarea id="heroDescription" class="form-control">${card._settings.description || ''}</textarea>
                         </div>
+
                         <div class="mt-2 countdown-wrapper">
                             <label>Countdown Date</label>
                             <input type="date" id="countdownDate" class="form-control countdown-date" value="${dateValue}">
                         </div>
+
                         <div class="mt-2 mb-2 countdown-wrapper">
                             <label>Countdown Time</label>
                             <input type="time" id="countdownTime" class="form-control countdown-time" value="${timeValue}">
                         </div>
-                        <label>Image</label>
-                        ${uploadInput('heroImg')}
+                        <label>Image <small class="text-muted" style="font-size:12px"></small></label>
+                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg" >
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         ${uploadPreview(card._settings.image)}
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2"><label>CTA Text</label>
+                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
                     break;
 
                 case 'product_video_slide':
@@ -244,6 +265,7 @@
                 case 'customer_review':
                     html += `
                         ${uploadInput('multiImage', true)}
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
                         <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
@@ -252,43 +274,52 @@
                 case 'premium_product_promotion':
                 case 'featured_product':
                     html += `
+                        <div class="mb-2"><label>Single Image</label>
+                            <input type="file" id="featuredImage" class="form-control" accept="image/png">
+                            <small class="text-muted">${sizeNote[type]}</small>
+                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                        </div>
                         <div class="mb-2"><label>Heading</label>
                             <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
                         </div>
+
                         <div class="mb-2"><label>Description</label>
                             <textarea id="description" class="form-control">${card._settings.description||''}</textarea>
                         </div>
-                        <div class="mb-2"><label>Single Image</label>
-                            <input type="file" id="premiumImage" class="form-control">
-                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
-                        </div>
+
                         <div class="mb-2"><label>CTA Text</label>
                             <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
-                        </div>`;
+                        </div>
+                    `;
                     break;
 
                 case 'product_highlight':
                     html += `
                         <div class="mb-2">
                             <label>Product Image</label>
-                            <input type="file" id="highlightImage" class="form-control">
+                            <input type="file" id="highlightImage" class="form-control" accept="image/png">
+                            <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2"><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
                         <div class="mb-2"><label>Description</label><textarea id="description" class="form-control">${card._settings.description||''}</textarea></div>
-                        <div class="mb-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>
-                        <div><label>Short Points</label>
-                            <div id="pointsList"></div>
-                            <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
-                            <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
-                        </div>`;
+                        <div class="mb-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                    if(type === 'product_highlight'){
+                        html += `
+                            <div><label>Short Points</label>
+                                <div id="pointsList"></div>
+                                <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
+                                <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
+                            </div>`;
+                    }
                     break;
 
                 case 'why_choose_us':
                     html += `
                         <div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
                         <div id="whyList" class="mt-2"></div>
-                        ${uploadInput('whyImage')}
+                        <input type="file" id="whyImage" class="form-control" accept="image/png">
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
                         <button id="addWhy" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Item</button>`;
                     break;
@@ -298,7 +329,8 @@
 
                         <div class="mb-2">
                             <label>Product Image</label>
-                            <input type="file" id="exclusiveImage" class="form-control">
+                            <input type="file" id="exclusiveImage" class="form-control" accept="image/png">
+                            <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2">
@@ -341,6 +373,9 @@
             if(type === 'hero_product_banner'){
                 const input = document.getElementById('heroImg');
                 const status = document.getElementById('uploadStatus');
+                if (!card._settings.image || card._settings.image.length === 0) {
+                    card._settings.image = null;
+                }
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;
@@ -468,8 +503,9 @@
                     }
                 };
             }
+
             if (type === 'premium_product_promotion') {
-                const input = document.getElementById('premiumImage');
+                const input = document.getElementById('featuredImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;
@@ -490,18 +526,22 @@
                     }
                 };
             }
+
             if(type === 'featured_product'){
                 const input = document.getElementById('featuredImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;
+
                     const fd = new FormData();
                     fd.append('file', f);
+
                     const res = await fetch(uploadUrl, {
                         method: 'POST',
                         headers: {'X-CSRF-TOKEN': csrf},
                         body: fd
                     });
+
                     const d = await res.json();
                     if(d.success){
                         card._settings.image = d.url;
@@ -536,25 +576,48 @@
                     }
                 }
                 const input = document.getElementById('highlightImage');
-                    input.onchange = async (e)=>{
-                        const f = e.target.files[0];
-                        if(!f) return;
+                input.onchange = async (e)=>{
+                    const f = e.target.files[0];
+                    if(!f) return;
 
-                        const fd = new FormData();
-                        fd.append('file', f);
+                    const fd = new FormData();
+                    fd.append('file', f);
 
-                        const res = await fetch(uploadUrl, {
-                            method: 'POST',
-                            headers: {'X-CSRF-TOKEN': csrf},
-                            body: fd
-                        });
+                    const res = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: {'X-CSRF-TOKEN': csrf},
+                        body: fd
+                    });
 
-                        const d = await res.json();
-                        if(d.success){
-                            card._settings.image = d.url;
-                            openSettings(card);
-                        }
+                    const d = await res.json();
+                    if(d.success){
+                        card._settings.image = d.url;
+                        openSettings(card);
                     }
+                }
+            }
+
+            if(type === 'exclusive_product'){
+                const input = document.getElementById('exclusiveImage');
+                input.onchange = async (e)=>{
+                    const f = e.target.files[0];
+                    if(!f) return;
+
+                    const fd = new FormData();
+                    fd.append('file', f);
+
+                    const res = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: {'X-CSRF-TOKEN': csrf},
+                        body: fd
+                    });
+
+                    const d = await res.json();
+                    if(d.success){
+                        card._settings.image = d.url;
+                        openSettings(card);
+                    }
+                }
             }
 
             if(type==='faq'){
@@ -592,14 +655,18 @@
                 if (document.getElementById('cta')) card._settings.cta = document.getElementById('cta').value;
                 if (document.getElementById('heading')) card._settings.heading = document.getElementById('heading').value;
                 if (document.getElementById('description')) card._settings.description = document.getElementById('description').value;
+                if (document.getElementById('cta1Text')) card._settings.cta1Text = document.getElementById('cta1Text').value;
+                if (document.getElementById('cta2Text')) card._settings.cta2Text = document.getElementById('cta2Text').value;
 
                 if (card.dataset.type === 'hero_product_banner') {
+                    card._settings.heading = document.getElementById('heroHeading').value;
+                    card._settings.description = document.getElementById('heroDescription').value;
                     const date = document.getElementById('countdownDate').value;
                     const time = document.getElementById('countdownTime').value;
                     if (date && time) {
                         card._settings.countdownDate = `${date}T${time}:00`;
                     } else if (date) {
-                        card._settings.countdownDate = date;
+                        card._settings.countdownDate = `${date}T00:00:00`;
                     } else {
                         card._settings.countdownDate = null;
                     }
@@ -612,13 +679,80 @@
             document.getElementById('cancelSettings').onclick=()=>settingsPane.innerHTML='<p class="text-muted">Cancelled</p>';
         }
 
-        function updateSectionsJSON(){
-            const arr=[];
-            canvas.querySelectorAll('.section-card').forEach((c,i)=>{
-                arr.push({ id:c.dataset.id, type:c.dataset.type, position:i, settings:c._settings });
+        function updateSectionsJSON() {
+            const sections = [];
+
+            canvas.querySelectorAll('.section-card').forEach((card, index) => {
+
+                // Safety: settings অবশ্যই object হবে
+                if (!card._settings || typeof card._settings !== "object" || Array.isArray(card._settings)) {
+                    card._settings = {};
+                }
+
+                // Object এর ভিতরের empty array/null → clean করে দেবে
+                const cleanedSettings = {};
+
+                Object.keys(card._settings).forEach(key => {
+                    const val = card._settings[key];
+
+                    // যদি value null → skip
+                    if (val === null) return;
+
+                    // যদি empty array → skip
+                    if (Array.isArray(val) && val.length === 0) return;
+
+                    // normal valid data set
+                    cleanedSettings[key] = val;
+                });
+
+                // যদি cleanedSettings empty → null save করো
+                const finalSettings = Object.keys(cleanedSettings).length === 0 ? null : cleanedSettings;
+
+                sections.push({
+                    id: card.dataset.id,
+                    type: card.dataset.type,
+                    position: index,
+                    settings: finalSettings,
+                });
             });
-            document.getElementById('sections_json').value=JSON.stringify(arr);
+
+            document.getElementById('sections_json').value = JSON.stringify(sections);
         }
+
+        document.getElementById('btnPreview').onclick = () => {
+            updateSectionsJSON();
+            const json = document.getElementById('sections_json').value;
+
+            const w = window.open('', '_blank');
+
+            // Add close icon + styles + JSON preview
+            w.document.write(`
+                <style>
+                    body{ font-family:Arial; margin:0; }
+                    #closeBtn{
+                        position:fixed;
+                        top:10px;
+                        right:10px;
+                        background:#ff4d4d;
+                        color:white;
+                        border:none;
+                        padding:6px 12px;
+                        border-radius:4px;
+                        cursor:pointer;
+                        font-size:14px;
+                        z-index:9999;
+                    }
+                    pre{ padding:20px; white-space:pre-wrap; }
+                </style>
+
+                <button id="closeBtn">✖ Close</button>
+                <pre>${JSON.stringify(JSON.parse(json), null, 2)}</pre>
+
+                <script>
+                    document.getElementById('closeBtn').onclick = () => window.close();
+                <\/script>
+            `);
+        };
     });
 </script>
 
@@ -661,5 +795,39 @@
             });
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
 
+        const saveBtn = document.getElementById("savePageBtn");
+        const form = document.getElementById("pageForm");
+
+        saveBtn.addEventListener("click", function () {
+            const pageName = document.getElementById("pageName").value.trim();
+            const slug = document.getElementById("slug").value.trim();
+            const productId = document.getElementById("product_id").value.trim();
+
+            if (!pageName || !slug || !productId) {
+                let missingFields = [];
+                if (!pageName) missingFields.push("Page Name");
+                if (!slug) missingFields.push("Slug");
+                if (!productId) missingFields.push("Product");
+
+                document.getElementById("warningText").textContent =
+                    "Please fill the following fields first: " + missingFields.join(", ");
+
+                let warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+                warningModal.show();
+                return;
+            }
+            let modal = new bootstrap.Modal(document.getElementById('saveConfirmModal'));
+            modal.show();
+
+            document.querySelector("#saveConfirmModal .btn-success").onclick = function () {
+                form.submit();
+            };
+        });
+
+    });
+
+</script>
 @endsection

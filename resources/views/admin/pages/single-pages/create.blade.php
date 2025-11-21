@@ -62,7 +62,11 @@
                 </div>
                 <div class="mt-3 d-flex gap-2">
                     {{-- <button type="button" id="btnPreview" class="btn btn-secondary">Preview JSON</button> --}}
-                    <button type="submit" class="btn btn-primary">Save Page</button>
+                    {{-- <button type="submit" class="btn btn-primary">Save Page</button> --}}
+
+                    <button type="button" id="savePageBtn" class="btn btn-primary">Save Page</button>
+                    @include('admin.modal.savecofirmmodal')
+
                 </div>
             </div>
 
@@ -126,11 +130,25 @@
         // ---------- SETTINGS PANEL ----------
         function openSettings(card){
             const type = card.dataset.type;
+
+        const sizeNote = {
+            hero_product_banner: "Recommended: 1080×1080px (PNG or JPG)",
+            product_feature: "Recommended: 1080×1080px (PNG or JPG)",
+            customer_review: "Recommended: 1080×1350px (PNG or JPG)",
+            certification: "Recommended: 1220×1024px (PNG or JPG)",
+            premium_product_promotion: "Recommended: 1080×1080px PNG",
+            featured_product: "Recommended: 1080×1080 PNG",
+            product_highlight: "Recommended: 1080×1080 (PNG or JPG)",
+            exclusive_product: "Recommended: 1080×1080 PNG",
+            why_choose_us: "Recommended: 80×80 PNG"
+        };
+
+
             let html = `<h6 class="mb-2">Edit: ${type.replace(/_/g,' ')}</h6>`;
 
             // const uploadInput = (id='fileInput') => `<input type="file" id="${id}" class="form-control">`;
             // Helper upload input function — add optional multiple param
-    const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''}>`;
+    const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''} accept="image/png, image/jpeg, image/jpg">`;
 
             const uploadPreview = (url) => url ? `<img src="${url}" class="img-fluid mt-2" style="max-height:100px;">` : '';
 
@@ -159,11 +177,13 @@
                             <input type="time" id="countdownTime" class="form-control countdown-time"
                                 value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[1].slice(0,5) : ''}">
                         </div>
-                        <label>Image</label>
-                        ${uploadInput('heroImg')}
+                        <label>Image <small class="text-muted" style="font-size:12px"></small></label>
+                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg" >
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         ${uploadPreview(card._settings.image)}
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2"><label>CTA Text</label>
+                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
                     break;
 
                 case 'product_video_slide':
@@ -184,6 +204,7 @@
                 case 'customer_review':
                     html += `
                         ${uploadInput('multiImage', true)}
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
                         <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
@@ -193,7 +214,8 @@
                 case 'featured_product':
                     html += `
                         <div class="mb-2"><label>Single Image</label>
-                            <input type="file" id="featuredImage" class="form-control">
+                            <input type="file" id="featuredImage" class="form-control" accept="image/png">
+                            <small class="text-muted">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2"><label>Heading</label>
@@ -214,7 +236,8 @@
                     html += `
                         <div class="mb-2">
                             <label>Product Image</label>
-                            <input type="file" id="highlightImage" class="form-control">
+                            <input type="file" id="highlightImage" class="form-control" accept="image/png">
+                            <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2"><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
@@ -234,7 +257,8 @@
                     html += `
                         <div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
                         <div id="whyList" class="mt-2"></div>
-                        ${uploadInput('whyImage')}
+                        <input type="file" id="whyImage" class="form-control" accept="image/png">
+                        <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
                         <button id="addWhy" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Item</button>`;
                     break;
@@ -244,7 +268,8 @@
 
                         <div class="mb-2">
                             <label>Product Image</label>
-                            <input type="file" id="exclusiveImage" class="form-control">
+                            <input type="file" id="exclusiveImage" class="form-control" accept="image/png">
+                            <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
                         <div class="mb-2">
@@ -285,6 +310,9 @@
             if(type === 'hero_product_banner'){
                 const input = document.getElementById('heroImg');
                 const status = document.getElementById('uploadStatus');
+                if (!card._settings.image || card._settings.image.length === 0) {
+                    card._settings.image = null;
+                }
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
                     if(!f) return;
@@ -301,7 +329,7 @@
                 const preview = document.getElementById('imagePreview');
                 const status = document.getElementById('uploadStatus');
 
-                card._settings.images = card._settings.images || [];
+                card._settings.images = card._settings.images || null;
 
                 // Function to render one image box
                 function renderImage(url, index = null) {
@@ -356,7 +384,7 @@
 
             if(type==='product_video_slide'){
                 const list=document.getElementById('videoList');
-                card._settings.videos=card._settings.videos||[];
+                card._settings.videos=card._settings.videos||null;
                 card._settings.videos.forEach(v=>{ const div=document.createElement('div'); div.textContent=v; list.appendChild(div); });
                 document.getElementById('addVideo').onclick=()=>{
                     const val=document.getElementById('newVideo').value.trim();
@@ -366,7 +394,7 @@
 
             if(type==='why_choose_us'){
                 const list=document.getElementById('whyList');
-                card._settings.items=card._settings.items||[];
+                card._settings.items=card._settings.items||null;
                 card._settings.items.forEach(i=>{
                     const div=document.createElement('div'); div.innerHTML=`<img src="${i.image}" style="height:40px;"> ${i.desc}`; list.appendChild(div);
                 });
@@ -434,7 +462,7 @@
 
             if(type==='product_highlight'){
                 const list=document.getElementById('pointsList');
-                card._settings.points=card._settings.points||[];
+                card._settings.points=card._settings.points||null;
                 card._settings.points.forEach(p=>{ const div=document.createElement('div'); div.textContent=p; list.appendChild(div); });
                 document.getElementById('addPoint').onclick=()=>{
                     const val=document.getElementById('newPoint').value;
@@ -488,7 +516,7 @@
 
             if(type==='faq'){
                 const list=document.getElementById('faqList');
-                card._settings.faqs=card._settings.faqs||[];
+                card._settings.faqs=card._settings.faqs||null;
                 card._settings.faqs.forEach(f=>{ const div=document.createElement('div'); div.innerHTML=`<strong>Q:</strong>${f.q}<br><strong>A:</strong>${f.a}<hr>`; list.appendChild(div); });
                 document.getElementById('addFaq').onclick=()=>{
                     const q=document.getElementById('faqQ').value, a=document.getElementById('faqA').value;
@@ -525,13 +553,46 @@
             document.getElementById('cancelSettings').onclick=()=>settingsPane.innerHTML='<p class="text-muted">Cancelled</p>';
         }
 
-        function updateSectionsJSON(){
-            const arr=[];
-            canvas.querySelectorAll('.section-card').forEach((c,i)=>{
-                arr.push({ id:c.dataset.id, type:c.dataset.type, position:i, settings:c._settings });
-            });
-            document.getElementById('sections_json').value=JSON.stringify(arr);
+        function updateSectionsJSON() {
+    const sections = [];
+
+    canvas.querySelectorAll('.section-card').forEach((card, index) => {
+
+        // Safety: settings অবশ্যই object হবে
+        if (!card._settings || typeof card._settings !== "object" || Array.isArray(card._settings)) {
+            card._settings = {};
         }
+
+        // Object এর ভিতরের empty array/null → clean করে দেবে
+        const cleanedSettings = {};
+
+        Object.keys(card._settings).forEach(key => {
+            const val = card._settings[key];
+
+            // যদি value null → skip
+            if (val === null) return;
+
+            // যদি empty array → skip
+            if (Array.isArray(val) && val.length === 0) return;
+
+            // normal valid data set
+            cleanedSettings[key] = val;
+        });
+
+        // যদি cleanedSettings empty → null save করো
+        const finalSettings = Object.keys(cleanedSettings).length === 0 ? null : cleanedSettings;
+
+        sections.push({
+            id: card.dataset.id,
+            type: card.dataset.type,
+            position: index,
+            settings: finalSettings,
+        });
+    });
+
+    document.getElementById('sections_json').value = JSON.stringify(sections);
+}
+
 
         document.getElementById('btnPreview').onclick = () => {
     updateSectionsJSON();
@@ -612,6 +673,41 @@
     });
 </script>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const saveBtn = document.getElementById("savePageBtn");
+        const form = document.getElementById("pageForm");
+
+        saveBtn.addEventListener("click", function () {
+            const pageName = document.getElementById("pageName").value.trim();
+            const slug = document.getElementById("slug").value.trim();
+            const productId = document.getElementById("product_id").value.trim();
+
+            if (!pageName || !slug || !productId) {
+                let missingFields = [];
+                if (!pageName) missingFields.push("Page Name");
+                if (!slug) missingFields.push("Slug");
+                if (!productId) missingFields.push("Product");
+
+                document.getElementById("warningText").textContent =
+                    "Please fill the following fields first: " + missingFields.join(", ");
+
+                let warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+                warningModal.show();
+                return;
+            }
+            let modal = new bootstrap.Modal(document.getElementById('saveConfirmModal'));
+            modal.show();
+
+            document.querySelector("#saveConfirmModal .btn-success").onclick = function () {
+                form.submit();
+            };
+        });
+
+    });
+
+</script>
 
 <style>
     .img-wrapper {

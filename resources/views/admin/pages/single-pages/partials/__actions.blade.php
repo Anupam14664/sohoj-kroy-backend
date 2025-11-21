@@ -9,7 +9,7 @@
         <i class="fas fa-edit bg-none"></i>
     </a>
 
-       {{-- <form width="0px"  action="{{ route('admin.products.destroy', $page->id) }}"
+       {{-- <form width="0px"  action="{{ route('admin.pages.destroy', $page->id) }}"
           method="POST" class="d-inline  m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
         @csrf
         @method('DELETE')
@@ -18,4 +18,12 @@
             <i class="fas fa-trash"></i>
         </button>
     </form> --}}
+
+        <button type="button" class="btn btn-danger p-0 py-1 px-2 border-none delete-btn"
+            title="Delete"
+            data-action="{{ route('admin.pages.destroy', $page) }}"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteConfirmModal">
+        <i class="fas fa-trash"></i>
+    </button>
 </div>

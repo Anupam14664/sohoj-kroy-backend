@@ -62,6 +62,8 @@
             </table>
         </div>
 
+        @include('admin.modal.deletemodal')
+
         <div class="card-footer">
             {{ $pages->links() }}
         </div>

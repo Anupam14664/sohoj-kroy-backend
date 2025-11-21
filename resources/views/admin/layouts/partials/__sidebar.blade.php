@@ -42,13 +42,41 @@
 					<div class="collapse" id="orders">
 						<ul class="nav nav-collapse">
 							<li><a href="{{route('admin.orders.index')}}"><span class="sub-item">All Orders</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'pending']) }}"><span class="sub-item">Pending</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'hold']) }}"><span class="sub-item">Hold</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'processing']) }}"><span class="sub-item">Order Confirmed</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'shipped']) }}"><span class="sub-item">Ready To Shipped</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'courier_delivered']) }}"><span class="sub-item">Courier Delivered</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'delivered']) }}"><span class="sub-item">Delivered Orders</span></a></li>
-							<li><a href="{{ route('admin.orders.index', ['status' => 'cancelled']) }}"><span class="sub-item">Cancelled Orders</span></a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'pending']) }}"><span class="sub-item">Pending</span>
+                                <span class="badge badge-warning float-right">{{ App\Models\Order::where('status', 'pending')->count() }}</span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'hold']) }}"><span class="sub-item">Hold</span>
+                            <span class="badge badge-warning float-right">
+                                                {{ App\Models\Order::where('status', 'hold')->count() }}
+                                            </span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'processing']) }}"><span class="sub-item">Order Confirmed</span>
+                                <span class="badge badge-info float-right">
+                                                {{ App\Models\Order::where('status', 'processing')->count() }}
+                                            </span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'shipped']) }}"><span class="sub-item">Ready To Shipped</span>
+                            <span class="badge badge-primary float-right">
+                                                {{ App\Models\Order::where('status', 'shipped')->count() }}
+                                            </span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'courier_delivered']) }}"><span class="sub-item">Courier Delivered</span>
+
+                            <span class="badge badge-warning float-right">
+                                                {{ App\Models\Order::where('status', 'courier_delivered')->count() }}
+                                            </span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'delivered']) }}"><span class="sub-item">Delivered Orders</span>
+                            <span class="badge badge-success float-right">
+                                                {{ App\Models\Order::where('status', 'delivered')->count() }}
+                                            </span>
+                            </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'cancelled']) }}"><span class="sub-item">Cancelled Orders</span>
+
+                            <span class="badge badge-danger float-right">
+                                                {{ App\Models\Order::where('status', 'cancelled')->count() }}
+                                            </span>
+                            </a></li>
 						</ul>
 					</div>
 				</li>
@@ -57,6 +85,9 @@
 					<a href="{{route('admin.orders.incomplete')}}">
 						<i class="fas fa-exclamation-circle"></i>
 						<p>Incomplete Orders</p>
+                        <span class="badge badge-secondary float-right">
+                                    {{ App\Models\Order::where('status', 'incomplete')->count() }}
+                                </span>
 					</a>
 				</li>
 

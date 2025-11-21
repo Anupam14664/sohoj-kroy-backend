@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('short_description')->nullable();
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('size_id')->nullable();
-            $table->integer('total_stock')->default(0);
+            $table->integer('total_stock')->nullable()->default(0);
             $table->decimal('buy_price', 10, 2);
             $table->decimal('regular_price', 10, 2);
             $table->decimal('discount_price', 10, 2)->nullable();

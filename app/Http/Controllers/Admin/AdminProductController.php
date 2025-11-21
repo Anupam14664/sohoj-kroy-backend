@@ -253,7 +253,7 @@ public function update(Request $request, Product $product)
         'description' => 'required|string',
         'category_id' => 'required|exists:categories,id',
         'size_id' => 'nullable|exists:sizes,id',
-        'total_stock' => 'required|integer|min:0',
+        'total_stock' => 'nullable|integer|min:0',
         'Purchase_price' => 'required|numeric|min:0',
         'regular_price' => 'required|numeric|min:0|gt:Purchase_price',
         'discount_price' => 'nullable|numeric|min:0|lt:regular_price',

@@ -32,7 +32,7 @@
                 <tbody>
                     @forelse($sizes as $size)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ ($sizes->currentPage() - 1) * $sizes->perPage() + $loop->iteration }}</td>
                         <td>{{ ucfirst($size->type) }}</td>
                         <td>{{ $size->name }}</td>
                         <td>{{ $size->display_name ?? '-' }}</td>
@@ -51,7 +51,7 @@
             </table>
         </div>
         <div class="card-footer clearfix">
-            {{ $sizes->links() }}
+            {{ $sizes->links('admin.layouts.partials.__pagination') }}
         </div>
     </div>
 </div>

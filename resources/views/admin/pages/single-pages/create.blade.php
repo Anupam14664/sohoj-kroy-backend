@@ -633,7 +633,7 @@
 </script>
 
 <script>
-    const products = @json($products);
+    const products = @json($products); // products passed from controller
     const productSearch = document.getElementById('productSearch');
     const productResults = document.getElementById('productResults');
     const productIdInput = document.getElementById('product_id');
@@ -650,19 +650,22 @@
                 const item = document.createElement('div');
                 item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
 
-                // fallback image if missing
-                const imgSrc = p.image ? `/storage/${p.main_image}` : '/images/no-image.png';
-
+                // Use image_url; fallback if null
+                const imgSrc = p.image_url ? p.image_url : '/images/no-image.png';
 
                 item.innerHTML = `
-                    <img src="${imgSrc}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
+                    <img src="${imgSrc}" alt="${p.name}"
+                         style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
                     <div class="flex-grow-1">
                         <div class="fw-bold">${p.name}</div>
-                        <div class="text-muted small">Price: ${p.discount_price ? p.discount_price + ' ৳' : 'N/A'}</div>
+                        <div class="text-muted small">
+                            Price: ${p.discount_price ? p.discount_price + ' ৳' : 'N/A'}
+                        </div>
                     </div>
                 `;
                 item.dataset.id = p.id;
 
+                // When clicked, set input and hide results
                 item.addEventListener('click', () => {
                     productSearch.value = p.name;
                     productIdInput.value = p.id;
@@ -672,7 +675,15 @@
                 productResults.appendChild(item);
             });
     });
+
+    // Optional: hide results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!productResults.contains(e.target) && e.target !== productSearch) {
+            productResults.innerHTML = '';
+        }
+    });
 </script>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

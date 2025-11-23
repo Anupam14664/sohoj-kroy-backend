@@ -26,11 +26,24 @@ class PageController extends Controller
      * Show the form for creating a new page.
      */
     public function create()
-    {
-        $sectionTypes = $this->getSectionTypes();
-        $products = Product::all();
-        return view('admin.pages.single-pages.create', compact('sectionTypes', 'products'));
-    }
+{
+    $sectionTypes = $this->getSectionTypes();
+
+    // Include image_url manually
+    $products = Product::all()->map(function($p) {
+        return [
+            'id' => $p->id,
+            'name' => $p->name,
+            'discount_price' => $p->discount_price,
+            'image_url' => $p->main_image
+                            ? asset('storage/' . $p->main_image)
+                            : null
+        ];
+    });
+
+    return view('admin.pages.single-pages.create', compact('sectionTypes', 'products'));
+}
+
 
     /**
      * Store a newly created page in storage.

@@ -27,3 +27,13 @@
         <i class="fas fa-trash"></i>
     </button>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelector('#deleteForm').action = this.dataset.action;
+        });
+    });
+});
+</script>

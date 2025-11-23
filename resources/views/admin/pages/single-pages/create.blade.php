@@ -651,7 +651,7 @@
                 item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
 
                 // fallback image if missing
-                const imgSrc = p.image ? `/storage/${p.image}` : '/images/no-image.png';
+                const imgSrc = p.image ? `/storage/${p.main_image}` : '/images/no-image.png';
 
 
                 item.innerHTML = `

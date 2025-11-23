@@ -129,7 +129,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $order->order_number }}</td>
-                                <td>
+                                {{-- <td>
                                     @if($order->items->isNotEmpty() && $order->items[0]->product && $order->items[0]->product->main_image)
                                         <img src="{{ asset('storage/'.$order->items[0]->product->main_image) }}"
                                              alt="{{ $order->items[0]->product->name }}"
@@ -138,7 +138,25 @@
                                     @else
                                         <span class="text-muted">No image</span>
                                     @endif
+                                </td> --}}
+
+                                <td>
+                                    @if($order->items->isNotEmpty() && $order->items[0]->product && $order->items[0]->product->main_image)
+                                        @php
+                                            $editUrl = route('admin.orders.edit', $order->id);
+                                            $imageUrl = asset('storage/'.$order->items[0]->product->main_image);
+                                        @endphp
+                                        <a href="{{ $editUrl }}" class="mobile-edit-link">
+                                            <img src="{{ $imageUrl }}"
+                                                alt="{{ $order->items[0]->product->name }}"
+                                                width="50"
+                                                class="img-thumbnail">
+                                        </a>
+                                    @else
+                                        <span class="text-muted">No image</span>
+                                    @endif
                                 </td>
+
                                 <td>{{ $order->name }}</td>
                                 <td>{{ $order->phone }}</td>
                                 <td>{{ $order->created_at->format('M d, Y') }}</td>
@@ -440,6 +458,19 @@ $(document).ready(function() {
     td:first-child {
         text-align: center;
     }
+
+.mobile-edit-link {
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-edit-link {
+        pointer-events: auto;
+    }
+    .card-body, .card .card-body{
+        padding: 0 !important;
+    }
+}
 </style>
 
 

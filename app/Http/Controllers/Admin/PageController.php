@@ -89,7 +89,16 @@ class PageController extends Controller
 public function edit(Page $page)
 {
     $sectionTypes = $this->getSectionTypes();
-    $products = Product::all();
+    $products = Product::all()->map(function($p) {
+        return [
+            'id' => $p->id,
+            'name' => $p->name,
+            'discount_price' => $p->discount_price,
+            'image_url' => $p->main_image
+                            ? asset('storage/' . $p->main_image)
+                            : null
+        ];
+    });
 
     // Load sections with proper ordering
     $page->load(['sections' => function($query) {

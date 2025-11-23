@@ -651,7 +651,8 @@
                 item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
 
                 // fallback image if missing
-                const imgSrc = p.image ? p.image : '/images/no-image.png';
+                const imgSrc = p.image ? `/storage/${p.image}` : '/images/no-image.png';
+
 
                 item.innerHTML = `
                     <img src="${imgSrc}" alt="${p.name}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">

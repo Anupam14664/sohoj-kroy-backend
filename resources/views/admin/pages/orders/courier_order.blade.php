@@ -6,7 +6,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Shipped Orders</h3>
+                    <h3 class="card-title">Courier Orders</h3>
 
 
                 </div>
@@ -114,9 +114,16 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-primary">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-primary  p-1 mx-1">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        <a href="{{ route('admin.orders.edit', $order->id) }}"
+                                            class="btn btn-primary p-1 mx-1" title="Edit">
+                                                <i class="fas fa-edit bg-none"></i>
+                                            </a>
+                                        </div>
+
                                     </td>
                                 </tr>
                                 @endforeach

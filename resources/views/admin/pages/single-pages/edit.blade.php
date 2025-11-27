@@ -210,54 +210,62 @@
 
             // Helper upload input function — add optional multiple param
             const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''} accept="image/png, image/jpeg, image/jpg">`;
-            const uploadPreview = (url) => url ? `<img src="${url}" class="img-fluid mt-2" style="max-height:100px;">` : '';
+
+            // FIXED: Smaller image preview
+            const uploadPreview = (url) => url ? `<img src="${url}" class="mt-2" style="max-height:80px; width:auto; border-radius:4px; border:1px solid #ddd;">` : '';
 
             // Section-specific fields
             switch(type){
                 case 'hero_product_banner':
-                    const countdownDate = card._settings.countdownDate || '';
-                    const dateValue = countdownDate ? countdownDate.split('T')[0] : '';
-                    const timeValue = countdownDate ? countdownDate.split('T')[1]?.slice(0,5) : '';
-
                     html += `
                         <div class="mt-2">
                             <label>Heading</label>
                             <input type="text" id="heroHeading" class="form-control" value="${card._settings.heading || ''}">
                         </div>
-
                         <div class="mt-2">
                             <label>Description</label>
                             <textarea id="heroDescription" class="form-control">${card._settings.description || ''}</textarea>
                         </div>
-
                         <div class="mt-2 countdown-wrapper">
                             <label>Countdown Date</label>
-                            <input type="date" id="countdownDate" class="form-control countdown-date" value="${dateValue}">
+                            <input type="date" id="countdownDate" class="form-control countdown-date"
+                                value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[0] : ''}">
                         </div>
-
                         <div class="mt-2 mb-2 countdown-wrapper">
                             <label>Countdown Time</label>
-                            <input type="time" id="countdownTime" class="form-control countdown-time" value="${timeValue}">
+                            <input type="time" id="countdownTime" class="form-control countdown-time"
+                                value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[1]?.slice(0,5) : ''}">
                         </div>
-                        <label>Image <small class="text-muted" style="font-size:12px"></small></label>
-                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg" >
+                        <label>Image</label>
+                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg">
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         ${uploadPreview(card._settings.image)}
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label>
-                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'product_video_slide':
-                    html += `<div><label>YouTube Links</label>
-                        <div id="videoList"></div>
-                        <input type="text" id="newVideo" class="form-control mt-1" placeholder="Enter YouTube URL">
-                        <button id="addVideo" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Video</button>
-                    </div>
-                    <div class="mt-2">
-                        <label>CTA Text</label>
-                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
-                    </div>`;
+                    html += `
+                        <div>
+                            <label>YouTube Links</label>
+                            <div id="videoList">
+                                ${(card._settings.videos || []).map(video =>
+                                    `<div class="d-flex justify-content-between align-items-center mb-1 p-2 border rounded">
+                                        <span class="small text-break flex-grow-1 me-2">${video}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-video flex-shrink-0">Remove</button>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                            <input type="text" id="newVideo" class="form-control mt-1" placeholder="Enter YouTube URL">
+                            <button id="addVideo" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Video</button>
+                        </div>
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'product_feature':
@@ -266,31 +274,42 @@
                     html += `
                         ${uploadInput('multiImage', true)}
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
-                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2">
+                            ${(card._settings.images || []).map(img => `
+                                <div class="img-wrapper">
+                                    <img src="${img}" style="height:60px; width:60px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                                    <div class="img-close" data-img="${img}">✖</div>
+                                </div>
+                            `).join('')}
+                        </div>
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'premium_product_promotion':
                 case 'featured_product':
                     html += `
-                        <div class="mb-2"><label>Single Image</label>
+                        <div class="mb-2">
+                            <label>Single Image</label>
                             <input type="file" id="featuredImage" class="form-control" accept="image/png">
                             <small class="text-muted">${sizeNote[type]}</small>
-                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                            ${uploadPreview(card._settings.image)}
                         </div>
-                        <div class="mb-2"><label>Heading</label>
+                        <div class="mb-2">
+                            <label>Heading</label>
                             <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
                         </div>
-
-                        <div class="mb-2"><label>Description</label>
+                        <div class="mb-2">
+                            <label>Description</label>
                             <textarea id="description" class="form-control">${card._settings.description||''}</textarea>
                         </div>
-
-                        <div class="mb-2"><label>CTA Text</label>
+                        <div class="mb-2">
+                            <label>CTA Text</label>
                             <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
-                        </div>
-                    `;
+                        </div>`;
                     break;
 
                 case 'product_highlight':
@@ -299,25 +318,52 @@
                             <label>Product Image</label>
                             <input type="file" id="highlightImage" class="form-control" accept="image/png">
                             <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
-                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                            ${uploadPreview(card._settings.image)}
                         </div>
-                        <div class="mb-2"><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div class="mb-2"><label>Description</label><textarea id="description" class="form-control">${card._settings.description||''}</textarea></div>
-                        <div class="mb-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
-                    if(type === 'product_highlight'){
-                        html += `
-                            <div><label>Short Points</label>
-                                <div id="pointsList"></div>
-                                <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
-                                <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
-                            </div>`;
-                    }
+                        <div class="mb-2">
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div class="mb-2">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control">${card._settings.description||''}</textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>
+                        <div>
+                            <label>Short Points</label>
+                            <div id="pointsList">
+                                ${(card._settings.points || []).map(point =>
+                                    `<div class="d-flex justify-content-between align-items-center mb-1 p-2 border rounded">
+                                        <span class="flex-grow-1 me-2">${point}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-point flex-shrink-0">Remove</button>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                            <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
+                            <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
+                        </div>`;
                     break;
 
                 case 'why_choose_us':
                     html += `
-                        <div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div id="whyList" class="mt-2"></div>
+                        <div>
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div id="whyList" class="mt-2">
+                            ${(card._settings.items || []).map((item, index) => `
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                    <div class="d-flex align-items-center gap-2 flex-grow-1 me-2">
+                                        <img src="${item.image}" style="height:40px; width:40px; object-fit:cover; border-radius:4px;">
+                                        <span class="text-break">${item.desc}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-why flex-shrink-0" data-index="${index}">Remove</button>
+                                </div>
+                            `).join('')}
+                        </div>
                         <input type="file" id="whyImage" class="form-control" accept="image/png">
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
@@ -326,23 +372,20 @@
 
                 case 'exclusive_product':
                     html += `
-
                         <div class="mb-2">
                             <label>Product Image</label>
                             <input type="file" id="exclusiveImage" class="form-control" accept="image/png">
                             <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
-                            ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
+                            ${uploadPreview(card._settings.image)}
                         </div>
                         <div class="mb-2">
                             <label>Heading</label>
                             <input type="text" id="heading" class="form-control" value="${card._settings.heading || ''}">
                         </div>
-
                         <div class="mb-2">
                             <label>Description</label>
                             <textarea id="description" class="form-control">${card._settings.description || ''}</textarea>
                         </div>
-
                         <div class="mb-2">
                             <label>CTA 1 Text</label>
                             <input type="text" id="cta1Text" class="form-control" value="${card._settings.cta1Text || ''}">
@@ -350,13 +393,26 @@
                         <div class="mb-2">
                             <label>CTA 2 Text</label>
                             <input type="text" id="cta2Text" class="form-control" value="${card._settings.cta2Text || ''}">
-                        </div>
-                    `;
+                        </div>`;
                     break;
 
                 case 'faq':
-                    html += `<div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div id="faqList"></div>
+                    html += `
+                        <div>
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div id="faqList" class="mt-2">
+                            ${(card._settings.faqs || []).map((faq, index) => `
+                                <div class="mb-2 p-2 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong class="flex-grow-1 me-2">Q: ${faq.q}</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-faq flex-shrink-0" data-index="${index}">Remove</button>
+                                    </div>
+                                    <div class="mt-1 text-break">A: ${faq.a}</div>
+                                </div>
+                            `).join('')}
+                        </div>
                         <input type="text" id="faqQ" class="form-control mt-1" placeholder="Question">
                         <textarea id="faqA" class="form-control mt-1" rows="3" placeholder="Answer"></textarea>
                         <button id="addFaq" type="button" class="btn btn-sm btn-outline-primary mt-1">Add FAQ</button>`;
@@ -383,7 +439,10 @@
                     status.textContent='Uploading...';
                     const res = await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
                     const d=await res.json();
-                    if(d.success){ card._settings.image=d.url; status.innerHTML=`<img src="${d.url}" class="mt-2" style="max-height:100px;"> Uploaded`; }
+                    if(d.success){
+                        card._settings.image=d.url;
+                        status.innerHTML=`<img src="${d.url}" class="mt-2" style="max-height:80px; width:auto; border-radius:4px; border:1px solid #ddd;"> Uploaded`;
+                    }
                 };
             }
 
@@ -401,6 +460,7 @@
 
                     const img = document.createElement('img');
                     img.src = url;
+                    img.style = 'height:60px; width:60px; object-fit:cover; border-radius:4px; border:1px solid #ddd;';
 
                     const close = document.createElement('div');
                     close.className = 'img-close';
@@ -451,10 +511,10 @@
                 list.innerHTML = '';
                 card._settings.videos.forEach((v, idx)=>{
                     const div=document.createElement('div');
-                    div.className = 'd-flex justify-content-between align-items-center mb-1';
+                    div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
                     div.innerHTML = `
-                        <span>${v}</span>
-                        <button type="button" class="btn btn-sm btn-danger" data-idx="${idx}">Remove</button>
+                        <span class="flex-grow-1 me-2 text-break small">${v}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-video flex-shrink-0" data-idx="${idx}">Remove</button>
                     `;
                     div.querySelector('button').onclick = function() {
                         card._settings.videos.splice(this.dataset.idx, 1);
@@ -478,10 +538,13 @@
                 list.innerHTML = '';
                 card._settings.items.forEach((i, idx)=>{
                     const div=document.createElement('div');
-                    div.className = 'd-flex justify-content-between align-items-center mb-2';
+                    div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded';
                     div.innerHTML = `
-                        <div><img src="${i.image}" style="height:40px;"> ${i.desc}</div>
-                        <button type="button" class="btn btn-sm btn-danger" data-idx="${idx}">Remove</button>
+                        <div class="d-flex align-items-center gap-2 flex-grow-1 me-2">
+                            <img src="${i.image}" style="height:40px; width:40px; object-fit:cover; border-radius:4px;">
+                            <span class="text-break">${i.desc}</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-why flex-shrink-0" data-idx="${idx}">Remove</button>
                     `;
                     div.querySelector('button').onclick = function() {
                         card._settings.items.splice(this.dataset.idx, 1);
@@ -556,10 +619,10 @@
                 list.innerHTML = '';
                 card._settings.points.forEach((p, idx)=>{
                     const div=document.createElement('div');
-                    div.className = 'd-flex justify-content-between align-items-center mb-1';
+                    div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
                     div.innerHTML = `
-                        <span>${p}</span>
-                        <button type="button" class="btn btn-sm btn-danger" data-idx="${idx}">Remove</button>
+                        <span class="flex-grow-1 me-2">${p}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-point flex-shrink-0" data-idx="${idx}">Remove</button>
                     `;
                     div.querySelector('button').onclick = function() {
                         card._settings.points.splice(this.dataset.idx, 1);
@@ -626,13 +689,12 @@
                 list.innerHTML = '';
                 card._settings.faqs.forEach((f, idx)=>{
                     const div=document.createElement('div');
-                    div.className = 'mb-2';
+                    div.className = 'mb-2 p-2 border rounded';
                     div.innerHTML = `
-                        <div class="d-flex justify-content-between">
-                            <div><strong>Q:</strong>${f.q}<br><strong>A:</strong>${f.a}</div>
-                            <button type="button" class="btn btn-sm btn-danger" data-idx="${idx}">Remove</button>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1 me-2"><strong>Q:</strong> ${f.q}<br><strong>A:</strong> ${f.a}</div>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-faq flex-shrink-0" data-idx="${idx}">Remove</button>
                         </div>
-                        <hr>
                     `;
                     div.querySelector('button').onclick = function() {
                         card._settings.faqs.splice(this.dataset.idx, 1);
@@ -840,4 +902,146 @@
     });
 
 </script>
+
+<style>
+    .img-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .img-wrapper img {
+        height: 50px;
+        width: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    .img-close {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 10;
+    }
+
+    /* Video list items styling */
+    #videoList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #videoList .remove-video {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    #videoList span {
+        flex: 1;
+        word-break: break-all;
+        font-size: 0.875rem;
+    }
+
+    /* Points list items styling */
+    #pointsList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #pointsList .remove-point {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Why choose us items styling */
+    #whyList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #whyList .remove-why {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    #whyList .d-flex > div {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #whyList img {
+        height: 40px;
+        width: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    /* FAQ items styling */
+    #faqList .border {
+        position: relative;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px;
+        background: #f8f9fa;
+    }
+
+    #faqList .remove-faq {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Settings panel scroll for long content */
+    #section-settings {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    #section-settings::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #section-settings::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    #section-settings::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    #section-settings::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
 @endsection

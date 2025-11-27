@@ -524,17 +524,16 @@
                         card._settings.videos.push(val);
 
                         const div = document.createElement('div');
-                        div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
+                        div.className = 'd-flex justify-content-between align-items-center mb-1';
                         div.innerHTML = `
-                            <span class="small">${val}</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-video">Remove</button>
+                            <span class="flex-grow-1 me-2 text-break">${val}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-video flex-shrink-0">Remove</button>
                         `;
                         list.appendChild(div);
                         document.getElementById('newVideo').value = '';
                     }
                 };
             }
-
             // Why choose us items
             if(type === 'why_choose_us'){
                 const list = document.getElementById('whyList');
@@ -544,7 +543,7 @@
                     if (e.target.classList.contains('remove-why')) {
                         const index = parseInt(e.target.getAttribute('data-index'));
                         card._settings.items.splice(index, 1);
-                        openSettings(card); // Refresh the settings view
+                        openSettings(card);
                     }
                 });
 
@@ -566,13 +565,14 @@
 
                         if(j.success){
                             card._settings.items.push({image: j.url, desc: d});
-                            openSettings(card); // Refresh to show new item
+                            openSettings(card);
                         }
                     } catch (error) {
                         console.error('Upload failed:', error);
                     }
                 };
             }
+
 
             // Single image upload handlers
             if (['premium_product_promotion', 'featured_product', 'product_highlight', 'exclusive_product'].includes(type)) {
@@ -626,16 +626,17 @@
                         card._settings.points.push(val);
 
                         const div = document.createElement('div');
-                        div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
+                        div.className = 'd-flex justify-content-between align-items-center mb-1';
                         div.innerHTML = `
-                            <span>${val}</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-point">Remove</button>
+                            <span class="flex-grow-1 me-2">${val}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-point flex-shrink-0">Remove</button>
                         `;
                         list.appendChild(div);
                         document.getElementById('newPoint').value = '';
                     }
                 };
             }
+
 
             // FAQ management
             if(type === 'faq'){
@@ -646,7 +647,7 @@
                     if (e.target.classList.contains('remove-faq')) {
                         const index = parseInt(e.target.getAttribute('data-index'));
                         card._settings.faqs.splice(index, 1);
-                        openSettings(card); // Refresh the settings view
+                        openSettings(card);
                     }
                 });
 
@@ -656,7 +657,7 @@
 
                     if(q && a){
                         card._settings.faqs.push({q, a});
-                        openSettings(card); // Refresh to show new FAQ
+                        openSettings(card);
                     }
                 };
             }
@@ -854,6 +855,146 @@
         justify-content: center;
     }
 </style>
+<style>
+    .img-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .img-wrapper img {
+        height: 50px;
+        width: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    .img-close {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 10;
+    }
 
+    /* Video list items styling */
+    #videoList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #videoList .remove-video {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    #videoList span {
+        flex: 1;
+        word-break: break-all;
+        font-size: 0.875rem;
+    }
+
+    /* Points list items styling */
+    #pointsList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #pointsList .remove-point {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Why choose us items styling */
+    #whyList .d-flex {
+        position: relative;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+    }
+
+    #whyList .remove-why {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    #whyList .d-flex > div {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #whyList img {
+        height: 40px;
+        width: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    /* FAQ items styling */
+    #faqList .border {
+        position: relative;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 6px;
+        background: #f8f9fa;
+    }
+
+    #faqList .remove-faq {
+        position: static;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Settings panel scroll for long content */
+    #section-settings {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    #section-settings::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #section-settings::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    #section-settings::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    #section-settings::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
 
 @endsection

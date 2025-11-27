@@ -106,13 +106,72 @@
             el.addEventListener('click',()=>addSection(el.dataset.type));
         });
 
+        // Initialize section settings based on type
+        function initializeSectionSettings(type) {
+            const baseSettings = {
+                cta: '',
+                heading: '',
+                description: ''
+            };
+
+            switch(type) {
+                case 'hero_product_banner':
+                    return {
+                        ...baseSettings,
+                        image: null,
+                        countdownDate: null
+                    };
+                case 'product_video_slide':
+                    return {
+                        ...baseSettings,
+                        videos: []
+                    };
+                case 'product_feature':
+                case 'certification':
+                case 'customer_review':
+                    return {
+                        ...baseSettings,
+                        images: []
+                    };
+                case 'premium_product_promotion':
+                case 'featured_product':
+                case 'product_highlight':
+                case 'exclusive_product':
+                    return {
+                        ...baseSettings,
+                        image: null
+                    };
+                case 'why_choose_us':
+                    return {
+                        ...baseSettings,
+                        items: []
+                    };
+                case 'product_highlight':
+                    return {
+                        ...baseSettings,
+                        image: null,
+                        points: []
+                    };
+                case 'faq':
+                    return {
+                        heading: '',
+                        faqs: []
+                    };
+                default:
+                    return baseSettings;
+            }
+        }
+
         function addSection(type){
             const id = 's_' + Date.now();
             const el = document.createElement('div');
             el.className = 'card mb-2 section-card';
             el.dataset.type = type;
             el.dataset.id = id;
-            el._settings = {};
+
+            // PROPERLY INITIALIZE SETTINGS
+            el._settings = initializeSectionSettings(type);
+
             el.innerHTML = `
                 <div class="card-body p-2 d-flex justify-content-between align-items-center">
                     <div><strong>${type.replace(/_/g,' ')}</strong></div>
@@ -131,24 +190,22 @@
         function openSettings(card){
             const type = card.dataset.type;
 
-        const sizeNote = {
-            hero_product_banner: "Recommended: 1080×1080px (PNG or JPG)",
-            product_feature: "Recommended: 1080×1080px (PNG or JPG)",
-            customer_review: "Recommended: 1080×1350px (PNG or JPG)",
-            certification: "Recommended: 1220×1024px (PNG or JPG)",
-            premium_product_promotion: "Recommended: 1080×1080px PNG",
-            featured_product: "Recommended: 1080×1080 PNG",
-            product_highlight: "Recommended: 1080×1080 (PNG or JPG)",
-            exclusive_product: "Recommended: 1080×1080 PNG",
-            why_choose_us: "Recommended: 80×80 PNG"
-        };
-
+            const sizeNote = {
+                hero_product_banner: "Recommended: 1080×1080px (PNG or JPG)",
+                product_feature: "Recommended: 1080×1080px (PNG or JPG)",
+                customer_review: "Recommended: 1080×1350px (PNG or JPG)",
+                certification: "Recommended: 1220×1024px (PNG or JPG)",
+                premium_product_promotion: "Recommended: 1080×1080px PNG",
+                featured_product: "Recommended: 1080×1080 PNG",
+                product_highlight: "Recommended: 1080×1080 (PNG or JPG)",
+                exclusive_product: "Recommended: 1080×1080 PNG",
+                why_choose_us: "Recommended: 80×80 PNG"
+            };
 
             let html = `<h6 class="mb-2">Edit: ${type.replace(/_/g,' ')}</h6>`;
 
-            // const uploadInput = (id='fileInput') => `<input type="file" id="${id}" class="form-control">`;
-            // Helper upload input function — add optional multiple param
-    const uploadInput = (id='fileInput', multiple=false) => `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''} accept="image/png, image/jpeg, image/jpg">`;
+            const uploadInput = (id='fileInput', multiple=false) =>
+                `<input type="file" id="${id}" class="form-control" ${multiple ? 'multiple' : ''} accept="image/png, image/jpeg, image/jpg">`;
 
             const uploadPreview = (url) => url ? `<img src="${url}" class="img-fluid mt-2" style="max-height:100px;">` : '';
 
@@ -160,43 +217,50 @@
                             <label>Heading</label>
                             <input type="text" id="heroHeading" class="form-control" value="${card._settings.heading || ''}">
                         </div>
-
                         <div class="mt-2">
                             <label>Description</label>
                             <textarea id="heroDescription" class="form-control">${card._settings.description || ''}</textarea>
                         </div>
-
                         <div class="mt-2 countdown-wrapper">
                             <label>Countdown Date</label>
                             <input type="date" id="countdownDate" class="form-control countdown-date"
                                 value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[0] : ''}">
                         </div>
-
                         <div class="mt-2 mb-2 countdown-wrapper">
                             <label>Countdown Time</label>
                             <input type="time" id="countdownTime" class="form-control countdown-time"
-                                value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[1].slice(0,5) : ''}">
+                                value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[1]?.slice(0,5) : ''}">
                         </div>
-                        <label>Image <small class="text-muted" style="font-size:12px"></small></label>
-                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg" >
+                        <label>Image</label>
+                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg">
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         ${uploadPreview(card._settings.image)}
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label>
-                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'product_video_slide':
-                    html += `<div><label>YouTube Links</label>
-                        <div id="videoList"></div>
-                        <input type="text" id="newVideo" class="form-control mt-1" placeholder="Enter YouTube URL">
-                        <button id="addVideo" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Video</button>
-                    </div>
-                    <div class="mt-2">
-                        <label>CTA Text</label>
-                        <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
-                    </div>
-                    `;
+                    html += `
+                        <div>
+                            <label>YouTube Links</label>
+                            <div id="videoList">
+                                ${(card._settings.videos || []).map(video =>
+                                    `<div class="d-flex justify-content-between align-items-center mb-1 p-2 border rounded">
+                                        <span class="small">${video}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-video">Remove</button>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                            <input type="text" id="newVideo" class="form-control mt-1" placeholder="Enter YouTube URL">
+                            <button id="addVideo" type="button" class="btn btn-sm btn-outline-primary mt-1">Add Video</button>
+                        </div>
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'product_feature':
@@ -205,31 +269,42 @@
                     html += `
                         ${uploadInput('multiImage', true)}
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
-                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2">
+                            ${(card._settings.images || []).map(img => `
+                                <div class="img-wrapper">
+                                    <img src="${img}" style="height:50px; border-radius:4px;">
+                                    <div class="img-close" data-img="${img}">✖</div>
+                                </div>
+                            `).join('')}
+                        </div>
                         <div id="uploadStatus" class="text-muted small mt-1"></div>
-                        <div class="mt-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
+                        <div class="mt-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>`;
                     break;
 
                 case 'premium_product_promotion':
                 case 'featured_product':
                     html += `
-                        <div class="mb-2"><label>Single Image</label>
+                        <div class="mb-2">
+                            <label>Single Image</label>
                             <input type="file" id="featuredImage" class="form-control" accept="image/png">
                             <small class="text-muted">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
-                        <div class="mb-2"><label>Heading</label>
+                        <div class="mb-2">
+                            <label>Heading</label>
                             <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
                         </div>
-
-                        <div class="mb-2"><label>Description</label>
+                        <div class="mb-2">
+                            <label>Description</label>
                             <textarea id="description" class="form-control">${card._settings.description||''}</textarea>
                         </div>
-
-                        <div class="mb-2"><label>CTA Text</label>
+                        <div class="mb-2">
+                            <label>CTA Text</label>
                             <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
-                        </div>
-                    `;
+                        </div>`;
                     break;
 
                 case 'product_highlight':
@@ -240,23 +315,50 @@
                             <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                             ${card._settings.image ? `<img src="${card._settings.image}" class="mt-2" style="max-height:100px;">` : ''}
                         </div>
-                        <div class="mb-2"><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div class="mb-2"><label>Description</label><textarea id="description" class="form-control">${card._settings.description||''}</textarea></div>
-                        <div class="mb-2"><label>CTA Text</label><input type="text" id="cta" class="form-control" value="${card._settings.cta||''}"></div>`;
-                    if(type === 'product_highlight'){
-                        html += `
-                            <div><label>Short Points</label>
-                                <div id="pointsList"></div>
-                                <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
-                                <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
-                            </div>`;
-                    }
+                        <div class="mb-2">
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div class="mb-2">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control">${card._settings.description||''}</textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label>CTA Text</label>
+                            <input type="text" id="cta" class="form-control" value="${card._settings.cta||''}">
+                        </div>
+                        <div>
+                            <label>Short Points</label>
+                            <div id="pointsList">
+                                ${(card._settings.points || []).map(point =>
+                                    `<div class="d-flex justify-content-between align-items-center mb-1 p-2 border rounded">
+                                        <span>${point}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-point">Remove</button>
+                                    </div>`
+                                ).join('')}
+                            </div>
+                            <input type="text" id="newPoint" class="form-control mt-1" placeholder="Add short description">
+                            <button id="addPoint" type="button" class="btn btn-sm btn-outline-primary mt-1">Add</button>
+                        </div>`;
                     break;
 
                 case 'why_choose_us':
                     html += `
-                        <div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div id="whyList" class="mt-2"></div>
+                        <div>
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div id="whyList" class="mt-2">
+                            ${(card._settings.items || []).map((item, index) => `
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="${item.image}" style="height:40px; width:40px; object-fit:cover;">
+                                        <span>${item.desc}</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-why" data-index="${index}">Remove</button>
+                                </div>
+                            `).join('')}
+                        </div>
                         <input type="file" id="whyImage" class="form-control" accept="image/png">
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         <input type="text" id="whyDesc" class="form-control mt-1" placeholder="Description">
@@ -265,7 +367,6 @@
 
                 case 'exclusive_product':
                     html += `
-
                         <div class="mb-2">
                             <label>Product Image</label>
                             <input type="file" id="exclusiveImage" class="form-control" accept="image/png">
@@ -276,12 +377,10 @@
                             <label>Heading</label>
                             <input type="text" id="heading" class="form-control" value="${card._settings.heading || ''}">
                         </div>
-
                         <div class="mb-2">
                             <label>Description</label>
                             <textarea id="description" class="form-control">${card._settings.description || ''}</textarea>
                         </div>
-
                         <div class="mb-2">
                             <label>CTA 1 Text</label>
                             <input type="text" id="cta1Text" class="form-control" value="${card._settings.cta1Text || ''}">
@@ -289,346 +388,358 @@
                         <div class="mb-2">
                             <label>CTA 2 Text</label>
                             <input type="text" id="cta2Text" class="form-control" value="${card._settings.cta2Text || ''}">
-                        </div>
-                    `;
+                        </div>`;
                     break;
 
                 case 'faq':
-                    html += `<div><label>Heading</label><input type="text" id="heading" class="form-control" value="${card._settings.heading||''}"></div>
-                        <div id="faqList"></div>
+                    html += `
+                        <div>
+                            <label>Heading</label>
+                            <input type="text" id="heading" class="form-control" value="${card._settings.heading||''}">
+                        </div>
+                        <div id="faqList" class="mt-2">
+                            ${(card._settings.faqs || []).map((faq, index) => `
+                                <div class="mb-2 p-2 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong>Q: ${faq.q}</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-faq" data-index="${index}">Remove</button>
+                                    </div>
+                                    <div class="mt-1">A: ${faq.a}</div>
+                                </div>
+                            `).join('')}
+                        </div>
                         <input type="text" id="faqQ" class="form-control mt-1" placeholder="Question">
                         <textarea id="faqA" class="form-control mt-1" rows="3" placeholder="Answer"></textarea>
                         <button id="addFaq" type="button" class="btn btn-sm btn-outline-primary mt-1">Add FAQ</button>`;
                     break;
             }
 
-            html += `<div class="mt-3 d-flex gap-2"><button type="button" id="saveSettings" class="btn btn-primary btn-sm">Save</button>
-                    <button type="button" id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button></div>`;
+            html += `<div class="mt-3 d-flex gap-2">
+                        <button type="button" id="saveSettings" class="btn btn-primary btn-sm">Save</button>
+                        <button type="button" id="cancelSettings" class="btn btn-secondary btn-sm">Cancel</button>
+                    </div>`;
             settingsPane.innerHTML = html;
 
-            // ---------- Upload logic ----------
+            // Setup event listeners for each section type
+            setupSectionEvents(card, type);
+        }
+
+        function setupSectionEvents(card, type) {
+            // Hero banner image upload
             if(type === 'hero_product_banner'){
                 const input = document.getElementById('heroImg');
                 const status = document.getElementById('uploadStatus');
-                if (!card._settings.image || card._settings.image.length === 0) {
-                    card._settings.image = null;
-                }
-                input.onchange = async (e)=>{
+
+                input.onchange = async (e) => {
                     const f = e.target.files[0];
                     if(!f) return;
-                    const fd = new FormData(); fd.append('file', f);
-                    status.textContent='Uploading...';
-                    const res = await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
-                    const d=await res.json();
-                    if(d.success){ card._settings.image=d.url; status.innerHTML=`<img src="${d.url}" class="mt-2" style="max-height:100px;"> Uploaded`; }
+
+                    const fd = new FormData();
+                    fd.append('file', f);
+                    status.textContent = 'Uploading...';
+
+                    try {
+                        const res = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {'X-CSRF-TOKEN': csrf},
+                            body: fd
+                        });
+                        const d = await res.json();
+
+                        if(d.success){
+                            card._settings.image = d.url;
+                            status.innerHTML = `<img src="${d.url}" class="mt-2" style="max-height:100px;"> Uploaded`;
+                        }
+                    } catch (error) {
+                        status.textContent = 'Upload failed';
+                    }
                 };
             }
 
+            // Multiple image upload
             if (['product_feature', 'certification', 'customer_review'].includes(type)) {
                 const input = document.getElementById('multiImage');
                 const preview = document.getElementById('imagePreview');
                 const status = document.getElementById('uploadStatus');
 
-                card._settings.images = card._settings.images || null;
+                // Remove image handler
+                preview.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('img-close')) {
+                        const imgUrl = e.target.getAttribute('data-img');
+                        card._settings.images = card._settings.images.filter(img => img !== imgUrl);
+                        e.target.parentElement.remove();
+                    }
+                });
 
-                // Function to render one image box
-                function renderImage(url, index = null) {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'img-wrapper';
-
-                    const img = document.createElement('img');
-                    img.src = url;
-
-                    const close = document.createElement('div');
-                    close.className = 'img-close';
-                    close.innerHTML = '✖';
-
-                    close.onclick = () => {
-                        wrap.remove();
-                        card._settings.images = card._settings.images.filter(i => i !== url);
-                    };
-
-                    wrap.appendChild(img);
-                    wrap.appendChild(close);
-                    preview.appendChild(wrap);
-                }
-
-                // Render existing images
-                preview.innerHTML = '';
-                card._settings.images.forEach(renderImage);
-
-                // Upload event
-                input.onchange = async e => {
+                input.onchange = async (e) => {
                     for (const f of e.target.files) {
                         const fd = new FormData();
                         fd.append('file', f);
-
                         status.textContent = 'Uploading...';
 
-                        const res = await fetch(uploadUrl, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf },
-                            body: fd
-                        });
+                        try {
+                            const res = await fetch(uploadUrl, {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': csrf },
+                                body: fd
+                            });
+                            const d = await res.json();
 
-                        const d = await res.json();
+                            if (d.success) {
+                                card._settings.images.push(d.url);
 
-                        if (d.success) {
-                            card._settings.images.push(d.url);
-                            renderImage(d.url);
+                                const wrap = document.createElement('div');
+                                wrap.className = 'img-wrapper';
+                                wrap.innerHTML = `
+                                    <img src="${d.url}" style="height:50px; border-radius:4px;">
+                                    <div class="img-close" data-img="${d.url}">✖</div>
+                                `;
+                                preview.appendChild(wrap);
+                            }
+                        } catch (error) {
+                            status.textContent = 'Upload failed';
                         }
-                        status.textContent = 'Uploaded';
                     }
+                    status.textContent = 'Upload completed';
                 };
             }
 
-            if(type==='product_video_slide'){
-                const list=document.getElementById('videoList');
-                card._settings.videos=card._settings.videos||null;
-                card._settings.videos.forEach(v=>{ const div=document.createElement('div'); div.textContent=v; list.appendChild(div); });
-                document.getElementById('addVideo').onclick=()=>{
-                    const val=document.getElementById('newVideo').value.trim();
-                    if(val){ card._settings.videos.push(val); const div=document.createElement('div'); div.textContent=val; list.appendChild(div); document.getElementById('newVideo').value=''; }
-                };
-            }
+            // Video management
+            if(type === 'product_video_slide'){
+                const list = document.getElementById('videoList');
 
-            if(type==='why_choose_us'){
-                const list=document.getElementById('whyList');
-                card._settings.items=card._settings.items||null;
-                card._settings.items.forEach(i=>{
-                    const div=document.createElement('div'); div.innerHTML=`<img src="${i.image}" style="height:40px;"> ${i.desc}`; list.appendChild(div);
+                // Remove video handler
+                list.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-video')) {
+                        const videoDiv = e.target.closest('.d-flex');
+                        const videoText = videoDiv.querySelector('span').textContent;
+                        card._settings.videos = card._settings.videos.filter(v => v !== videoText);
+                        videoDiv.remove();
+                    }
                 });
-                document.getElementById('addWhy').onclick=async()=>{
-                    const f=document.getElementById('whyImage').files[0];
-                    const d=document.getElementById('whyDesc').value;
-                    if(!f||!d)return;
-                    const fd=new FormData(); fd.append('file',f);
-                    const res=await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
-                    const j=await res.json();
-                    if(j.success){
-                        card._settings.items.push({image:j.url,desc:d});
-                        const div=document.createElement('div'); div.innerHTML=`<img src="${j.url}" style="height:40px;"> ${d}`; list.appendChild(div);
-                        document.getElementById('whyDesc').value='';
+
+                document.getElementById('addVideo').onclick = () => {
+                    const val = document.getElementById('newVideo').value.trim();
+                    if(val && !card._settings.videos.includes(val)) {
+                        card._settings.videos.push(val);
+
+                        const div = document.createElement('div');
+                        div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
+                        div.innerHTML = `
+                            <span class="small">${val}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-video">Remove</button>
+                        `;
+                        list.appendChild(div);
+                        document.getElementById('newVideo').value = '';
                     }
                 };
             }
 
-            if (type === 'premium_product_promotion') {
-                const input = document.getElementById('featuredImage');
-                input.onchange = async (e)=>{
+            // Why choose us items
+            if(type === 'why_choose_us'){
+                const list = document.getElementById('whyList');
+
+                // Remove item handler
+                list.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-why')) {
+                        const index = parseInt(e.target.getAttribute('data-index'));
+                        card._settings.items.splice(index, 1);
+                        openSettings(card); // Refresh the settings view
+                    }
+                });
+
+                document.getElementById('addWhy').onclick = async () => {
+                    const f = document.getElementById('whyImage').files[0];
+                    const d = document.getElementById('whyDesc').value.trim();
+                    if(!f || !d) return;
+
+                    const fd = new FormData();
+                    fd.append('file', f);
+
+                    try {
+                        const res = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {'X-CSRF-TOKEN': csrf},
+                            body: fd
+                        });
+                        const j = await res.json();
+
+                        if(j.success){
+                            card._settings.items.push({image: j.url, desc: d});
+                            openSettings(card); // Refresh to show new item
+                        }
+                    } catch (error) {
+                        console.error('Upload failed:', error);
+                    }
+                };
+            }
+
+            // Single image upload handlers
+            if (['premium_product_promotion', 'featured_product', 'product_highlight', 'exclusive_product'].includes(type)) {
+                const inputId = type === 'exclusive_product' ? 'exclusiveImage' :
+                               type === 'product_highlight' ? 'highlightImage' : 'featuredImage';
+
+                const input = document.getElementById(inputId);
+
+                input.onchange = async (e) => {
                     const f = e.target.files[0];
                     if(!f) return;
 
                     const fd = new FormData();
                     fd.append('file', f);
 
-                    const res = await fetch(uploadUrl, {
-                        method: 'POST',
-                        headers:{'X-CSRF-TOKEN': csrf},
-                        body: fd
-                    });
-
-                    const d = await res.json();
-                    if(d.success){
-                        card._settings.image = d.url;
-                        openSettings(card);
-                    }
-                };
-            }
-
-            if(type === 'featured_product'){
-                    const input = document.getElementById('featuredImage');
-                    input.onchange = async (e)=>{
-                        const f = e.target.files[0];
-                        if(!f) return;
-
-                        const fd = new FormData();
-                        fd.append('file', f);
-
+                    try {
                         const res = await fetch(uploadUrl, {
                             method: 'POST',
                             headers: {'X-CSRF-TOKEN': csrf},
                             body: fd
                         });
-
                         const d = await res.json();
+
                         if(d.success){
                             card._settings.image = d.url;
-                            openSettings(card);
+                            openSettings(card); // Refresh to show new image
                         }
+                    } catch (error) {
+                        console.error('Upload failed:', error);
                     }
-                }
-
-
-            if(type==='product_highlight'){
-                const list=document.getElementById('pointsList');
-                card._settings.points=card._settings.points||null;
-                card._settings.points.forEach(p=>{ const div=document.createElement('div'); div.textContent=p; list.appendChild(div); });
-                document.getElementById('addPoint').onclick=()=>{
-                    const val=document.getElementById('newPoint').value;
-                    if(val){ card._settings.points.push(val); const div=document.createElement('div'); div.textContent=val; list.appendChild(div); document.getElementById('newPoint').value=''; }
-                }
-                const input = document.getElementById('highlightImage');
-                    input.onchange = async (e)=>{
-                        const f = e.target.files[0];
-                        if(!f) return;
-
-                        const fd = new FormData();
-                        fd.append('file', f);
-
-                        const res = await fetch(uploadUrl, {
-                            method: 'POST',
-                            headers: {'X-CSRF-TOKEN': csrf},
-                            body: fd
-                        });
-
-                        const d = await res.json();
-                        if(d.success){
-                            card._settings.image = d.url;
-                            openSettings(card);
-                        }
-                    }
-            }
-
-            if(type === 'exclusive_product'){
-                const input = document.getElementById('exclusiveImage');
-                input.onchange = async (e)=>{
-                    const f = e.target.files[0];
-                    if(!f) return;
-
-                    const fd = new FormData();
-                    fd.append('file', f);
-
-                    const res = await fetch(uploadUrl, {
-                        method: 'POST',
-                        headers: {'X-CSRF-TOKEN': csrf},
-                        body: fd
-                    });
-
-                    const d = await res.json();
-                    if(d.success){
-                        card._settings.image = d.url;
-                        openSettings(card);
-                    }
-                }
-            }
-
-
-            if(type==='faq'){
-                const list=document.getElementById('faqList');
-                card._settings.faqs=card._settings.faqs||null;
-                card._settings.faqs.forEach(f=>{ const div=document.createElement('div'); div.innerHTML=`<strong>Q:</strong>${f.q}<br><strong>A:</strong>${f.a}<hr>`; list.appendChild(div); });
-                document.getElementById('addFaq').onclick=()=>{
-                    const q=document.getElementById('faqQ').value, a=document.getElementById('faqA').value;
-                    if(q&&a){ card._settings.faqs.push({q,a}); const div=document.createElement('div'); div.innerHTML=`<strong>Q:</strong>${q}<br><strong>A:</strong>${a}<hr>`; list.appendChild(div); document.getElementById('faqQ').value=''; document.getElementById('faqA').value=''; }
                 };
             }
 
+            // Product highlight points
+            if(type === 'product_highlight'){
+                const list = document.getElementById('pointsList');
+
+                // Remove point handler
+                list.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-point')) {
+                        const pointDiv = e.target.closest('.d-flex');
+                        const pointText = pointDiv.querySelector('span').textContent;
+                        card._settings.points = card._settings.points.filter(p => p !== pointText);
+                        pointDiv.remove();
+                    }
+                });
+
+                document.getElementById('addPoint').onclick = () => {
+                    const val = document.getElementById('newPoint').value.trim();
+                    if(val && !card._settings.points.includes(val)) {
+                        card._settings.points.push(val);
+
+                        const div = document.createElement('div');
+                        div.className = 'd-flex justify-content-between align-items-center mb-1 p-2 border rounded';
+                        div.innerHTML = `
+                            <span>${val}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-point">Remove</button>
+                        `;
+                        list.appendChild(div);
+                        document.getElementById('newPoint').value = '';
+                    }
+                };
+            }
+
+            // FAQ management
+            if(type === 'faq'){
+                const list = document.getElementById('faqList');
+
+                // Remove FAQ handler
+                list.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-faq')) {
+                        const index = parseInt(e.target.getAttribute('data-index'));
+                        card._settings.faqs.splice(index, 1);
+                        openSettings(card); // Refresh the settings view
+                    }
+                });
+
+                document.getElementById('addFaq').onclick = () => {
+                    const q = document.getElementById('faqQ').value.trim();
+                    const a = document.getElementById('faqA').value.trim();
+
+                    if(q && a){
+                        card._settings.faqs.push({q, a});
+                        openSettings(card); // Refresh to show new FAQ
+                    }
+                };
+            }
+
+            // Save settings button
             document.getElementById('saveSettings').onclick = () => {
-                if (document.getElementById('cta')) card._settings.cta = document.getElementById('cta').value;
-                if (document.getElementById('heading')) card._settings.heading = document.getElementById('heading').value;
-                if (document.getElementById('description')) card._settings.description = document.getElementById('description').value;
-                if (document.getElementById('cta1Text')) card._settings.cta1Text = document.getElementById('cta1Text').value;
-                if (document.getElementById('cta2Text')) card._settings.cta2Text = document.getElementById('cta2Text').value;
-
-                if (card.dataset.type === 'hero_product_banner') {
-                    card._settings.heading = document.getElementById('heroHeading').value;
-                    card._settings.description = document.getElementById('heroDescription').value;
-                    const date = document.getElementById('countdownDate').value;
-                    const time = document.getElementById('countdownTime').value;
-                    if (date && time) {
-                        card._settings.countdownDate = `${date}T${time}:00`;
-                    } else if (date) {
-                        card._settings.countdownDate = `${date}T00:00:00`;
-                    } else {
-                        card._settings.countdownDate = null;
-                    }
-                }
-
-
-                settingsPane.innerHTML = '<p class="text-success">Settings Saved</p>';
-                updateSectionsJSON();
+                saveSectionSettings(card, type);
             };
 
-            document.getElementById('cancelSettings').onclick=()=>settingsPane.innerHTML='<p class="text-muted">Cancelled</p>';
+            document.getElementById('cancelSettings').onclick = () => {
+                settingsPane.innerHTML = '<p class="text-muted">Select a section in canvas to edit settings</p>';
+            };
+        }
+
+        function saveSectionSettings(card, type) {
+            // Common fields
+            if (document.getElementById('cta')) card._settings.cta = document.getElementById('cta').value;
+            if (document.getElementById('heading')) card._settings.heading = document.getElementById('heading').value;
+            if (document.getElementById('description')) card._settings.description = document.getElementById('description').value;
+
+            // Exclusive product fields
+            if (document.getElementById('cta1Text')) card._settings.cta1Text = document.getElementById('cta1Text').value;
+            if (document.getElementById('cta2Text')) card._settings.cta2Text = document.getElementById('cta2Text').value;
+
+            // Hero banner specific
+            if (type === 'hero_product_banner') {
+                card._settings.heading = document.getElementById('heroHeading').value;
+                card._settings.description = document.getElementById('heroDescription').value;
+
+                const date = document.getElementById('countdownDate').value;
+                const time = document.getElementById('countdownTime').value;
+
+                if (date && time) {
+                    card._settings.countdownDate = `${date}T${time}:00`;
+                } else if (date) {
+                    card._settings.countdownDate = `${date}T00:00:00`;
+                } else {
+                    card._settings.countdownDate = null;
+                }
+            }
+
+            settingsPane.innerHTML = '<p class="text-success">Settings Saved</p>';
+            updateSectionsJSON();
         }
 
         function updateSectionsJSON() {
-    const sections = [];
+            const sections = [];
 
-    canvas.querySelectorAll('.section-card').forEach((card, index) => {
+            canvas.querySelectorAll('.section-card').forEach((card, index) => {
+                // Ensure settings is properly initialized
+                if (!card._settings || typeof card._settings !== "object") {
+                    card._settings = initializeSectionSettings(card.dataset.type);
+                }
 
-        // Safety: settings অবশ্যই object হবে
-        if (!card._settings || typeof card._settings !== "object" || Array.isArray(card._settings)) {
-            card._settings = {};
+                // Clean empty values
+                const cleanedSettings = {};
+                Object.keys(card._settings).forEach(key => {
+                    const val = card._settings[key];
+
+                    // Skip null values
+                    if (val === null) return;
+
+                    // Skip empty arrays
+                    if (Array.isArray(val) && val.length === 0) return;
+
+                    // Skip empty strings
+                    if (typeof val === 'string' && val.trim() === '') return;
+
+                    cleanedSettings[key] = val;
+                });
+
+                const finalSettings = Object.keys(cleanedSettings).length === 0 ? null : cleanedSettings;
+
+                sections.push({
+                    id: card.dataset.id,
+                    type: card.dataset.type,
+                    position: index,
+                    settings: finalSettings,
+                });
+            });
+
+            document.getElementById('sections_json').value = JSON.stringify(sections);
         }
-
-        // Object এর ভিতরের empty array/null → clean করে দেবে
-        const cleanedSettings = {};
-
-        Object.keys(card._settings).forEach(key => {
-            const val = card._settings[key];
-
-            // যদি value null → skip
-            if (val === null) return;
-
-            // যদি empty array → skip
-            if (Array.isArray(val) && val.length === 0) return;
-
-            // normal valid data set
-            cleanedSettings[key] = val;
-        });
-
-        // যদি cleanedSettings empty → null save করো
-        const finalSettings = Object.keys(cleanedSettings).length === 0 ? null : cleanedSettings;
-
-        sections.push({
-            id: card.dataset.id,
-            type: card.dataset.type,
-            position: index,
-            settings: finalSettings,
-        });
-    });
-
-    document.getElementById('sections_json').value = JSON.stringify(sections);
-}
-
-
-        document.getElementById('btnPreview').onclick = () => {
-    updateSectionsJSON();
-    const json = document.getElementById('sections_json').value;
-
-    const w = window.open('', '_blank');
-
-    // Add close icon + styles + JSON preview
-    w.document.write(`
-        <style>
-            body{ font-family:Arial; margin:0; }
-            #closeBtn{
-                position:fixed;
-                top:10px;
-                right:10px;
-                background:#ff4d4d;
-                color:white;
-                border:none;
-                padding:6px 12px;
-                border-radius:4px;
-                cursor:pointer;
-                font-size:14px;
-                z-index:9999;
-            }
-            pre{ padding:20px; white-space:pre-wrap; }
-        </style>
-
-        <button id="closeBtn">✖ Close</button>
-        <pre>${JSON.stringify(JSON.parse(json), null, 2)}</pre>
-
-        <script>
-            document.getElementById('closeBtn').onclick = () => window.close();
-        <\/script>
-    `);
-};
-
     });
 </script>
 

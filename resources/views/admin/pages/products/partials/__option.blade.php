@@ -1,4 +1,4 @@
-<div class="option-row row mb-2 mt-4">
+<div class="option-row row mb-2 mt-4" data-option-id="{{ $option['id'] ?? '' }}">
     <div class="col-md-3">
         <select name="variants[{{ $variantIndex }}][options][{{ $optionIndex }}][size_id]" class="form-control">
             <option value="">Select Size</option>

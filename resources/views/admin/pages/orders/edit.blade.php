@@ -64,7 +64,7 @@
                                                 @endphp
                                                 {{ $sku }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price,0) }}</td>
                                             <td><input type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" class="form-control form-control-sm" style="width:60px;"></td>
                                             <td>
                                                 {{ $item->variantOption?->size?->name ?? $item->product->size?->name ?? '-' }}
@@ -72,7 +72,7 @@
                                             <td>
                                                 {{ $item->variantOption?->variant?->color?->name ?? '-' }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price * $item->quantity,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price * $item->quantity,0) }}</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
                                         </tr>
                                     @endforeach
@@ -102,12 +102,12 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <strong>Subtotal:</strong> &#2547;{{ number_format($order->subtotal, 2) }}
+                        <strong>Subtotal:</strong> &#2547;{{ number_format($order->subtotal, 0) }}
                     </div>
 
                     @if($order->discount > 0)
                     <div class="mb-3">
-                        <strong>Discount:</strong> -&#2547;{{ number_format($order->discount, 2) }}
+                        <strong>Discount:</strong> -&#2547;{{ number_format($order->discount, 0) }}
                         @if($order->coupon)
                             <br><small>Coupon: {{ $order->coupon->code }}</small>
                         @endif
@@ -132,7 +132,7 @@
                                     <option value="{{ $option->id }}"
                                         data-charge="{{ $option->charge }}"
                                         {{ $order->delivery_option_id == $option->id ? 'selected' : '' }}>
-                                        {{ $option->name }} - {{ number_format($option->charge, 2) }}
+                                        {{ $option->name }} - {{ number_format($option->charge, 0) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -142,7 +142,7 @@
                         <div class="delivery mb-3">
                             <label for="delivery_charge"><strong>Delivery Charge:</strong></label>
                             <input type="number" name="delivery_charge" id="delivery_charge"
-                                   value="{{ $order->delivery_charge }}" step="0.01"
+                                   value="{{ intval($order->delivery_charge) }}" step="0.01"
                                    class="form-control w-50 d-inline-block mx-1" style="max-width: 100px;" required>
                         </div>
 
@@ -150,7 +150,7 @@
                         <div class="admin-discount mb-3">
                             <label for="admin_discount" class="ms-3"><strong>Discount:</strong></label>
                             <input type="number" name="admin_discount" id="admin_discount"
-                                   value="{{ $order->admin_discount ?? 0 }}" step="0.01"
+                                   value="{{ intval($order->admin_discount ?? 0) }}" step="0.01"
                                    class="form-control w-50 d-inline-block mx-1" style="max-width: 100px;" required>
                         </div>
 
@@ -158,7 +158,7 @@
                     </form>
 
                     <div class="mb-3">
-                        <strong>Total:</strong> &#2547;{{ number_format($order->total, 2) }}
+                        <strong>Total:</strong> &#2547;{{ number_format($order->total, 0) }}
                     </div>
                 </div>
             </div>

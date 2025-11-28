@@ -54,19 +54,19 @@
                                         @endif
                                     </td>
                                     <td>{{ $item->quantity }}</td>
-                                    <td>&#2547;{{ number_format($item->price, 2) }}</td>
-                                    <td>&#2547;{{ number_format($item->price * $item->quantity, 2) }}</td>
+                                    <td>&#2547;{{ number_format($item->price, 0) }}</td>
+                                    <td>&#2547;{{ number_format($item->price * $item->quantity, 0) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                          <div class="mt-3">
                             <p><strong>Delivery Method:</strong> {{ $order->deliveryOption->name ?? 'N/A' }}</p>
-                            <p><strong>Delivery Charge:</strong> &#2547;{{ number_format($order->delivery_charge ?? 0, 2) }}</p>
-                            <p><strong>Discount:</strong> &#2547;{{ number_format($order->discount ?? 0, 2) }}</p>
-                            <p><strong>Coupon Amount:</strong> &#2547;{{ number_format($order->coupon_amount ?? 0, 2) }}</p>
+                            <p><strong>Delivery Charge:</strong> &#2547;{{ number_format($order->delivery_charge ?? 0, 0) }}</p>
+                            <p><strong>Discount:</strong> &#2547;{{ number_format($order->discount ?? 0, 0) }}</p>
+                            <p><strong>Coupon Amount:</strong> &#2547;{{ number_format($order->coupon_amount ?? 0, 0) }}</p>
                             <hr>
-                            <p class="text-right"><strong>Grand Total: &#2547;{{ number_format($order->total + ($order->delivery_charge ?? 0) - ($order->discount ?? 0) - ($order->coupon_amount ?? 0), 2) }}</strong></p>
+                            <p class="text-right"><strong>Grand Total: &#2547;{{ number_format($order->total + ($order->delivery_charge ?? 0) - ($order->discount ?? 0) - ($order->coupon_amount ?? 0), 0) }}</strong></p>
                         </div>
                     </div>
                 </div>

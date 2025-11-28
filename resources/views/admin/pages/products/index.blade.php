@@ -44,8 +44,8 @@
                                     <span class="text-muted">No main image</span>
                                 @endif
                             </td>
-                            <td>&#2547;{{ number_format($product->buy_price, 2) }}</td>
-                            <td>&#2547;{{ number_format($product->regular_price, 2) }}</td>
+                            <td>&#2547;{{ number_format($product->buy_price, 0) }}</td>
+                            <td>&#2547;{{ number_format($product->regular_price, 0) }}</td>
                             <td>{{ number_format($product->total_stock) }} PCS</td>
                             <td>{{ $product->category->name ?? 'N/A' }}</td>
                             <td>

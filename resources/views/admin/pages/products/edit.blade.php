@@ -119,7 +119,7 @@
                             <label for="discount_price">Discount Price</label>
                             <input type="number" step="0.01" name="discount_price" id="discount_price"
                                    class="form-control @error('discount_price') is-invalid @enderror"
-                                   value="{{ old('discount_price', $product->discount_price) }}">
+                                   value="{{ old('discount_price', intval($product->discount_price)) }}">
                             @error('discount_price')
                             <span class="text-danger">{{ $message }}</span>
                             @enderror

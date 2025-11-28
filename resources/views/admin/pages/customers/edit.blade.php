@@ -37,9 +37,9 @@
                                         <br><small>Color: {{ $item->color_name }}</small>
                                     @endif
                                 </td>
-                                <td>${{ number_format($item->price, 2) }}</td>
+                                <td>${{ number_format($item->price, 0) }}</td>
                                 <td>{{ $item->quantity }}</td>
-                                <td>${{ number_format($item->price * $item->quantity, 2) }}</td>
+                                <td>${{ number_format($item->price * $item->quantity, 0) }}</td>
                             </tr>
                             @endforeach
                         </tbody>

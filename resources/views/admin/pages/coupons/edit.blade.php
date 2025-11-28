@@ -24,7 +24,7 @@
         <div class="form-group">
             <label for="amount">Amount</label>
             <input type="number" name="amount" id="amount" class="form-control"
-                   step="0.01" min="0" value="{{ old('amount', $coupon->amount) }}" required>
+                   step="1" min="0" value="{{ old('amount', number_format($coupon->amount, 0, '', '')) }}" required>
         </div>
 
         <div class="row">
@@ -47,8 +47,8 @@
         <div class="form-group">
             <label for="min_purchase">Minimum Purchase Amount (0 for no minimum)</label>
             <input type="number" name="min_purchase" id="min_purchase"
-                   class="form-control" step="0.01" min="0"
-                   value="{{ old('min_purchase', $coupon->min_purchase) }}">
+                   class="form-control" step="1" min="0"
+                   value="{{ old('min_purchase', number_format($coupon->min_purchase, 0, '', '')) }}">
         </div>
 
         <div class="form-group form-check">

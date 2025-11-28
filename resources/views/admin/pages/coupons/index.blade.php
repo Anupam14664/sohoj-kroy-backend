@@ -30,10 +30,10 @@
                     <td>{{ ($coupons->currentPage() - 1) * $coupons->perPage() + $loop->iteration }}</td>
                     <td>{{ $coupon->code }}</td>
                     <td>{{ ucfirst($coupon->type) }}</td>
-                    <td>{{ $coupon->type === 'percentage' ? $coupon->amount.'%' : config('currency.symbol').$coupon->amount }}</td>
+                    <td>{{ $coupon->type === 'percentage' ? intval($coupon->amount) . '%' : config('currency.symbol') . intval($coupon->amount)}}</td>
                     <td>{{ $coupon->start_date->format('d M Y') }}</td>
                     <td>{{ $coupon->end_date->format('d M Y') }}</td>
-                    <td>{{ config('currency.symbol').$coupon->min_purchase }}</td>
+                    <td>{{ config('currency.symbol').intval($coupon->min_purchase) }}</td>
                     <td>
                         <span class="badge badge-{{ $coupon->is_active ? 'success' : 'danger' }}">
                             {{ $coupon->is_active ? 'Active' : 'Inactive' }}

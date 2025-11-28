@@ -160,7 +160,7 @@
                                 <td>{{ $order->name }}</td>
                                 <td>{{ $order->phone }}</td>
                                 <td>{{ $order->created_at->format('M d, Y') }}</td>
-                                <td>&#2547;{{ number_format($order->total, 2) }}</td>
+                                <td>&#2547;{{ number_format($order->total, 0) }}</td>
                                 <td>
                                     <span class="badge
                                         @if($order->status == 'delivered') badge-success

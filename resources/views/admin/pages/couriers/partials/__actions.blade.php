@@ -1,8 +1,8 @@
 <div class="btn-group btn-group-sm" role="group">
-    {{-- <a href="{{ route('admin.couriers.show', $color->id) }}"
+    <a href="{{ route('admin.couriers.show', $courier->id) }}"
        class="btn btn-info p-1 mx-1" title="View">
         <i class="fas fa-eye"></i>
-    </a> --}}
+    </a>
 
     <a href="{{ route('admin.couriers.edit', $courier->id) }}"
        class="btn btn-primary p-1 mx-1" title="Edit">

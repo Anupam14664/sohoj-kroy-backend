@@ -15,9 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('base_url');
-            $table->string('create_order_endpoint');
-            $table->string('api_key');
-            $table->string('secret_key');
+            $table->string('create_order_endpoint')->nullable();
+            $table->string('api_key')->nullable();
+            $table->string('secret_key')->nullable();
+            $table->string('client_id')->nullable();
+            $table->string('client_secret')->nullable();
+            $table->string('username')->nullable();
+            $table->string('password')->nullable();
+            $table->string('auth_endpoint')->nullable();
             $table->json('headers')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

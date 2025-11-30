@@ -114,6 +114,4 @@ class Product extends Model
         return $this->belongsToMany(DeliveryOption::class, 'free_delivery_products')
                     ->withTimestamps();
     }
-
-
 }

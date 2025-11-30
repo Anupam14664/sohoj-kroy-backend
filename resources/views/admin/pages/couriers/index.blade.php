@@ -11,9 +11,9 @@
                 </a>
             </div>
         </div>
-        <div class="card-body table-responsive">
-            @include('admin.layouts.partials.__alerts')
 
+            @include('admin.layouts.partials.__alerts')
+        <div class="card-body table-responsive">
             <table class="table table-striped table-hover table-head-bg-primary mt-4">
                 <thead>
                     <tr>
@@ -21,8 +21,8 @@
                         <th>Name</th>
                         <th>Base URL</th>
                         <th>Order Endpoint</th>
-                        <th>API Key</th>
-                        <th>Secret Key</th>
+                        {{-- <th>API Key</th>
+                        <th>Secret Key</th> --}}
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -34,8 +34,8 @@
                         <td>{{ $courier->name }}</td>
                         <td>{{ $courier->base_url }}</td>
                         <td>{{ $courier->create_order_endpoint }}</td>
-                        <td>{{ Str::limit($courier->api_key, 20) }}</td>
-                        <td>{{ Str::limit($courier->secret_key, 20) }}</td>
+                        {{-- <td>{{ Str::limit($courier->api_key, 20) }}</td>
+                        <td>{{ Str::limit($courier->secret_key, 20) }}</td> --}}
                         <td>
                             @if($courier->is_active)
                                 <span class="badge badge-success">Active</span>

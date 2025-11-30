@@ -81,6 +81,106 @@ class AdminOrderController extends Controller
         ));
     }
 
+    // public function updateStatus(Request $request, Order $order)
+    // {
+    //     $validated = $request->validate([
+    //         'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled',
+    //         'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
+    //         'delivery_note' => 'nullable|string|max:255',
+    //         'comment' => 'nullable|string',
+    //         'custom_link' => 'nullable|url|max:255',
+    //     ]);
+
+    //     $allowedTransitions = [
+    //         'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
+    //         'pending' => ['hold', 'processing', 'cancelled'],
+    //         'hold' => ['processing', 'cancelled'],
+    //         'processing' => ['shipped','courier_delivered', 'cancelled'],
+    //         'shipped' => ['courier_delivered', 'cancelled'],
+    //         'courier_delivered' => ['delivered'],
+    //         'delivered' => [],
+    //         'cancelled' => [],
+    //     ];
+
+
+    //     $currentStatus = $order->status;
+    //     $newStatus = $validated['status'];
+
+    //     if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
+    //         return back()->with('error', 'Invalid status transition from '.$currentStatus.' to '.$newStatus);
+    //     }
+
+    //     DB::beginTransaction();
+
+    //     if ($validated['status'] === 'courier_delivered' || $validated['status'] === 'delivered') {
+    //         $order->custom_link = $request->custom_link ?? $order->custom_link;
+    //     }
+
+    //     try {
+    //         if ($validated['status'] === 'shipped' && $order->status === 'shipped') {
+    //             throw new \Exception('This order is already marked as shipped.');
+    //         }
+
+    //         if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
+    //             $order->returnStock();
+    //         }
+
+    //         $order->status = $validated['status'];
+    //         if (isset($validated['comment'])) {
+    //             $order->comment = $validated['comment'];
+    //         }
+
+
+    //         if ($validated['status'] === 'shipped') {
+    //             $courier = CourierService::findOrFail($validated['courier_service_id']);
+
+    //             $payload = [
+    //                 'invoice' => $order->order_number,
+    //                 'recipient_name' => $order->name,
+    //                 'recipient_phone' => $order->phone,
+    //                 'recipient_address' => $order->address . ', ' . $order->thana . ', ' . $order->district,
+    //                 'cod_amount' => $order->total,
+    //                 'note' => $validated['delivery_note'] ?? 'Handle with care',
+    //                 'item_description' => 'N/A',
+    //                 'delivery_type' => 0,
+    //             ];
+
+    //             $response = Http::withHeaders([
+    //                 'Api-Key' => $courier->api_key,
+    //                 'Secret-Key' => $courier->secret_key,
+    //                 'Content-Type' => 'application/json',
+    //             ])->post($courier->base_url . '/' . $courier->create_order_endpoint, $payload);
+
+    //             $data = $response->json();
+
+    //             if (!$response->successful() || !isset($data['consignment']['tracking_code'])) {
+    //                 throw new \Exception('Courier API Error: ' . ($data['message'] ?? 'Unknown error'));
+    //             }
+
+    //             $order->courier_service_id = $courier->id;
+    //             $order->tracking_code = $data['consignment']['tracking_code'];
+    //             $order->consignment_id = $data['consignment']['consignment_id'];
+    //             $order->courier_response = $data;
+    //         }
+
+    //         $order->save();
+    //         DB::commit();
+
+    //         return back()->with('success', 'Order updated successfully.' .
+    //             ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : ''));
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Order status update failed', [
+    //             'order_id' => $order->id,
+    //             'error' => $e->getMessage(),
+    //         ]);
+    //         return back()->with('error', 'Failed to update order: ' . $e->getMessage());
+    //     }
+    // }
+
+
+
     public function updateStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
@@ -101,7 +201,6 @@ class AdminOrderController extends Controller
             'delivered' => [],
             'cancelled' => [],
         ];
-
 
         $currentStatus = $order->status;
         $newStatus = $validated['status'];
@@ -130,10 +229,10 @@ class AdminOrderController extends Controller
                 $order->comment = $validated['comment'];
             }
 
-
             if ($validated['status'] === 'shipped') {
                 $courier = CourierService::findOrFail($validated['courier_service_id']);
 
+                // Prepare payload depending on courier
                 $payload = [
                     'invoice' => $order->order_number,
                     'recipient_name' => $order->name,
@@ -145,12 +244,26 @@ class AdminOrderController extends Controller
                     'delivery_type' => 0,
                 ];
 
-                $response = Http::withHeaders([
-                    'Api-Key' => $courier->api_key,
-                    'Secret-Key' => $courier->secret_key,
+                $headers = [
                     'Content-Type' => 'application/json',
-                ])->post($courier->base_url . '/' . $courier->create_order_endpoint, $payload);
+                ];
 
+                // Check courier type and add credentials
+                if ($courier->name === 'Steadfast') {
+                    $headers['Api-Key'] = $courier->api_key;
+                    $headers['Secret-Key'] = $courier->secret_key;
+                    $url = $courier->base_url . '/' . $courier->create_order_endpoint;
+                }
+
+                if ($courier->name === 'Pathao') {
+                    $headers['Client-ID'] = $courier->client_id;
+                    $headers['Client-Secret'] = $courier->client_secret;
+                    $headers['Username'] = $courier->username;
+                    $headers['Password'] = $courier->password;
+                    $url = $courier->base_url . '/' . $courier->create_order_endpoint;
+                }
+
+                $response = Http::withHeaders($headers)->post($url, $payload);
                 $data = $response->json();
 
                 if (!$response->successful() || !isset($data['consignment']['tracking_code'])) {
@@ -178,8 +291,6 @@ class AdminOrderController extends Controller
             return back()->with('error', 'Failed to update order: ' . $e->getMessage());
         }
     }
-
-
 
 
     public function edit(Order $order)

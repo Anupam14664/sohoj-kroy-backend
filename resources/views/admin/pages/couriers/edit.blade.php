@@ -11,9 +11,14 @@
                 @csrf
                 @method('PUT')
 
+                {{-- Courier Name --}}
                 <div class="form-group">
                     <label for="name">Courier Name *</label>
-                    <input type="text" name="name" class="form-control" required value="{{ old('name', $courier->name) }}">
+                    <select name="name" id="courier_name" class="form-control" required>
+                        <option value="">-- Select Courier --</option>
+                        <option value="Steadfast" {{ $courier->name === 'Steadfast' ? 'selected' : '' }}>Steadfast</option>
+                        <option value="Pathao" {{ $courier->name === 'Pathao' ? 'selected' : '' }}>Pathao</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -26,26 +31,67 @@
                     <input type="text" name="create_order_endpoint" class="form-control" required value="{{ old('create_order_endpoint', $courier->create_order_endpoint) }}">
                 </div>
 
-                <div class="form-group">
-                    <label for="api_key">API Key *</label>
-                    <input type="text" name="api_key" class="form-control" required value="{{ old('api_key', $courier->api_key) }}">
+                {{-- Common API fields --}}
+                <div id="steadfast_fields" style="display:block;">
+                    <div class="form-group">
+                        <label for="api_key">API Key</label>
+                        <input type="text" name="api_key" class="form-control" value="{{ old('api_key', $courier->api_key) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="secret_key">API Secret</label>
+                        <input type="text" name="secret_key" class="form-control" value="{{ old('secret_key', $courier->secret_key) }}">
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="secret_key">API Secret *</label>
-                    <input type="text" name="secret_key" class="form-control" required value="{{ old('secret_key', $courier->secret_key) }}">
+
+                {{-- ===================== --}}
+                {{-- PATHAO EXTRA FIELDS --}}
+                {{-- ===================== --}}
+                <div id="pathao_fields" style="display:none;">
+
+                    <div class="form-group">
+                        <label for="client_id">Client ID</label>
+                        <input type="text" name="client_id" class="form-control"
+                               value="{{ old('client_id', $courier->client_id) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client_secret">Client Secret</label>
+                        <input type="text" name="client_secret" class="form-control"
+                               value="{{ old('client_secret', $courier->client_secret) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Pathao Username</label>
+                        <input type="text" name="username" class="form-control"
+                               value="{{ old('username', $courier->username) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Pathao Password</label>
+                        <input type="text" name="password" class="form-control"
+                               value="{{ old('password', $courier->password) }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="auth_endpoint">Auth Token Endpoint</label>
+                        <input type="text" name="auth_endpoint" class="form-control"
+                               value="{{ old('auth_endpoint', $courier->auth_endpoint) }}">
+                    </div>
+
                 </div>
 
                 <div class="form-group">
                     <label for="headers">Optional Headers (JSON)</label>
-                    <textarea name="headers" class="form-control" rows="3">{{ old('headers', $courier->headers) }}</textarea>
+                    <textarea name="headers" class="form-control" rows="3">{{ old('headers', json_encode($courier->headers)) }}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="is_active">Status</label>
                     <select name="is_active" class="form-control">
-                        <option value="1" {{ isset($courier) && $courier->is_active ? 'selected' : '' }}>Active</option>
-                        <option value="0" {{ isset($courier) && !$courier->is_active ? 'selected' : '' }}>Inactive</option>
+                        <option value="1" {{ $courier->is_active ? 'selected' : '' }}>Active</option>
+                        <option value="0" {{ !$courier->is_active ? 'selected' : '' }}>Inactive</option>
                     </select>
                 </div>
 
@@ -55,4 +101,24 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleFields() {
+        const courier = document.getElementById('courier_name').value;
+        const pathaoFields = document.getElementById('pathao_fields');
+
+        if (courier === 'Pathao') {
+            pathaoFields.style.display = 'block';
+            document.getElementById('steadfast_fields').style.display = 'none';
+        } else {
+            pathaoFields.style.display = 'none';
+        }
+    }
+
+    // Run on page load + every change
+    document.addEventListener('DOMContentLoaded', function () {
+        toggleFields();
+        document.getElementById('courier_name').addEventListener('change', toggleFields);
+    });
+</script>
 @endsection

@@ -232,7 +232,7 @@
                                 value="${card._settings.countdownDate ? card._settings.countdownDate.split('T')[1]?.slice(0,5) : ''}">
                         </div>
                         <label>Image</label>
-                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg">
+                        <input type="file" id="heroImg" class="form-control" accept="image/png, image/jpg, image/jpeg">
                         <small class="text-muted" style="font-size:12px;">${sizeNote[type]}</small>
                         ${uploadPreview(card._settings.image)}
                         <div id="uploadStatus" class="text-muted small mt-1"></div>

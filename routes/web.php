@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\AdminColorController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminCouponController;
 use App\Http\Controllers\Admin\AdminReviewController;
+use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\CourierServiceController;
@@ -228,7 +229,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
          'destroy' => 'admin.pages.destroy',
      ]);
 
-    Route::get('products/search', [PageController::class, 'search'])->name('admin.products.search');
+    Route::post('products/search', [PageController::class, 'search'])->name('admin.products.search');
 
 
 
@@ -249,6 +250,18 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.admins.update',
         'destroy' => 'admin.admins.destroy',
     ]);
+    Route::post('product-costs/export', [ProductCostController::class, 'exportExcel'])
+    ->name('admin.product-costs.export');
+    Route::resource('product-costs', ProductCostController::class)->names([
+        'index' => 'admin.product-costs.index',
+        'create' => 'admin.product-costs.create',
+        'store' => 'admin.product-costs.store',
+        'edit' => 'admin.product-costs.edit',
+        'update' => 'admin.product-costs.update',
+        'destroy' => 'admin.product-costs.destroy',
+    ]);
+
+
 
     Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])->middleware('can:manage downloadDB')
     ->name('admin.download.database');

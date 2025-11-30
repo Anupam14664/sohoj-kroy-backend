@@ -12,12 +12,12 @@
 
     @include('admin.layouts.partials.__alerts')
     {{-- Search + Filter --}}
-    <form method="GET" class="row g-2 mb-3" style="width: 100%;">
+    <form method="GET" class="row g-2 mb-3" style="width: 100%; background: none; border: none;">
 
         {{-- ONE SEARCH INPUT --}}
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" name="search" class="form-control"
-                   placeholder="Search: Product Name / SKU / Cost Type"
+                   placeholder="Search ..."
                    value="{{ request('search') }}">
         </div>
 
@@ -34,14 +34,23 @@
         </div>
 
         {{-- Search Button --}}
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100">Search</button>
+        <div class="col-md-2 d-flex">
+            <button class="btn btn-primary me-2">Search</button>
+
+            {{-- Reset Button --}}
+            @if(request('search') || request('from_date') || request('to_date'))
+                <a href="{{ route('admin.product-costs.index') }}"
+                class="btn btn-outline-danger"
+                title="Reset">
+                    <i class="fas fa-sync-alt"></i>
+                </a>
+            @endif
         </div>
 
         {{-- Download Button --}}
-        <div class="col-md-2">
+        <div class="col-md-3">
             <button type="button" id="downloadSelected"
-                    class="btn btn-success w-100">
+                    class="btn btn-success">
                 Download Excel
             </button>
         </div>
@@ -60,11 +69,11 @@
 
     {{-- Table --}}
     <div class="table-responsive">
-        <table class="table table-bordered text-center">
+        <table class="table table-striped table-hover table-head-bg-primary mt-4">
             <thead class="table-dark">
                 <tr>
                     <th><input type="checkbox" id="checkAll"></th>
-                    <th>ID</th>
+                    {{-- <th>#</th> --}}
                     <th>Product</th>
                     <th>Cost Type</th>
                     <th>Amount</th>
@@ -79,7 +88,7 @@
                     <tr>
                         <td><input type="checkbox" class="row-check" value="{{ $cost->id }}"></td>
 
-                        <td>{{ $cost->id }}</td>
+                        {{-- <td>{{ ($costs->currentPage() - 1) * $costs->perPage() + $loop->iteration }}</td> --}}
 
                         <td>
                             <strong>{{ $cost->product->name }}</strong><br>

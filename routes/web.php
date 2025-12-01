@@ -34,7 +34,7 @@ Route::post('logout', [AuthController::class, 'logout'])->name('admin.logout');
 // Protect Admin Routes
 Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('can:view dashboard')->name('admin.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
       // For profile route
       Route::get('/profile', [AuthController::class, 'profileEdit'])->name('admin.profile');
@@ -250,17 +250,18 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.admins.update',
         'destroy' => 'admin.admins.destroy',
     ]);
-    Route::post('product-costs/export', [ProductCostController::class, 'exportExcel'])
-    ->name('admin.product-costs.export');
-    Route::resource('product-costs', ProductCostController::class)->names([
+
+    Route::resource('product-costs', ProductCostController::class)->middleware('can:manage profit')->names([
         'index' => 'admin.product-costs.index',
         'create' => 'admin.product-costs.create',
         'store' => 'admin.product-costs.store',
         'edit' => 'admin.product-costs.edit',
+        'show' => 'admin.product-costs.show',
         'update' => 'admin.product-costs.update',
         'destroy' => 'admin.product-costs.destroy',
     ]);
-
+    Route::post('product-costs/export', [ProductCostController::class, 'exportExcel'])
+    ->name('admin.product-costs.export');
 
 
     Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])->middleware('can:manage downloadDB')

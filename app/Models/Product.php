@@ -114,4 +114,12 @@ class Product extends Model
         return $this->belongsToMany(DeliveryOption::class, 'free_delivery_products')
                     ->withTimestamps();
     }
+    public function costs()
+    {
+        return $this->hasMany(ProductCost::class);
+    }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

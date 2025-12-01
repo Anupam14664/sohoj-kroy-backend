@@ -1,5 +1,5 @@
 <div class="btn-group btn-group-sm" role="group" style="gap: 5px">
-    <div>
+    {{-- <div>
         @if (!$review->is_approved)
         <form action="{{ route('admin.reviews.approve', $review) }}" method="POST"
             class="d-inline  m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
@@ -9,8 +9,11 @@
                 </button>
             </form>
         @endif
-    </div>
-
+    </div> --}}
+    <a href="{{ route('admin.admins.edit', $admin->id) }}"
+       class="btn btn-primary p-1 mx-1" title="Edit">
+        <i class="fas fa-edit bg-none"></i>
+    </a>
 
     <div>
         {{-- <form width="0px"  action="{{ route('admin.reviews.destroy', $review) }}"
@@ -22,14 +25,21 @@
                 <i class="fas fa-trash"></i>
             </button>
         </form> --}}
-
-        <button type="button" class="btn btn-danger p-0 py-1 px-2 border-none delete-btn"
-                title="Delete"
-                data-action="{{ route('admin.reviews.destroy', $review) }}"
-                data-bs-toggle="modal"
-                data-bs-target="#deleteConfirmModal">
-            <i class="fas fa-trash"></i>
-        </button>
+@php
+    $isSuperAdmin = $admin->roles->contains('name', 'Super Admin');
+@endphp
+<button type="button"
+        class="btn {{ $isSuperAdmin ? 'btn-secondary' : 'btn-danger' }} p-0 py-1 px-2 border-none delete-btn"
+        title="{{ $isSuperAdmin ? 'Cannot Delete Super Admin' : 'Delete' }}"
+        {{ $isSuperAdmin ? 'hidden' : '' }}
+        @if(!$isSuperAdmin)
+            data-action="{{ route('admin.admins.destroy', $admin) }}"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteConfirmModal"
+        @endif
+>
+    <i class="fas fa-trash"></i>
+</button>
     </div>
 
 </div>

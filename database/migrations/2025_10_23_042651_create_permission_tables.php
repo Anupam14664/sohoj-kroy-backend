@@ -112,7 +112,7 @@ return new class extends Migration
         // --- Seed Default Roles, Permissions & Admin ---
         try {
             $permissions = [
-                'view dashboard',
+                // 'view dashboard',
                 'manage orders',
                 'manage customers',
                 'manage products',
@@ -128,6 +128,7 @@ return new class extends Migration
                 'manage home-section',
                 'manage banners',
                 'manage settings',
+                'manage profit',
                 'manage roles',
                 'manage permissions',
                 'manage admins',
@@ -149,14 +150,14 @@ return new class extends Migration
 
             $superAdmin->syncPermissions(Permission::all());
             $manager->syncPermissions([
-                'view dashboard',
+                // 'view dashboard',
                 'manage orders',
                 'manage products',
                 'manage categories',
                 'manage customers',
             ]);
             $editor->syncPermissions([
-                'view dashboard',
+                // 'view dashboard',
                 'manage products',
             ]);
 

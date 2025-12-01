@@ -2,52 +2,40 @@
 
 @section('content')
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Product Cost List</h3>
-        <a href="{{ route('admin.product-costs.create') }}" class="btn btn-primary">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h3>Product Cost & Profit Analysis</h3>
+        <a href="{{ route('admin.product-costs.create') }}" class="btn btn-primary ">
             + Add New Cost
         </a>
     </div>
 
-
     @include('admin.layouts.partials.__alerts')
-    {{-- Search + Filter --}}
-    <form method="GET" class="row g-2 mb-3" style="width: 100%; background: none; border: none;">
 
-        {{-- ONE SEARCH INPUT --}}
+    {{-- Search + Filter --}}
+    <form method="GET" class="row g-2 mb-3" style="width: 100%; background:none; border: none;">
         <div class="col-md-3">
             <input type="text" name="search" class="form-control"
-                   placeholder="Search ..."
+                   placeholder="Search Product Name or SKU"
                    value="{{ request('search') }}">
         </div>
-
-        {{-- From Date --}}
         <div class="col-md-2">
             <input type="date" name="from_date" class="form-control"
                    value="{{ request('from_date') }}">
         </div>
-
-        {{-- To Date --}}
         <div class="col-md-2">
             <input type="date" name="to_date" class="form-control"
                    value="{{ request('to_date') }}">
         </div>
-
-        {{-- Search Button --}}
         <div class="col-md-2 d-flex">
-            <button class="btn btn-primary me-2">Search</button>
-
-            {{-- Reset Button --}}
+            <button class="btn btn-primary me-2">Filter</button>
             @if(request('search') || request('from_date') || request('to_date'))
                 <a href="{{ route('admin.product-costs.index') }}"
-                class="btn btn-outline-danger"
-                title="Reset">
+                   class="btn btn-outline-danger"
+                   title="Reset">
                     <i class="fas fa-sync-alt"></i>
                 </a>
             @endif
         </div>
-
-        {{-- Download Button --}}
         <div class="col-md-3">
             <button type="button" id="downloadSelected"
                     class="btn btn-success">
@@ -65,58 +53,108 @@
         <input type="hidden" name="to_date" value="{{ request('to_date') }}">
     </form>
 
-
-
     {{-- Table --}}
     <div class="table-responsive">
         <table class="table table-striped table-hover table-head-bg-primary mt-4">
             <thead class="table-dark">
                 <tr>
                     <th><input type="checkbox" id="checkAll"></th>
-                    {{-- <th>#</th> --}}
+                    <th>#</th>
                     <th>Product</th>
-                    <th>Cost Type</th>
-                    <th>Amount</th>
+                    <th>Sold</th>
+                    <th>Sell Price</th>
                     <th>Buy Price</th>
-                    <th>Comment</th>
-                    <th>Date</th>
+                    <th>Additional Cost</th>
+                    {{-- <th>Total Cost</th> --}}
+                    <th>Profit</th>
+                    {{-- <th>Margin</th> --}}
+                    <th>Actions</th>
                 </tr>
             </thead>
-
             <tbody>
-                @forelse ($costs as $cost)
+                @forelse ($products as $product)
+                    @php
+                        $margin = $product->total_revenue > 0
+                            ? ($product->total_profit / $product->total_revenue) * 100
+                            : 0;
+                    @endphp
                     <tr>
-                        <td><input type="checkbox" class="row-check" value="{{ $cost->id }}"></td>
-
-                        {{-- <td>{{ ($costs->currentPage() - 1) * $costs->perPage() + $loop->iteration }}</td> --}}
-
+                        <td><input type="checkbox" class="row-check" value="{{ $product->id }}"></td>
+                        <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                         <td>
-                            <strong>{{ $cost->product->name }}</strong><br>
-                            <small class="text-muted">SKU: {{ $cost->product->sku }}</small>
+                            <strong>{{ $product->name }}</strong><br>
+                            <small class="text-muted">SKU: {{ $product->sku }}</small>
+                            {{-- <small>Unit Buy: {{ number_format($product->buy_price, 2) }}৳</small> --}}
                         </td>
-
-                        <td>{{ $cost->cost_type }}</td>
-
-                        <td>{{ number_format($cost->amount, 2) }} ৳</td>
-
-                        <td>{{ number_format($cost->product_buy_price, 2) }} ৳</td>
-
-                        <td>{{ $cost->comment ?? '-' }}</td>
-
-                        <td>{{ $cost->created_at->format('Y-m-d') }}</td>
+                        <td>
+                            {{ $product->total_sold }} Pcs
+                        </td>
+                        <td class="text-success">
+                            <strong>{{ number_format($product->total_revenue, 2) }}৳</strong><br>
+                            {{-- <small>Avg: {{ $product->total_sold > 0 ? number_format($product->total_revenue / $product->total_sold, 2) : 0 }}৳/unit</small> --}}
+                        </td>
+                        <td class="text-warning">
+                            {{ number_format($product->total_buy_price, 2) }}৳<br>
+                            {{-- <small>{{ number_format($product->buy_price, 2) }}৳ × {{ $product->total_sold }}</small> --}}
+                        </td>
+                        <td class="text-danger">
+                            {{ number_format($product->total_additional_cost, 2) }}৳<br>
+                            {{-- <small>Extra costs</small> --}}
+                        </td>
+                        {{-- <td class="text-danger">
+                            <strong>{{ number_format($product->total_cost, 2) }}৳</strong><br>
+                            <small>Buy + Additional</small>
+                        </td> --}}
+                        <td class="{{ $product->total_profit >= 0 ? 'text-success' : 'text-danger' }}">
+                            <strong>{{ number_format($product->total_profit, 2) }}৳</strong><br>
+                            {{-- <small>Per unit: {{ $product->total_sold > 0 ? number_format($product->total_profit / $product->total_sold, 2) : 0 }}৳</small> --}}
+                        </td>
+                        {{-- <td>
+                            <span class="badge bg-{{ $margin >= 0 ? 'success' : 'danger' }}">
+                                {{ number_format($margin, 1) }}%
+                            </span>
+                        </td> --}}
+                        <td>
+                            <a href="{{ route('admin.product-costs.show', $product->id) }}?from_date={{ request('from_date') }}&to_date={{ request('to_date') }}"
+                               class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> Details
+                            </a>
+                        </td>
                     </tr>
-
                 @empty
-                    <tr><td colspan="8" class="text-muted text-center">No records found.</td></tr>
+                    <tr>
+                        <td colspan="7" class="text-muted text-center">No products found.</td>
+                    </tr>
                 @endforelse
             </tbody>
+            <tfoot class="table-dark">
+                <tr>
+                    <th colspan="2">Totals</th>
+                    <th>{{ $products->sum('total_sold') }} units</th>
+                    <th>{{ number_format($products->sum('total_revenue'), 2) }}৳</th>
+                    <th>{{ number_format($products->sum('total_buy_price'), 2) }}৳</th>
+                    <th>{{ number_format($products->sum('total_additional_cost'), 2) }}৳</th>
+                    {{-- <th>{{ number_format($products->sum('total_cost'), 2) }}৳</th> --}}
+                    <th class="{{ $products->sum('total_profit') >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ number_format($products->sum('total_profit'), 2) }}৳
+                    </th>
+                    <th colspan="2">
+                        @php
+                            $totalRevenue = $products->sum('total_revenue');
+                            $totalProfit = $products->sum('total_profit');
+                            $totalMargin = $totalRevenue > 0 ? ($totalProfit / $totalRevenue) * 100 : 0;
+                        @endphp
+                        {{-- <span class="badge bg-{{ $totalMargin >= 0 ? 'success' : 'danger' }}">
+                            {{ number_format($totalMargin, 1) }}%
+                        </span> --}}
+                    </th>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
-    {{ $costs->links() }}
-
+    {{ $products->links('admin.layouts.partials.__pagination') }}
 </div>
-
 
 <script>
     // Check All
@@ -134,7 +172,5 @@
 
         document.getElementById('downloadForm').submit();
     });
-
 </script>
-
 @endsection

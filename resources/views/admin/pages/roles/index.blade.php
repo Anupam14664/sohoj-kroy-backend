@@ -4,7 +4,7 @@
 <div class="container">
     <h2 class="mb-4">Roles Management</h2>
 
-    <a href="{{ route('admin.roles.create') }}" class="btn btn-primary mb-3">➕ Create Role</a>
+    <a href="{{ route('admin.roles.create') }}" class="btn btn-primary mb-3">Create Role</a>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -30,16 +30,12 @@
                     @endforeach
                 </td>
                 <td>
-                    <a href="{{ route('admin.roles.edit', $role->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" style="display:inline-block">
-                        @csrf
-                        @method('DELETE')
-                        <button onclick="return confirm('Are you sure?')" class="btn btn-sm btn-danger">Delete</button>
-                    </form>
+                   @include('admin.pages.roles.partials.__actions')
                 </td>
             </tr>
         @endforeach
         </tbody>
     </table>
 </div>
+@include('admin.modal.deletemodal')
 @endsection

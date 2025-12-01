@@ -165,7 +165,7 @@
     </div>
 
     <!-- Section 2: Date Filtered Data -->
-    <div class="row">
+    {{-- <div class="row">
         <div class="col-lg-12 mb-4">
             <div class="card shadow">
                 <div class="card-header py-3 d-flex  align-items-center justify-content-between">
@@ -281,7 +281,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Section 3: Recent Orders -->
     <div class="row mt-4">

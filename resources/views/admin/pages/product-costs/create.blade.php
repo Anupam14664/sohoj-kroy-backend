@@ -25,12 +25,16 @@
 
         <br>
 
+        {{-- Cost Date --}}
+        <label class="fw-bold">Cost Date*</label>
+        <input type="date" name="cost_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+        <br>
+
         {{-- Cost Type --}}
         <label class="fw-bold">Cost Type*</label>
         <select name="cost_type" class="form-control" required>
             <option value="" disabled selected>Select Cost Type</option>
             <option value="Marketing Cost">Marketing Cost</option>
-            <option value="Ads Cost">Ads Cost</option>
             <option value="Others Cost">Others Cost</option>
         </select>
 

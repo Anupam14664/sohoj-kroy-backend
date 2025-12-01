@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminUserController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['role:Super Admin']);
-    }
+    // public function __construct()
+    // {
+    //     $this->middleware(['role:Super Admin']);
+    // }
 
     public function index()
     {

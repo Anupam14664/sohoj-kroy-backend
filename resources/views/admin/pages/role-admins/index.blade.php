@@ -8,7 +8,7 @@
     @if(session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
     @if(session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
 
-    <table class="table table-bordered">
+    <table class="table table-striped table-hover table-head-bg-primary mt-4">
         <thead>
             <tr>
                 <th>SL</th>
@@ -30,18 +30,13 @@
                     @endforeach
                 </td>
                 <td>
-                    <a href="{{ route('admin.admins.edit', $admin->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    @if(!$admin->hasRole('Super Admin'))
-                        <form action="{{ route('admin.admins.destroy', $admin->id) }}" method="POST" style="display:inline-block">
-                            @csrf
-                            @method('DELETE')
-                            <button onclick="return confirm('Are you sure?')" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
-                    @endif
+                    @include('admin.pages.role-admins.partials.__actions')
                 </td>
             </tr>
         @endforeach
         </tbody>
     </table>
 </div>
+
+@include('admin.modal.deletemodal')
 @endsection

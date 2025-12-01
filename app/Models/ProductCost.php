@@ -12,6 +12,7 @@ class ProductCost extends Model
     protected $fillable = [
         'product_id',
         'cost_type',
+        'cost_date',
         'amount',
         'product_buy_price',
         'comment',

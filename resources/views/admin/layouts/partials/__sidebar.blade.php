@@ -22,14 +22,14 @@
 			<ul class="nav nav-secondary">
 
 				{{-- Dashboard --}}
-				@can('view dashboard')
+				{{-- @can('view dashboard') --}}
 				<li class="nav-item active">
 					<a href="{{route('admin.dashboard')}}">
 						<i class="fas fa-home"></i>
 						<p>Dashboard</p>
 					</a>
 				</li>
-				@endcan
+				{{-- @endcan --}}
 
 				{{-- Orders --}}
 				@can('manage orders')
@@ -151,6 +151,16 @@
 				</li>
 				@endcan
 
+                @can('manage profit')
+                <li class="nav-item">
+                    <a href="{{ route('admin.product-costs.index') }}">
+                        <i class="fas fa-chart-line"></i>
+                        <p>Profit Analysis</p>
+                    </a>
+                </li>
+                @endcan
+
+
 				{{-- Frontend --}}
 				@can('manage frontend')
 				<li class="nav-item">
@@ -248,7 +258,7 @@
 					</a>
 				</li>
                  @endcan
-                 {{-- @can('manage roles')
+                 @can('manage roles')
 				<li class="nav-item">
 					<a href="{{ route('admin.roles.index') }}">
 						<i class="fas fa-user-shield"></i>
@@ -263,7 +273,7 @@
 						<p>Admin Management</p>
 					</a>
 				</li>
-                @endcan --}}
+                @endcan
 
                 @can('manage downloadDB')
                 <li class="nav-item mt-4 pt-4">

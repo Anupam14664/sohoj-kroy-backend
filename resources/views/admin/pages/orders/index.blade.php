@@ -85,9 +85,10 @@
                         @endif
                     </div>
                     @if(in_array($status, ['processing', 'shipped', 'courier_delivered', 'delivered']))
-                    <button type="button" class="btn btn-sm btn-primary" id="exportBtn">
-                        <i class="fas fa-file-excel"></i> Export Selected
+                    <button type="button" class="btn btn-sm btn-primary" id="exportXlsBtn">
+                        <i class="fas fa-file-excel"></i> Export xlsx
                     </button>
+
                     @endif
                 </div>
 
@@ -106,7 +107,7 @@
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>IP Address</th>
-                                @if(in_array($status, ['courier_delivered', 'delivered']))
+                                @if(in_array($status, ['shipped', 'courier_delivered', 'delivered']))
                                     <th>Track Order</th>
                                 @endif
                                 <th>Actions</th>
@@ -283,11 +284,19 @@ $(document).ready(function() {
 
 
     $('#exportBtn').click(function() {
+
         const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
+
+        const dateFrom = $('input[name="date_from"]').val();
+        const dateTo = $('input[name="date_to"]').val();
+        const status = $('select[name="status"]').val();
+        const district = $('input[name="district"]').val();
+        const thana = $('input[name="thana"]').val();
+        const productSearch = $('input[name="product_search"]').val();
 
         const form = $('<form>', {
             method: 'POST',
-            action: "{{ route('admin.orders.export') }}",
+            action: "{{ route('admin.orders.export.order') }}",
             target: '_blank'
         });
 
@@ -296,17 +305,20 @@ $(document).ready(function() {
         if($('#allFilteredInput').length) {
 
             form.append($('<input>', { type: 'hidden', name: 'all_filtered', value: true }));
-            form.append($('<input>', { type: 'hidden', name: 'status', value: "{{ request('status', 'all') }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'date_from', value: "{{ request('date_from') }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'date_to', value: "{{ request('date_to') }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'district', value: "{{ request('district') }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'thana', value: "{{ request('thana') }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'product_search', value: "{{ request('product_search') }}" }));
+            form.append($('<input>', { type: 'hidden', name: 'date_from', value: dateFrom }));
+            form.append($('<input>', { type: 'hidden', name: 'date_to', value: dateTo }));
+            form.append($('<input>', { type: 'hidden', name: 'status', value: status }));
+            form.append($('<input>', { type: 'hidden', name: 'district', value: district }));
+            form.append($('<input>', { type: 'hidden', name: 'thana', value: thana }));
+            form.append($('<input>', { type: 'hidden', name: 'product_search', value: productSearch }));
+
         } else {
+
             if(selectedOrders.length === 0) {
                 alert('Please select at least one order to export');
                 return;
             }
+
             selectedOrders.each(function() {
                 form.append($('<input>', { type: 'hidden', name: 'order_ids[]', value: $(this).val() }));
             });
@@ -315,7 +327,6 @@ $(document).ready(function() {
         $('body').append(form);
         form.submit();
     });
-
 
 
     $('#exportAllBtn').click(function() {
@@ -504,30 +515,97 @@ $(document).ready(function() {
 
 <script>
     $(document).ready(function() {
-        $('#exportPdfBtn').click(function() {
-            const dateFrom = $('input[name="date_from"]').val();
-            const dateTo = $('input[name="date_to"]').val();
-            const status = $('select[name="status"]').val();
-            const district = $('input[name="district"]').val();
-            const thana = $('input[name="thana"]').val();
-            const productSearch = $('input[name="product_search"]').val();
+        $(document).on('click', '#exportXlsBtn', function() {
 
-            const form = $('<form>', {
-                method: 'POST',
-                action: "{{ route('admin.orders.export.order') }}",
-                target: '_blank'
-            });
+    const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
 
-            form.append($('<input>', { type: 'hidden', name: '_token', value: "{{ csrf_token() }}" }));
-            form.append($('<input>', { type: 'hidden', name: 'date_from', value: dateFrom }));
-            form.append($('<input>', { type: 'hidden', name: 'date_to', value: dateTo }));
-            form.append($('<input>', { type: 'hidden', name: 'status', value: status }));
-            form.append($('<input>', { type: 'hidden', name: 'district', value: district }));
-            form.append($('<input>', { type: 'hidden', name: 'thana', value: thana }));
-            form.append($('<input>', { type: 'hidden', name: 'product_search', value: productSearch }));
+    const dateFrom = $('input[name="date_from"]').val();
+    const dateTo = $('input[name="date_to"]').val();
+    const status = $('select[name="status"]').val();
+    const district = $('input[name="district"]').val();
+    const thana = $('input[name="thana"]').val();
+    const productSearch = $('input[name="product_search"]').val();
 
-            $('body').append(form);
-            form.submit();
+    const form = $('<form>', {
+        method: 'POST',
+        action: "{{ route('admin.orders.export') }}",
+        target: '_blank'
+    });
+
+    form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
+
+    if($('#allFilteredInput').length) {
+
+        form.append(`<input type="hidden" name="all_filtered" value="1">`);
+        form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
+        form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
+        form.append(`<input type="hidden" name="status" value="${status}">`);
+        form.append(`<input type="hidden" name="district" value="${district}">`);
+        form.append(`<input type="hidden" name="thana" value="${thana}">`);
+        form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
+
+    } else {
+
+        if(selectedOrders.length === 0) {
+            alert('Please select orders to export Excel.');
+            return;
+        }
+
+        selectedOrders.each(function() {
+            form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
         });
+    }
+
+    $('body').append(form);
+    form.submit();
+});
+
+$(document).on('click', '#exportPdfBtn', function() {
+
+    const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
+
+    const dateFrom = $('input[name="date_from"]').val();
+    const dateTo = $('input[name="date_to"]').val();
+    const status = $('select[name="status"]').val();
+    const district = $('input[name="district"]').val();
+    const thana = $('input[name="thana"]').val();
+    const productSearch = $('input[name="product_search"]').val();
+
+    const form = $('<form>', {
+        method: 'POST',
+        action: "{{ route('admin.orders.export.order') }}",
+        target: '_blank'
+    });
+
+    form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
+
+    if($('#allFilteredInput').length) {
+
+        form.append(`<input type="hidden" name="all_filtered" value="1">`);
+        form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
+        form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
+        form.append(`<input type="hidden" name="status" value="${status}">`);
+        form.append(`<input type="hidden" name="district" value="${district}">`);
+        form.append(`<input type="hidden" name="thana" value="${thana}">`);
+        form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
+
+    } else {
+
+        if(selectedOrders.length === 0) {
+            alert('Please select orders to export PDF.');
+            return;
+        }
+
+        selectedOrders.each(function() {
+            form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
+        });
+    }
+
+    $('body').append(form);
+    form.submit();
+});
+
+
+
     });
 </script>

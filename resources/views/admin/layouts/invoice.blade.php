@@ -5,6 +5,7 @@
     <title> Invoice</title>
     <style>
         * {
+            width: 3in;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -146,6 +147,37 @@
             border-radius: 4px;
             background: #fafafa;
         }
+        .totals-table {
+            width: 100%;
+            margin-top: 8px;
+            border: 1px solid #ddd;
+            border-collapse: collapse;
+            background: #f5f5f5;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        .totals-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        .totals-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .totals-table .amount {
+            text-align: right;
+            width: 80px;
+        }
+
+        .totals-table .grand-total td {
+            font-weight: bold;
+            font-size: 13px;
+            color: #000;
+        }
+
     </style>
 </head>
 <body>
@@ -177,7 +209,7 @@
     </div>
 
     <!-- Invoice To -->
-    <div class="invoice-to" style=" margin: 8px 0; padding: 6px; background: #f5f5f5; border-radius: 4px;">
+    <div class="invoice-to" style=" margin: 8px 0; padding: 8px; padding-top: -8px ; background: #f5f5f5; border-radius: 4px;">
         <h4>Invoice To:</h4>
         <p><strong>Name:</strong> {{ $order->name }}</p>
         <p><strong>Phone:</strong> {{ $order->phone }}</p>
@@ -202,25 +234,41 @@
                     @endif
                 </td>
                 <td>{{ $item->quantity }}</td>
-                <td>{{ number_format($item->price, 2) }}</td>
+                <td>৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
             </tr>
         @endforeach
         </tbody>
     </table>
 
     <!-- Totals -->
-    <div class="totals">
-        <p><span>Sub Total:</span> <span>{{ number_format($order->subtotal, 2) }}</span></p>
-        <p><span>Delivery Fee:</span> <span>{{ number_format($order->delivery_charge, 2) }}</span></p>
-        <p><span>Discount:</span> <span>-{{ number_format($order->discount, 2) }}</span></p>
-        <p style="font-weight: bold; font-size: 12px; color: #000;"><span>Total Amount:</span> <span>{{ number_format($order->total, 2) }}</span></p>
-    </div>
+<table class="totals-table">
+    <tr>
+        <td>Sub Total</td>
+        <td class="amount">৳ {{ number_format($order->subtotal, 0) }}</td>
+    </tr>
+    <tr>
+        <td>Delivery Fee</td>
+        <td class="amount">৳ {{ number_format($order->delivery_charge, 0) }}</td>
+    </tr>
+    @unless($order->discount == 0)
+    <tr>
+        <td>Discount</td>
+        <td class="amount">৳ -{{ number_format($order->discount, 0) }}</td>
+    </tr>
+    @endunless
+    <tr class="grand-total">
+        <td><strong>Total Amount</strong></td>
+        <td class="amount"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
+    </tr>
+</table>
+
+
 
     <!-- Order Note -->
-    <div class="order-note-container">
+    {{-- <div class="order-note-container">
         <p>Order Note:</p>
         <div class="order-note">{{ $order->admin_comment }}</div>
-    </div>
+    </div> --}}
 </div>
 
 </body>

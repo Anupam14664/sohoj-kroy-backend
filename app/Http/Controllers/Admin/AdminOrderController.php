@@ -301,7 +301,7 @@ private function createPathaoOrder($order, $courier)
 
     // Step 2: Create Order
     $payload = [
-        'store_id' => $courier->store_id,             
+        'store_id' => $courier->store_id,
         'merchant_order_id' => $order->order_number,
         'recipient_name' => $order->name,
         'recipient_phone' => $order->phone,

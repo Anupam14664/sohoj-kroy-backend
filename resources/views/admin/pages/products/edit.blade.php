@@ -15,13 +15,6 @@
                     <div class="card-header" style="font-size: 18px;">Basic Information</div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="sku">SKU</label>
-                            <input type="text" name="sku" id="sku" class="form-control @error('sku') is-invalid @enderror"
-                                   value="{{ old('sku', $product->sku) }}">
-                            @error('sku')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
                         <div class="form-group">
                             <label for="name">Product Name</label>
                             <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
@@ -196,6 +189,15 @@
                                 <label class="form-check-label" for="campaign">Campaign Product</label>
                             </div>
                         </div>
+
+
+                            <label for="sku">SKU</label>
+                            <input type="text" name="sku" id="sku" class="form-control @error('sku') is-invalid @enderror"
+                                   value="{{ old('sku', $product->sku) }}">
+                            @error('sku')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 
@@ -224,14 +226,14 @@
 
 
 
-                {{-- <div class="card mb-4">
+                <div class="card mb-4">
                     <div class="form-group">
                         <label>Keyword Tags (comma-separated)</label>
                         <input type="text" name="keyword_tags" class="form-control"
                                placeholder="Add tags..."
                                value="{{ old('keyword_tags', is_array($product->keyword_tags ?? null) ? implode(',', $product->keyword_tags) : ($product->keyword_tags ?? '')) }}">
                     </div>
-                </div> --}}
+                </div>
 
                 <div class="form-group">
                     <div class="custom-control custom-switch">

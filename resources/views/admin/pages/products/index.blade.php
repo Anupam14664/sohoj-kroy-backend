@@ -11,7 +11,9 @@
                 </a>
             </div>
         </div>
-
+            <div id="alert-container">
+                @include('admin.layouts.partials.__alerts')
+            </div>
 
         <div class="card-body">
             <div class="mb-3 d-flex justify-content-end">

@@ -25,7 +25,7 @@ class ProductController extends Controller
                 $q->where('is_approved', true);
             }])
             ->withAvg('reviews', 'rating')
-            ->active()
+            ->active()->where('status', true)
             ->latest()
             ->paginate(12);
 

@@ -264,24 +264,52 @@ class OrderController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Order created successfully',
-                    'data' => [
-                        'order' => [
-                            'order_number' => $order->order_number,
-                            'status' => $order->status,
-                            'payment' => [
-                                'subtotal' => $order->subtotal,
-                                'discount' => $order->discount,
-                                'delivery_charge' => $order->delivery_charge,
-                                'total' => $order->total,
-                                'coupon_applied' => $order->coupon_code,
-                                'coupon_details' => $couponDetails
-                            ],
-                            'items' => $items,
-                            'created_at' => $order->created_at->toIso8601String()
+                    'data' =>
+                    [ 'order' =>
+                    [
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'customer' =>
+                        [
+                            'name' => $order->name,
+                            'phone' => $order->phone,
+                            'address' => $order->address
                         ],
-                        'inventory_updates' => $inventoryUpdates
-                    ]
-                ], 201);
+                        'delivery' =>
+                        [
+                            'method' => $deliveryOption->name,
+                            'charge' => (float) $deliveryOption->charge,
+                            'estimated_days' => $deliveryOption->estimated_days
+                        ],
+                        'payment' =>
+                        [
+                            'subtotal' => (float) $order->subtotal,
+                            'discount' => (float) $order->discount,
+                            'delivery_charge' => (float) $order->delivery_charge,
+                            'total' => (float) $order->total,
+                            'coupon_applied' => $order->coupon_code,
+                            'coupon_details' => $couponDetails
+                        ],
+                        'items' =>
+                        array_map(fn($item) =>
+                        [ 'product_id' =>
+                        $item['product_id'],
+                        'product_name' => $item['product_name'],
+                        'variant' =>
+                        [
+                            'color' => $item['color_name'],
+                            'color_code' => $item['color_code'],
+                            'size' => $item['size_name']
+                        ],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['price'],
+                        'total_price' => $item['price'] * $item['quantity']
+                    ], $items),
+                    'created_at' => $order->created_at->toIso8601String()
+                ],
+                'inventory_updates' => $inventoryUpdates
+                ]
+            ], 201);
 
             } catch (\Exception $e) {
 

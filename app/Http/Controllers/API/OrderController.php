@@ -126,7 +126,7 @@ class OrderController extends Controller
                         }
                     }
 
-                    if (empty($itemData['size_name'])) {
+                    if (!isset($itemData['size_name']) || trim($itemData['size_name']) === '') {
                         throw new \Exception("Size is required for product with variants: {$product->name}");
                     }
 

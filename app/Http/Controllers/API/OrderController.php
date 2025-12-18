@@ -295,192 +295,205 @@ class OrderController extends Controller
             }
         }
 
-        public function incomplete(Request $request)
-        {
-            $ipAddress = $request->ip();
+    public function incomplete(Request $request)
+    {
+        $ipAddress = $request->ip();
 
-            $validator = Validator::make($request->all(), [
-                'name' => 'nullable|string|max:255',
-                'phone' => 'nullable|string|max:20',
-                'address' => 'nullable|string',
-                'district' => 'nullable|string',
-                'thana' => 'nullable|string',
-                'delivery_option_id' => 'nullable|exists:delivery_options,id',
-                'items' => 'nullable|array',
-                'items.*.product_id' => 'required_with:items|exists:products,id',
-                'items.*.quantity' => 'required_with:items|integer|min:1',
-                'items.*.color_name' => 'nullable|string',
-                'items.*.size_name' => 'nullable|string',
-                'comment' => 'nullable|string',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'district' => 'nullable|string',
+            'thana' => 'nullable|string',
+            'delivery_option_id' => 'nullable|exists:delivery_options,id',
+            'items' => 'nullable|array',
+            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.color_name' => 'nullable|string',
+            'items.*.size_name' => 'nullable|string',
+            'comment' => 'nullable|string',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-            try {
-                DB::beginTransaction();
+        try {
+            DB::beginTransaction();
 
-                $deliveryOption = $request->delivery_option_id
-                    ? DeliveryOption::find($request->delivery_option_id)
-                    : null;
+            $deliveryOption = $request->delivery_option_id
+                ? DeliveryOption::find($request->delivery_option_id)
+                : null;
 
-                $subtotal = 0;
-                $items = [];
+            $subtotal = 0;
+            $items = [];
 
-                if ($request->filled('items')) {
-                    foreach ($request->items as $itemData) {
-                        $product = Product::with(['variants.color', 'variants.options.size'])->findOrFail($itemData['product_id']);
+            if ($request->filled('items')) {
+                foreach ($request->items as $itemData) {
 
-                        $hasVariants = $product->has_variants;
-                        $variant = null;
-                        $option = null;
-                        $colorName = null;
-                        $sizeName = null;
-                        $variantId = null;
-                        $optionId = null;
-                        $colorId = null;
-                        $sizeId = null;
-                        $colorCode = null;
-                        $itemPrice = $product->discount_price ?? $product->regular_price;
+                    $product = Product::with(['variants.color', 'variants.options.size'])
+                        ->findOrFail($itemData['product_id']);
 
-                        if ($hasVariants) {
+                    $variant = null;
+                    $option  = null;
+
+                    $colorName = null;
+                    $sizeName  = null;
+                    $variantId = null;
+                    $optionId  = null;
+                    $colorId   = null;
+                    $sizeId    = null;
+                    $colorCode = null;
+
+                    $itemPrice = $product->discount_price ?? $product->regular_price;
+
+                    if ($product->has_variants) {
+
                         $hasColor = $product->variants->contains(fn($v) => $v->color !== null);
 
-                        if ($hasColor) {
-                            if (empty($itemData['color_name'])) {
-                                throw new \Exception("Color is required for product with variants: {$product->name}");
-                            }
+                        if ($hasColor && !empty($itemData['color_name'])) {
 
-                            $variant = $product->variants->first(function ($v) use ($itemData) {
-                                return $v->color && $v->color->name === $itemData['color_name'];
-                            });
+                            $variant = $product->variants->first(
+                                fn($v) => $v->color && $v->color->name === $itemData['color_name']
+                            );
 
                             if (!$variant) {
                                 $availableColors = $product->variants
                                     ->filter(fn($v) => $v->color)
                                     ->pluck('color.name')->unique()->implode(', ');
-                                throw new \Exception("Color '{$itemData['color_name']}' not available for product: {$product->name}. Available colors: {$availableColors}");
+                                throw new \Exception(
+                                    "Color '{$itemData['color_name']}' not available for product: {$product->name}. Available colors: {$availableColors}"
+                                );
                             }
 
-                            $colorName = $variant->color->name ?? null;
-                            $colorId = $variant->color->id ?? null;
-                            $colorCode = $variant->color->code ?? null;
+                            $colorName = $variant->color->name;
+                            $colorId   = $variant->color->id;
+                            $colorCode = $variant->color->code;
+
                         } else {
                             $variant = $product->variants->first();
-                            if (!$variant) {
-                                throw new \Exception("No variant available for product: {$product->name}");
-                            }
                         }
 
-                        if (empty($itemData['size_name'])) {
-                            throw new \Exception("Size is required for product with variants: {$product->name}");
+                        if (!$variant) {
+                            throw new \Exception("No variant available for product: {$product->name}");
                         }
 
-                        $option = $variant->options->first(fn($o) => $o->size && $o->size->name == $itemData['size_name']);
-
-                        if (!$option) {
-                            $availableSizes = $variant->options->pluck('size.name')->implode(', ');
-                            throw new \Exception("Size '{$itemData['size_name']}' not available for product: {$product->name}. Available sizes: {$availableSizes}");
-                        }
-
-                        if ($option->stock < $itemData['quantity']) {
-                            throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$option->stock}, Requested: {$itemData['quantity']}");
-                        }
-
-                        $sizeName = $option->size->name;
-                        $sizeId = $option->size->id;
                         $variantId = $variant->id;
-                        $optionId = $option->id;
-                        $itemPrice = $option->price ?? ($product->discount_price ?? $product->regular_price);
+
+                        $hasSize = $variant->options->contains(fn($o) => $o->size !== null);
+
+                        if ($hasSize && !empty($itemData['size_name'])) {
+
+                            $option = $variant->options->first(
+                                fn($o) => $o->size && $o->size->name === $itemData['size_name']
+                            );
+
+                            if (!$option) {
+                                $availableSizes = $variant->options->pluck('size.name')->filter()->implode(', ');
+                                throw new \Exception(
+                                    "Size '{$itemData['size_name']}' not available for product: {$product->name}. Available sizes: {$availableSizes}"
+                                );
+                            }
+
+                            if ($option->stock < $itemData['quantity']) {
+                                throw new \Exception(
+                                    "Insufficient stock for product: {$product->name}. Available: {$option->stock}, Requested: {$itemData['quantity']}"
+                                );
+                            }
+
+                            $sizeName  = $option->size->name;
+                            $sizeId    = $option->size->id;
+                            $optionId  = $option->id;
+                            $itemPrice = $option->price ?? ($product->discount_price ?? $product->regular_price);
+
+                        } else {
+                            $itemPrice = $variant->price ?? ($product->discount_price ?? $product->regular_price);
+                        }
                     }
 
-                        $itemTotal = $itemPrice * $itemData['quantity'];
-                        $subtotal += $itemTotal;
+                    $itemTotal = $itemPrice * $itemData['quantity'];
+                    $subtotal += $itemTotal;
 
-                        $items[] = [
-                            'product_id' => $product->id,
-                            'product_name' => $product->name,
-                            'price' => (float) $itemPrice,
-                            'quantity' => (int) $itemData['quantity'],
-                            'size_name' => $sizeName,
-                            'color_name' => $colorName,
-                            'size_id' => $sizeId,
-                            'color_id' => $colorId,
-                            'variant_id' => $variantId,
-                            'option_id' => $optionId,
-                            'variant_option_id' => $optionId,
-                            'color_code' => $colorCode,
-                            'total_price' => $itemTotal
-                        ];
-                    }
+                    $items[] = [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'price' => (float) $itemPrice,
+                        'quantity' => (int) $itemData['quantity'],
+                        'size_name' => $sizeName,
+                        'color_name' => $colorName,
+                        'size_id' => $sizeId,
+                        'color_id' => $colorId,
+                        'variant_id' => $variantId,
+                        'option_id' => $optionId,
+                        'variant_option_id' => $optionId,
+                        'color_code' => $colorCode,
+                        'total_price' => $itemTotal
+                    ];
                 }
-
-                $orderNumber = "H-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
-
-                // Create Order
-                $order = Order::create([
-                    'order_number' => $orderNumber,
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'address' => $request->address,
-                    'subtotal' => (float) $subtotal,
-                    'delivery_charge' => $deliveryOption->charge ?? 0,
-                    'total' => (float) $subtotal + ($deliveryOption->charge ?? 0),
-                    'status' => 'incomplete',
-                    'comment' => $request->comment,
-                    'delivery_option_id' => $request->delivery_option_id,
-                    'ip_address' => $ipAddress,
-                ]);
-
-                // Save Order Items to DB
-                foreach ($items as $item) {
-                    $order->items()->create([
-                        'product_id' => $item['product_id'],
-                        'variant_option_id' => $item['variant_option_id'],
-                        'variant_id' => $item['variant_id'],
-                        'size_id' => $item['size_id'],
-                        'color_id' => $item['color_id'],
-                        'product_name' => $item['product_name'],
-                        'price' => $item['price'],
-                        'quantity' => $item['quantity'],
-                        'size_name' => $item['size_name'],
-                        'color_name' => $item['color_name'],
-                    ]);
-                }
-
-                DB::commit();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Incomplete order saved successfully',
-                    'data' => [
-                        'order' => $order->load('items'),
-                        'items' => $items
-                    ]
-                ], 201);
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-
-                Log::error('Incomplete order failed: ' . $e->getMessage(), [
-                    'exception' => $e,
-                    'request' => $request->all(),
-                    'ip' => $ipAddress,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to save incomplete order',
-                    'error' => $e->getMessage()
-                ], 500);
             }
-        }
 
+            $orderNumber = "H-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
+
+            $order = Order::create([
+                'order_number' => $orderNumber,
+                'name' => $request->name,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'subtotal' => (float) $subtotal,
+                'delivery_charge' => $deliveryOption->charge ?? 0,
+                'total' => (float) $subtotal + ($deliveryOption->charge ?? 0),
+                'status' => 'incomplete',
+                'comment' => $request->comment,
+                'delivery_option_id' => $request->delivery_option_id,
+                'ip_address' => $ipAddress,
+            ]);
+
+            foreach ($items as $item) {
+                $order->items()->create([
+                    'product_id' => $item['product_id'],
+                    'variant_option_id' => $item['variant_option_id'],
+                    'variant_id' => $item['variant_id'],
+                    'size_id' => $item['size_id'],
+                    'color_id' => $item['color_id'],
+                    'product_name' => $item['product_name'],
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'size_name' => $item['size_name'],
+                    'color_name' => $item['color_name'],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Incomplete order saved successfully',
+                'data' => [
+                    'order' => $order->load('items'),
+                    'items' => $items
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Incomplete order failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+                'ip' => $ipAddress,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save incomplete order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
         public function incompleteOrders()
         {

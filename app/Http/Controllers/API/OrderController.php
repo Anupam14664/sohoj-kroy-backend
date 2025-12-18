@@ -40,7 +40,7 @@ class OrderController extends Controller
     {
         $ipAddress = $request->ip();
 
-        $blocked = BlockedCustomer::where(function($query) use ($request) {
+        $blocked = BlockedCustomer::where(function ($query) use ($request) {
             $query->where('phone', $request->phone)
                 ->orWhere('ip_address', $request->ip());
         })->exists();
@@ -80,171 +80,131 @@ class OrderController extends Controller
             $deliveryOption = DeliveryOption::findOrFail($request->delivery_option_id);
             $subtotal = 0;
             $items = [];
-            $inventoryUpdates = ['items_updated' => 0, 'total_stock_reduced' => 0];
 
             foreach ($request->items as $itemData) {
-                $product = Product::with(['variants.color', 'variants.options.size'])->findOrFail($itemData['product_id']);
-                $hasVariants = $product->has_variants;
+
+                $product = Product::with(['variants.color', 'variants.options.size'])
+                    ->findOrFail($itemData['product_id']);
+
+                $quantity = (int) $itemData['quantity'];
 
                 $variant = null;
                 $option = null;
-                $colorName = null;
+
                 $sizeName = null;
+                $sizeId = null;
+                $colorName = null;
+                $colorId = null;
+                $colorCode = null;
                 $variantId = null;
                 $optionId = null;
-                $colorId = null;
-                $sizeId = null;
-                $colorCode = null;
-                $itemPrice = 0;
 
-                if ($hasVariants) {
-                    $hasColor = $product->variants->contains(fn($v) => $v->color !== null);
+                // ===== VARIANT PRODUCT =====
+                if ($product->has_variants) {
 
-                    if ($hasColor) {
-                        if (empty($itemData['color_name'])) {
-                            throw new \Exception("Color is required for product with variants: {$product->name}");
-                        }
-
-                        $variant = $product->variants->first(function ($v) use ($itemData) {
-                            return $v->color && $v->color->name === $itemData['color_name'];
-                        });
+                    // ---------- COLOR ----------
+                    if (!empty($itemData['color_name'])) {
+                        $variant = $product->variants
+                            ->first(fn($v) => $v->color && $v->color->name === $itemData['color_name']);
 
                         if (!$variant) {
-                            $availableColors = $product->variants
-                                ->filter(fn($v) => $v->color)
-                                ->pluck('color.name')->unique()->implode(', ');
-                            throw new \Exception("Color '{$itemData['color_name']}' not available for product: {$product->name}. Available colors: {$availableColors}");
+                            throw new \Exception("Color '{$itemData['color_name']}' not available for {$product->name}");
                         }
 
-                        $colorName = $variant->color->name ?? null;
-                        $colorId = $variant->color->id ?? null;
-                        $colorCode = $variant->color->code ?? null;
+                        $colorName = $variant->color->name;
+                        $colorId   = $variant->color->id;
+                        $colorCode = $variant->color->code;
                     } else {
+                        // no color product
                         $variant = $product->variants->first();
-                        if (!$variant) {
-                            throw new \Exception("No variant available for product: {$product->name}");
-                        }
                     }
 
-                    if (!isset($itemData['size_name']) || trim($itemData['size_name']) === '') {
-                        throw new \Exception("Size is required for product with variants: {$product->name}");
+                    if (!$variant) {
+                        throw new \Exception("Variant not found for {$product->name}");
                     }
 
-                    $option = $variant->options->first(fn($o) => $o->size && $o->size->name == $itemData['size_name']);
-
-                    if (!$option) {
-                        $availableSizes = $variant->options->pluck('size.name')->implode(', ');
-                        throw new \Exception("Size '{$itemData['size_name']}' not available for product: {$product->name}. Available sizes: {$availableSizes}");
-                    }
-
-                    if ($option->stock < $itemData['quantity']) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$option->stock}, Requested: {$itemData['quantity']}");
-                    }
-
-                    $sizeName = $option->size->name;
-                    $sizeId = $option->size->id;
                     $variantId = $variant->id;
-                    $optionId = $option->id;
-                    $itemPrice = $option->price ?? ($product->discount_price ?? $product->regular_price);
-                } else {
-                    if ($product->total_stock < $itemData['quantity']) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->total_stock}, Requested: {$itemData['quantity']}");
+
+                    // ---------- SIZE (OPTIONAL) ----------
+                    $hasSize = $variant->options->contains(fn($o) => $o->size !== null);
+
+                    if ($hasSize && !empty($itemData['size_name'])) {
+
+                        $option = $variant->options
+                            ->first(fn($o) => $o->size && $o->size->name === $itemData['size_name']);
+
+                        if (!$option) {
+                            $availableSizes = $variant->options->pluck('size.name')->filter()->implode(', ');
+                            throw new \Exception("Size '{$itemData['size_name']}' not available for {$product->name}. Available: {$availableSizes}");
+                        }
+
+                        if ($option->stock < $quantity) {
+                            throw new \Exception("Insufficient stock for {$product->name}");
+                        }
+
+                        $sizeName = $option->size->name;
+                        $sizeId   = $option->size->id;
+                        $optionId = $option->id;
+                        $price    = $option->price ?? $product->discount_price ?? $product->regular_price;
+
+                    } else {
+                        // size নাই → null যাবে
+                        $price = $variant->price ?? $product->discount_price ?? $product->regular_price;
                     }
 
-                    if ($product->size_id && !empty($itemData['size_name'])) {
-                        $sizeName = $itemData['size_name'];
-                        $sizeId = $product->size_id;
+                }
+                // ===== SIMPLE PRODUCT =====
+                else {
+
+                    if ($product->total_stock < $quantity) {
+                        throw new \Exception("Insufficient stock for {$product->name}");
                     }
 
-                    $itemPrice = $product->discount_price ?? $product->regular_price;
+                    $price = $product->discount_price ?? $product->regular_price;
                 }
 
-                $itemTotal = $itemPrice * $itemData['quantity'];
+                $itemTotal = $price * $quantity;
                 $subtotal += $itemTotal;
 
                 $items[] = [
                     'product_id' => $product->id,
                     'product_name' => $product->name,
-                    'price' => (float) $itemPrice,
-                    'quantity' => (int) $itemData['quantity'],
+                    'price' => $price,
+                    'quantity' => $quantity,
                     'size_name' => $sizeName,
-                    'color_name' => $colorName,
                     'size_id' => $sizeId,
+                    'color_name' => $colorName,
                     'color_id' => $colorId,
-                    'variant_id' => $variantId,
-                    'option_id' => $optionId,
-                    'variant_option_id' => $optionId,
                     'color_code' => $colorCode,
-                    'total_price' => $itemTotal
+                    'variant_id' => $variantId,
+                    'variant_option_id' => $optionId,
                 ];
             }
 
-            $discount = 0;
-            $couponCode = null;
-            $couponDetails = null;
-
-            if ($request->coupon_code) {
-                $coupon = Coupon::with('products')->where('code', $request->coupon_code)->first();
-
-                if (!$coupon) throw new \Exception('Coupon code not found');
-                if (!$coupon->is_active) throw new \Exception('Coupon is inactive');
-
-                $now = now();
-                if (($coupon->start_date && $now->lt($coupon->start_date)) ||
-                    ($coupon->end_date && $now->gt($coupon->end_date))) {
-                    throw new \Exception('Coupon is not valid at this time');
-                }
-
-                $productIds = collect($request->items)->pluck('product_id')->toArray();
-
-                if (!$coupon->apply_to_all && !$coupon->products()->whereIn('product_id', $productIds)->exists()) {
-                    throw new \Exception('Coupon is not valid for any products in your cart');
-                }
-
-                $subtotalCheck = collect($items)->sum(fn($item) => $item['price'] * $item['quantity']);
-                if ($subtotalCheck < $coupon->min_purchase) {
-                    throw new \Exception('Coupon requires minimum purchase of ' . $coupon->min_purchase);
-                }
-
-                $discountResult = $coupon->calculateDiscountForProducts($items);
-                $discount = $discountResult['total_discount'];
-
-                $couponCode = $coupon->code;
-                $couponDetails = [
-                    'code' => $coupon->code,
-                    'discount_type' => $coupon->type,
-                    'discount_value' => (float) $coupon->amount,
-                    'min_purchase' => (float) $coupon->min_purchase,
-                    'apply_to_all' => $coupon->apply_to_all,
-                    'applicable_products' => $coupon->apply_to_all ? null : $coupon->products->pluck('id')
-                ];
-            }
-
-            $total = $subtotal + $deliveryOption->charge - $discount;
-            $orderNumber = "H-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
+            $total = $subtotal + $deliveryOption->charge;
+            $orderNumber = 'H-' . str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
 
             $order = Order::create([
                 'order_number' => $orderNumber,
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'address' => $request->address,
-                'subtotal' => (float) $subtotal,
-                'delivery_charge' => (float) $deliveryOption->charge,
-                'discount' => (float) $discount,
-                'total' => (float) $total,
-                'coupon_code' => $couponCode,
+                'subtotal' => $subtotal,
+                'delivery_charge' => $deliveryOption->charge,
+                'total' => $total,
                 'status' => 'pending',
                 'comment' => $request->comment,
-                'delivery_option_id' => $request->delivery_option_id,
+                'delivery_option_id' => $deliveryOption->id,
                 'ip_address' => $ipAddress,
             ]);
 
             foreach ($items as $item) {
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
-                    'variant_option_id' => $item['variant_option_id'],
                     'variant_id' => $item['variant_id'],
+                    'variant_option_id' => $item['variant_option_id'],
                     'size_id' => $item['size_id'],
                     'color_id' => $item['color_id'],
                     'product_name' => $item['product_name'],
@@ -254,17 +214,12 @@ class OrderController extends Controller
                     'color_name' => $item['color_name'],
                 ]);
 
-                if ($item['option_id']) {
-                    $rowsAffected = ProductVariantOption::where('id', $item['option_id'])
+                if ($item['variant_option_id']) {
+                    ProductVariantOption::where('id', $item['variant_option_id'])
                         ->decrement('stock', $item['quantity']);
                 } else {
-                    $rowsAffected = Product::where('id', $item['product_id'])
+                    Product::where('id', $item['product_id'])
                         ->decrement('total_stock', $item['quantity']);
-                }
-
-                if ($rowsAffected) {
-                    $inventoryUpdates['items_updated']++;
-                    $inventoryUpdates['total_stock_reduced'] += $item['quantity'];
                 }
             }
 
@@ -273,54 +228,12 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order created successfully',
-                'data' => [
-                    'order' => [
-                        'order_number' => $order->order_number,
-                        'status' => $order->status,
-                        'customer' => [
-                            'name' => $order->name,
-                            'phone' => $order->phone,
-                            'address' => $order->address
-                        ],
-                        'delivery' => [
-                            'method' => $deliveryOption->name,
-                            'charge' => (float) $deliveryOption->charge,
-                            'estimated_days' => $deliveryOption->estimated_days
-                        ],
-                        'payment' => [
-                            'subtotal' => (float) $order->subtotal,
-                            'discount' => (float) $order->discount,
-                            'delivery_charge' => (float) $order->delivery_charge,
-                            'total' => (float) $order->total,
-                            'coupon_applied' => $order->coupon_code,
-                            'coupon_details' => $couponDetails
-                        ],
-                        'items' => array_map(fn($item) => [
-                            'product_id' => $item['product_id'],
-                            'product_name' => $item['product_name'],
-                            'variant' => [
-                                'color' => $item['color_name'],
-                                'color_code' => $item['color_code'],
-                                'size' => $item['size_name']
-                            ],
-                            'quantity' => $item['quantity'],
-                            'unit_price' => $item['price'],
-                            'total_price' => $item['price'] * $item['quantity']
-                        ], $items),
-                        'created_at' => $order->created_at->toIso8601String()
-                    ],
-                    'inventory_updates' => $inventoryUpdates
-                ]
+                'order_number' => $order->order_number
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
 
-            Log::error('Order creation failed: ' . $e->getMessage(), [
-                'exception' => $e,
-                'request' => $request->all(),
-                'ip' => $ipAddress,
-            ]);
+            DB::rollBack();
 
             return response()->json([
                 'success' => false,
@@ -329,7 +242,6 @@ class OrderController extends Controller
             ], 400);
         }
     }
-
 
     public function incomplete(Request $request)
     {
@@ -369,86 +281,92 @@ class OrderController extends Controller
             $items = [];
 
             if ($request->filled('items')) {
-                foreach ($request->items as $itemData) {
-                    $product = Product::with(['variants.color', 'variants.options.size'])->findOrFail($itemData['product_id']);
 
-                    $hasVariants = $product->has_variants;
+                foreach ($request->items as $itemData) {
+
+                    $product = Product::with(['variants.color', 'variants.options.size'])
+                        ->findOrFail($itemData['product_id']);
+
+                    $quantity = (int) $itemData['quantity'];
+
                     $variant = null;
                     $option = null;
+
                     $colorName = null;
+                    $colorId = null;
+                    $colorCode = null;
                     $sizeName = null;
+                    $sizeId = null;
                     $variantId = null;
                     $optionId = null;
-                    $colorId = null;
-                    $sizeId = null;
-                    $colorCode = null;
-                    $itemPrice = $product->discount_price ?? $product->regular_price;
 
-                    if ($hasVariants) {
-                    $hasColor = $product->variants->contains(fn($v) => $v->color !== null);
+                    // ===== VARIANT PRODUCT =====
+                    if ($product->has_variants) {
 
-                    if ($hasColor) {
-                        if (empty($itemData['color_name'])) {
-                            throw new \Exception("Color is required for product with variants: {$product->name}");
+                        // ---------- COLOR (OPTIONAL) ----------
+                        if (!empty($itemData['color_name'])) {
+                            $variant = $product->variants
+                                ->first(fn($v) => $v->color && $v->color->name === $itemData['color_name']);
+
+                            if (!$variant) {
+                                throw new \Exception("Color '{$itemData['color_name']}' not available for {$product->name}");
+                            }
+
+                            $colorName = $variant->color->name;
+                            $colorId   = $variant->color->id;
+                            $colorCode = $variant->color->code;
+                        } else {
+                            $variant = $product->variants->first();
                         }
-
-                        $variant = $product->variants->first(function ($v) use ($itemData) {
-                            return $v->color && $v->color->name === $itemData['color_name'];
-                        });
 
                         if (!$variant) {
-                            $availableColors = $product->variants
-                                ->filter(fn($v) => $v->color)
-                                ->pluck('color.name')->unique()->implode(', ');
-                            throw new \Exception("Color '{$itemData['color_name']}' not available for product: {$product->name}. Available colors: {$availableColors}");
+                            throw new \Exception("Variant not found for {$product->name}");
                         }
 
-                        $colorName = $variant->color->name ?? null;
-                        $colorId = $variant->color->id ?? null;
-                        $colorCode = $variant->color->code ?? null;
-                    } else {
-                        $variant = $product->variants->first();
-                        if (!$variant) {
-                            throw new \Exception("No variant available for product: {$product->name}");
+                        $variantId = $variant->id;
+
+                        // ---------- SIZE (OPTIONAL) ----------
+                        $hasSize = $variant->options->contains(fn($o) => $o->size !== null);
+
+                        if ($hasSize && !empty($itemData['size_name'])) {
+
+                            $option = $variant->options
+                                ->first(fn($o) => $o->size && $o->size->name === $itemData['size_name']);
+
+                            if ($option) {
+                                $sizeName = $option->size->name;
+                                $sizeId   = $option->size->id;
+                                $optionId = $option->id;
+                                $price    = $option->price ?? $product->discount_price ?? $product->regular_price;
+                            } else {
+                                // incomplete order → invalid size হলেও fail না
+                                $price = $variant->price ?? $product->discount_price ?? $product->regular_price;
+                            }
+
+                        } else {
+                            // size নাই বা পাঠানো হয়নি
+                            $price = $variant->price ?? $product->discount_price ?? $product->regular_price;
                         }
+
+                    }
+                    // ===== SIMPLE PRODUCT =====
+                    else {
+                        $price = $product->discount_price ?? $product->regular_price;
                     }
 
-                    if (empty($itemData['size_name'])) {
-                        throw new \Exception("Size is required for product with variants: {$product->name}");
-                    }
-
-                    $option = $variant->options->first(fn($o) => $o->size && $o->size->name == $itemData['size_name']);
-
-                    if (!$option) {
-                        $availableSizes = $variant->options->pluck('size.name')->implode(', ');
-                        throw new \Exception("Size '{$itemData['size_name']}' not available for product: {$product->name}. Available sizes: {$availableSizes}");
-                    }
-
-                    if ($option->stock < $itemData['quantity']) {
-                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$option->stock}, Requested: {$itemData['quantity']}");
-                    }
-
-                    $sizeName = $option->size->name;
-                    $sizeId = $option->size->id;
-                    $variantId = $variant->id;
-                    $optionId = $option->id;
-                    $itemPrice = $option->price ?? ($product->discount_price ?? $product->regular_price);
-                }
-
-                    $itemTotal = $itemPrice * $itemData['quantity'];
+                    $itemTotal = $price * $quantity;
                     $subtotal += $itemTotal;
 
                     $items[] = [
                         'product_id' => $product->id,
                         'product_name' => $product->name,
-                        'price' => (float) $itemPrice,
-                        'quantity' => (int) $itemData['quantity'],
+                        'price' => (float) $price,
+                        'quantity' => $quantity,
                         'size_name' => $sizeName,
-                        'color_name' => $colorName,
                         'size_id' => $sizeId,
+                        'color_name' => $colorName,
                         'color_id' => $colorId,
                         'variant_id' => $variantId,
-                        'option_id' => $optionId,
                         'variant_option_id' => $optionId,
                         'color_code' => $colorCode,
                         'total_price' => $itemTotal
@@ -458,7 +376,6 @@ class OrderController extends Controller
 
             $orderNumber = "H-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
 
-            // Create Order
             $order = Order::create([
                 'order_number' => $orderNumber,
                 'name' => $request->name,
@@ -473,7 +390,6 @@ class OrderController extends Controller
                 'ip_address' => $ipAddress,
             ]);
 
-            // Save Order Items to DB
             foreach ($items as $item) {
                 $order->items()->create([
                     'product_id' => $item['product_id'],
@@ -494,20 +410,12 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Incomplete order saved successfully',
-                'data' => [
-                    'order' => $order->load('items'),
-                    'items' => $items
-                ]
+                'data' => $order->load('items')
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
 
-            Log::error('Incomplete order failed: ' . $e->getMessage(), [
-                'exception' => $e,
-                'request' => $request->all(),
-                'ip' => $ipAddress,
-            ]);
+            DB::rollBack();
 
             return response()->json([
                 'success' => false,
@@ -516,7 +424,6 @@ class OrderController extends Controller
             ], 500);
         }
     }
-
 
     public function incompleteOrders()
     {

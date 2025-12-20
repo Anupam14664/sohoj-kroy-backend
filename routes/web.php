@@ -94,15 +94,15 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'destroy' => 'admin.orders.destroy',
     ]);
     Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->middleware('can:manage orders')->name('admin.orders.update.items');
-    Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->middleware('can:manage orders')->name('admin.orders.update.delivery');
-    Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->middleware('can:manage orders')->name('admin.orders.update-status');
-    Route::get('orders/download/{order}', [AdminOrderController::class, 'download'])->middleware('can:manage orders')->name('admin.orders.download');
+    Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->name('admin.orders.update.delivery');
+    Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
+    Route::get('orders/download/{order}', [AdminOrderController::class, 'download'])->name('admin.orders.download');
     Route::get('orders/sku-search', [AdminOrderController::class, 'skuSearch'])->name('admin.orders.sku-search');
     Route::get('product/search', [AdminOrderController::class, 'search'])->name('admin.product.search');
-    Route::get('product/{product}/variants', [AdminOrderController::class, 'getVariants'])->middleware('can:manage product');
-    Route::post('orders/export', [AdminOrderController::class, 'export'])->middleware('can:manage orders')->name('admin.orders.export');
+    Route::get('product/{product}/variants', [AdminOrderController::class, 'getVariants']);
+    Route::post('orders/export', [AdminOrderController::class, 'export'])->name('admin.orders.export');
     Route::post('orders/bulk-delete', [AdminOrderController::class, 'bulkDelete'])->middleware('can:manage orders')->name('admin.orders.bulk-delete');
-    Route::post('orders/export-order', [AdminOrderController::class, 'exportOrder'])->middleware('can:manage orders')->name('admin.orders.export.order');
+    Route::post('orders/export-order', [AdminOrderController::class, 'exportOrder'])->name('admin.orders.export.order');
 
 
 

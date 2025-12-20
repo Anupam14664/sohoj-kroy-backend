@@ -913,7 +913,6 @@ public function unblockCustomer(Request $request)
 public function export(Request $request)
 {
     if ($request->has('all_filtered')) {
-        // সার্ভার সাইডে ফিল্টার করা সব অর্ডার
         $orders = Order::query()
             ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered'])
             ->when($request->status !== 'all', fn($q) => $q->where('status', $request->status))

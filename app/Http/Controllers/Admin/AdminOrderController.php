@@ -344,17 +344,17 @@ class AdminOrderController extends Controller
 
 
     public function destroy($id)
-{
-    $order = Order::findOrFail($id);
+    {
+        $order = Order::findOrFail($id);
 
-    if ($order->status !== 'cancelled') {
-        return redirect()->back()->with('error', 'Only cancelled orders can be deleted.');
+        if ($order->status !== 'cancelled') {
+            return redirect()->back()->with('error', 'Only cancelled orders can be deleted.');
+        }
+
+        $order->delete();
+
+        return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
     }
-
-    $order->delete();
-
-    return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
-}
 
     public function show(Order $order)
     {

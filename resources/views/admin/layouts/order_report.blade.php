@@ -174,8 +174,10 @@
                     @endif
                 </p>
 
-                <p><span>Consignment ID:</span> {{ $order->tracking_code ?? 'N/A' }}</p>
-                <p><span>Courier Name:</span> {{ $order->deliveryOption?->courier_name ?? 'N/A' }}</p>
+                <p><span>Merchant:</span> {{ $order->courier->name ?? 'N/A' }}</p>
+                <p><span>Invoice:</span> {{ $order->order_number }}</p>
+                <p><span>Tracking Code:</span> {{ $order->tracking_code ?? 'N/A' }}</p>
+                <p><span>Delivery Option:</span> {{ $order->deliveryOption?->name ?? 'N/A' }}</p>
                 <p ><span class="admin-comment">Admin Comment:</span>
                     <span style="background: none;">{{ $order->admin_comment ?? 'N/A' }}</span>
                 </p>

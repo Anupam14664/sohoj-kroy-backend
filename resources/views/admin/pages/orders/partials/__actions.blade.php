@@ -14,15 +14,20 @@
         <i class="fas fa-file-pdf"></i>
         </a>
     @endif
-     @if($order->status === 'cancelled')
-        <form width="0px"  action="{{ route('admin.orders.destroy', $order->id) }}"
-            method="POST" class="d-inline  m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
+        {{-- @if($order->status == 'cancelled')
+        <form action="{{ route('admin.orders.destroy', ['order' => $order->id]) }}"
+            method="POST"
+            class="d-inline m-0 p-0">
             @csrf
             @method('DELETE')
-            <button type="submit" class="btn btn-danger p-0 py-1 px-2 border-none"
-                    title="Delete" onclick="return confirm('Are you sure?')">
+
+            <button type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="return confirm('Are you sure?')"
+                    title="Delete">
                 <i class="fas fa-trash"></i>
             </button>
         </form>
-    @endif
+        @endif --}}
+
 </div>

@@ -143,7 +143,7 @@
                             </select>
                         </div>
 
-                        @if(in_array($order->status, ['courier_delivered', 'delivered']) && $order->custom_link)
+                         @if(in_array($order->status, ['courier_delivered', 'delivered']) && $order->custom_link)
                             <p>
                                 <strong>Custom Courier Link:</strong>
                                 <a href="{{ $order->custom_link }}" target="_blank">{{ $order->custom_link }}</a>

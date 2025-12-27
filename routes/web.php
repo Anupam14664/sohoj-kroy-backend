@@ -251,6 +251,8 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'destroy' => 'admin.admins.destroy',
     ]);
 
+
+    // costs 
     Route::resource('product-costs', ProductCostController::class)->middleware('can:manage profit')->names([
         'index' => 'admin.product-costs.index',
         'create' => 'admin.product-costs.create',

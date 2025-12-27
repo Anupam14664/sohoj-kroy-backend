@@ -72,6 +72,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                 'Thana',
                 'Delivery Charge',
                 'Discount',
+                'Admin Discount',
                 'Total Amount',
                 'Tracking ID',
                 'Products (Name, Qty, Price)',
@@ -112,6 +113,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
             $order->thana,
             $order->delivery_charge,
             $order->discount,
+            $order->admin_discount,
             $order->total,
             $trackingId,
             implode("\n", $productsInfo),
@@ -123,9 +125,9 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
     public function styles(Worksheet $sheet)
     {
         // Merge title cells
-        $sheet->mergeCells('B1:N1');
-        $sheet->mergeCells('B2:N2');
-        $sheet->mergeCells('B3:N3');
+        $sheet->mergeCells('B1:O1');
+        $sheet->mergeCells('B2:O2');
+        $sheet->mergeCells('B3:O3');
 
         return [
             // Title rows style
@@ -194,7 +196,7 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping, ShouldA
                 // Add hyperlinks to tracking IDs
                 $highestRow = $event->sheet->getHighestRow();
                 for ($row = 6; $row <= $highestRow; $row++) {
-                    $trackingCell = 'K'.$row;
+                    $trackingCell = 'L'.$row;
                     $trackingId = $event->sheet->getCell($trackingCell)->getValue();
 
                     if ($trackingId && $trackingId !== 'N/A') {

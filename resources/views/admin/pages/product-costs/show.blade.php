@@ -216,10 +216,19 @@
                                        class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-danger"
-                                        onclick="confirmDelete({{ $cost->id }})">
-                                    <i class="fas fa-trash"></i>
-                                    </button>
+                                    <form action="{{ route('admin.product-costs.destroy', $cost->id) }}"
+                                        method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Are you sure you want to delete?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+
                                 </td>
                             </tr>
                         @empty

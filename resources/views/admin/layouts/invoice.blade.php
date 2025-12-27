@@ -5,7 +5,7 @@
     <title> Invoice</title>
     <style>
         * {
-            width: 3in;
+            /* width: 3in; */
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -17,7 +17,7 @@
         }
 
         .sticker-container {
-            width: 3in;
+            /* width: 3in; */
             padding: 10px;
             border: 1px solid #ccc;
             background: #fff;
@@ -250,12 +250,12 @@
         <td>Delivery Fee</td>
         <td class="amount">৳ {{ number_format($order->delivery_charge, 0) }}</td>
     </tr>
-    @unless($order->discount == 0)
+    @if((float)$order->admin_discount > 0)
     <tr>
         <td>Discount</td>
-        <td class="amount">৳ -{{ number_format($order->discount, 0) }}</td>
+        <td class="amount">৳ -{{ number_format($order->admin_discount, 0) }}</td>
     </tr>
-    @endunless
+    @endif
     <tr class="grand-total">
         <td><strong>Total Amount</strong></td>
         <td class="amount"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>

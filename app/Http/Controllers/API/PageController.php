@@ -43,6 +43,7 @@ class PageController extends Controller
 
         $generalSetting = GeneralSetting::first();
             $headerData = [
+                'app_name' => $generalSetting->app_name ?? null,
                 'logo' => $generalSetting && $generalSetting->logo ? asset('storage/' . $generalSetting->logo) : null,
                 'contact_number_1' => $generalSetting->contact_number_1 ?? null,
                 'contact_number_2' => $generalSetting->contact_number_2 ?? null,
@@ -61,7 +62,7 @@ class PageController extends Controller
             $product = $page->product;
 
             $product->load([
-                // 'category',
+                'category',
                 'images',
                 'variants.color',
                 'variants.options.size',

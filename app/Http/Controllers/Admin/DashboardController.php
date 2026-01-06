@@ -31,13 +31,13 @@ class DashboardController extends Controller
         $monthlyOrders = Order::where('created_at', '>=', $currentMonth)->count();
         $totalOrders = Order::count();
 
-        // Amount calculations (total order value)
+        // Amount calculations
         $todayAmount = Order::whereDate('created_at', $today)->sum('total');
         $yesterdayAmount = Order::whereDate('created_at', $yesterday)->sum('total');
         $monthlyAmount = Order::where('created_at', '>=', $currentMonth)->sum('total');
         $totalAmount = Order::sum('total');
 
-        // Profit calculations (updated to consider buy price)
+        // Profit calculations
         $todayProfit = $this->calculateProfit(Order::whereDate('created_at', $today)->with('items')->get());
         $yesterdayProfit = $this->calculateProfit(Order::whereDate('created_at', $yesterday)->with('items')->get());
         $monthlyProfit = $this->calculateProfit(Order::where('created_at', '>=', $currentMonth)->with('items')->get());

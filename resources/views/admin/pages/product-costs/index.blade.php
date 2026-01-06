@@ -11,6 +11,77 @@
 
     @include('admin.layouts.partials.__alerts')
 
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="text-muted">Total Sold</h5>
+                <h5>{{ $totals['total_sold'] }} Pcs</h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="text-muted">Revenue</h5>
+                <h5 class="text-success">
+                    {{ number_format($totals['total_revenue'], 2) }}৳
+                </h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="text-muted">Buy Cost</h5>
+                <h5 class="text-warning">
+                    {{ number_format($totals['total_buy_price'], 2) }}৳
+                </h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Additional Cost</h6>
+                <h5 class="text-danger">
+                    {{ number_format($totals['total_additional_cost'], 2) }}৳
+                </h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="text-muted">Profit</h5>
+                <h5 class="{{ $totals['total_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ number_format($totals['total_profit'], 2) }}৳
+                </h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h5 class="text-muted">Margin</h5>
+                <h5 class="{{ $totals['total_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ $totals['total_revenue'] > 0
+                        ? number_format(($totals['total_profit'] / $totals['total_revenue']) * 100, 1)
+                        : 0
+                    }}%
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
     {{-- Search + Filter --}}
     <form method="GET" class="row g-2 mb-3" style="width: 100%; background:none; border: none;">
         <div class="col-md-3">
@@ -129,8 +200,8 @@
             </tbody>
             <tfoot class="table-dark">
                 <tr>
-                    <th colspan="2">Totals</th>
-                    <th>{{ $products->sum('total_sold') }} units</th>
+                    <th colspan="3">Totals</th>
+                    <th>{{ $products->sum('total_sold') }} Pcs</th>
                     <th>{{ number_format($products->sum('total_revenue'), 2) }}৳</th>
                     <th>{{ number_format($products->sum('total_buy_price'), 2) }}৳</th>
                     <th>{{ number_format($products->sum('total_additional_cost'), 2) }}৳</th>

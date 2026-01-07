@@ -16,7 +16,7 @@ class CategoryProductController extends Controller
             'sort' => 'sometimes|in:latest,price_asc,price_desc,popular',
         ]);
 
-        $perPage = $request->input('per_page', 30);
+        $perPage = $request->input('per_page', 12);
         $sort = $request->input('sort', 'latest');
 
         $categories = Category::withCount('products')
@@ -49,7 +49,7 @@ class CategoryProductController extends Controller
             'max_price' => 'sometimes|numeric|min:0',
         ]);
 
-        $perPage = $request->input('per_page', 30);
+        $perPage = $request->input('per_page', 12);
         $sort = $request->input('sort', 'latest');
 
         $category = Category::where('slug', $slug)

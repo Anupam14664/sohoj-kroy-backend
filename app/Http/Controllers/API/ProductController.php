@@ -189,7 +189,7 @@ class ProductController extends Controller
     public function byCategory(Category $category, Request $request)
     {
         try {
-            $perPage = $request->input('per_page', 12);
+            $perPage = $request->input('per_page', 30);
 
             $products = Product::with(['category', 'variants.color', 'variants.options.size'])
                 ->where('category_id', $category->id)

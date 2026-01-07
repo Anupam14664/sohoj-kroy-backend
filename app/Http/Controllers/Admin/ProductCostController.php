@@ -59,52 +59,113 @@ class ProductCostController extends Controller
             $deliveredOrdersQuery->whereBetween('created_at', [$fromDate, $toDate]);
         }
 
-        $products = $query->paginate(15)->withQueryString();
+        $baseQuery = clone $query;
 
-        // Calculate totals for each product
+        $products = $query->paginate(8)->withQueryString();
+
+        /*
+        |--------------------------------------------------------------------------
+        | PER PRODUCT CALCULATION (TABLE - PAGINATION)
+        |--------------------------------------------------------------------------
+        */
         $products->each(function ($product) use ($request, $deliveredOrdersQuery) {
-            // Total costs with date filter
+
+            // Additional cost
             $costsQuery = $product->costs();
             if ($request->from_date && $request->to_date) {
                 $costsQuery->whereBetween('created_at', [$request->from_date, $request->to_date]);
             }
             $totalAdditionalCost = $costsQuery->sum('amount');
-            $product->total_additional_cost = $totalAdditionalCost;
 
-            // Get delivered orders for this product with date filter
+            // Delivered orders
             $deliveredOrders = clone $deliveredOrdersQuery;
             $deliveredOrders->whereHas('items', function ($q) use ($product) {
                 $q->where('product_id', $product->id);
             });
 
-            // Calculate product sales
             $totalSold = 0;
-            $totalRevenue = 0; // Total sell price
-            $totalBuyPrice = 0; // Total buy price
+            $totalRevenue = 0;
+            $totalBuyPrice = 0;
 
-            $deliveredOrdersList = $deliveredOrders->get();
-            foreach ($deliveredOrdersList as $order) {
+            foreach ($deliveredOrders->get() as $order) {
                 foreach ($order->items as $item) {
                     if ($item->product_id == $product->id) {
                         $totalSold += $item->quantity;
-                        $totalRevenue += ($item->price * $item->quantity); // Sell price
-                        $totalBuyPrice += ($product->buy_price * $item->quantity); // Buy price
+                        $totalRevenue += $item->price * $item->quantity;
+                        $totalBuyPrice += $product->buy_price * $item->quantity;
                     }
                 }
             }
 
-            // Calculate profit: Sell Price - (Buy Price + Additional Costs)
             $totalCost = $totalBuyPrice + $totalAdditionalCost;
             $totalProfit = $totalRevenue - $totalCost;
 
             $product->total_sold = $totalSold;
-            $product->total_revenue = $totalRevenue; // Total sell price
-            $product->total_buy_price = $totalBuyPrice; // Total buy price
-            $product->total_cost = $totalCost; // Buy price + Additional costs
+            $product->total_revenue = $totalRevenue;
+            $product->total_buy_price = $totalBuyPrice;
+            $product->total_additional_cost = $totalAdditionalCost;
+            $product->total_cost = $totalCost;
             $product->total_profit = $totalProfit;
         });
 
-        return view('admin.pages.product-costs.index', compact('products'));
+        /*
+        |--------------------------------------------------------------------------
+        | GLOBAL TOTALS (ALL DATA - NO PAGINATION)
+        |--------------------------------------------------------------------------
+        */
+        $totals = [
+            'total_sold' => 0,
+            'total_revenue' => 0,
+            'total_buy_price' => 0,
+            'total_additional_cost' => 0,
+            'total_profit' => 0,
+        ];
+
+        $allProducts = $baseQuery->get();
+
+        $allProducts->each(function ($product) use ($request, $deliveredOrdersQuery, &$totals) {
+
+            $costsQuery = $product->costs();
+            if ($request->from_date && $request->to_date) {
+                $costsQuery->whereBetween('created_at', [$request->from_date, $request->to_date]);
+            }
+            $totalAdditionalCost = $costsQuery->sum('amount');
+
+            $deliveredOrders = clone $deliveredOrdersQuery;
+            $deliveredOrders->whereHas('items', function ($q) use ($product) {
+                $q->where('product_id', $product->id);
+            });
+
+            $totalSold = 0;
+            $totalRevenue = 0;
+            $totalBuyPrice = 0;
+
+            foreach ($deliveredOrders->get() as $order) {
+                foreach ($order->items as $item) {
+                    if ($item->product_id == $product->id) {
+                        $totalSold += $item->quantity;
+                        $totalRevenue += $item->price * $item->quantity;
+                        $totalBuyPrice += $product->buy_price * $item->quantity;
+                    }
+                }
+            }
+
+            $totalCost = $totalBuyPrice + $totalAdditionalCost;
+            $totalProfit = $totalRevenue - $totalCost;
+
+            // 🔥 ACCUMULATE
+            $totals['total_sold'] += $totalSold;
+            $totals['total_revenue'] += $totalRevenue;
+            $totals['total_buy_price'] += $totalBuyPrice;
+            $totals['total_additional_cost'] += $totalAdditionalCost;
+            $totals['total_profit'] += $totalProfit;
+        });
+
+        return view(
+            'admin.pages.product-costs.index',
+            compact('products', 'totals')
+        );
+
     }
 
 

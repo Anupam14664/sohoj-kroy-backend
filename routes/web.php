@@ -23,12 +23,12 @@ use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\AdminDeliveryOptionController;
 
 Route::get('/', function () {
-    return redirect('/signin');
+    return redirect('/login');
 });
 
 // Login/Logout Routes
-Route::get('signin', [AuthController::class, 'index'])->name('admin.login');
-Route::post('signin', [AuthController::class, 'login'])->name('admin.login.submit');
+Route::get('login', [AuthController::class, 'index'])->name('login');
+Route::post('login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('logout', [AuthController::class, 'logout'])->name('admin.logout');
 
 // Protect Admin Routes
@@ -252,7 +252,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ]);
 
 
-    // costs 
+    // costs
     Route::resource('product-costs', ProductCostController::class)->middleware('can:manage profit')->names([
         'index' => 'admin.product-costs.index',
         'create' => 'admin.product-costs.create',

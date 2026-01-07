@@ -135,7 +135,7 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('admin.login.submit') }}">
+    <form method="POST" action="{{ route('login.submit') }}">
         @csrf
 
         <div class="form-group">

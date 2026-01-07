@@ -70,7 +70,7 @@ class CategoryController extends Controller
 
     public function products(Category $category, Request $request)
     {
-        $perPage = $request->input('per_page', 12);
+        $perPage = $request->input('per_page', 30);
 
         $products = $category->products()
             ->with(['category', 'variants.color', 'variants.options.size'])

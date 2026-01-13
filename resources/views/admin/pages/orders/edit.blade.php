@@ -316,28 +316,28 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-  const bdLocations = @json(config('bd_location'));
-  const selDist = "{{ $selDist }}";
-  const selThana = "{{ $selThana }}";
+    const bdLocations = @json(config('bd_location'));
+    const selDist = "{{ $selDist }}";
+    const selThana = "{{ $selThana }}";
 
-  function loadThanas(district) {
-    const list = bdLocations[district] || [];
-    const $thana = $('#thana').empty().append('<option value="">Select Thana</option>');
-    list.forEach(th => {
-      const selected = th === selThana ? 'selected' : '';
-      $thana.append(`<option value="${th}" ${selected}>${th}</option>`);
-    });
-  }
-
-  $(function() {
-    $('#district').on('change', function() {
-      loadThanas(this.value);
-    });
-
-    if (selDist) {
-      loadThanas(selDist);
+    function loadThanas(district) {
+        const list = bdLocations[district] || [];
+        const $thana = $('#thana').empty().append('<option value="">Select Thana</option>');
+        list.forEach(th => {
+        const selected = th === selThana ? 'selected' : '';
+        $thana.append(`<option value="${th}" ${selected}>${th}</option>`);
+        });
     }
-  });
+
+    $(function() {
+        $('#district').on('change', function() {
+        loadThanas(this.value);
+        });
+
+        if (selDist) {
+        loadThanas(selDist);
+        }
+    });
 </script>
 
 <script>
@@ -359,84 +359,6 @@
     });
 
 </script>
-
-<script>
-    $(document).ready(function () {
-        const suggestionBox = $('#sku-suggestions');
-
-        $('#new_sku_input').on('input', function () {
-            const query = $(this).val();
-
-            if (query.length < 2) {
-                suggestionBox.hide();
-                return;
-            }
-
-            $.get("{{ route('admin.orders.sku-search') }}", { query: query }, function (data) {
-                suggestionBox.empty().show();
-                data.forEach(item => {
-                    suggestionBox.append(`
-                        <a class="list-group-item list-group-item-action"
-                        data-type="${item.type}"
-                        data-id="${item.id}"
-                        data-sku="${item.sku}"
-                        data-name="${item.name}"
-                        data-price="${item.price}"
-                        data-product-id="${item.product_id ?? item.id}"
-                        data-size="${item.size ?? ''}"
-                        data-color="${item.color ?? ''}">
-                            ${item.sku} - ${item.name}
-                        </a>
-                    `);
-                });
-
-                if (suggestionBox.children().length === 0) {
-                    suggestionBox.hide();
-                }
-            });
-        });
-
-        suggestionBox.on('click', '.list-group-item', function () {
-            const index = $('#order-items-table tbody tr').length;
-            const type = $(this).data('type');
-            const productId = $(this).data('product-id');
-            const name = $(this).data('name');
-            const price = parseFloat($(this).data('price')).toFixed(2);
-            const size = $(this).data('size') || '-';
-            const color = $(this).data('color') || '-';
-            const qty = $('#search-quantity').val() || 1;
-
-            $('#order-items-table tbody').append(`
-                <tr>
-                    <td>
-                        ${name}
-                        <input type="hidden" name="items[${index}][product_id]" value="${productId}">
-                        <input type="hidden" name="items[${index}][product_name]" value="${name}">
-                        <input type="hidden" name="items[${index}][price]" value="${price}">
-                        <input type="hidden" name="items[${index}][size]" value="${size !== '-' ? size : ''}">
-                        <input type="hidden" name="items[${index}][color]" value="${color !== '-' ? color : ''}">
-                    </td>
-                    <td>&#2547;${price}</td>
-                    <td>
-                        <input type="number" name="items[${index}][quantity]" value="${qty}" class="form-control form-control-sm" style="width:60px;">
-                    </td>
-                    <td>${size}</td>
-                    <td>${color}</td>
-                    <td>&#2547;${(price * qty).toFixed(2)}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                    </td>
-                </tr>
-            `);
-
-            suggestionBox.hide();
-            $('#search-product').val('');
-            $('#search-quantity').val(1);
-        });
-    });
-
-</script>
-
 
 <style>
     .color-badge {
@@ -467,103 +389,103 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    const statusSelect = document.getElementById('status');
-    const courierField = document.querySelector('.courier-field');
-    const courierSelect = document.getElementById('courier_service_id');
-    const customLinkWrapper = document.getElementById('custom-link-wrapper');
-    const form = document.getElementById('order-status-form');
+        const statusSelect = document.getElementById('status');
+        const courierField = document.querySelector('.courier-field');
+        const courierSelect = document.getElementById('courier_service_id');
+        const customLinkWrapper = document.getElementById('custom-link-wrapper');
+        const form = document.getElementById('order-status-form');
 
-    const currentStatus = "{{ $order->status }}";
-    const hasCourier = {{ $order->courier_service_id ? 'true' : 'false' }};
-    const isAlreadyShipped = currentStatus === 'shipped';
+        const currentStatus = "{{ $order->status }}";
+        const hasCourier = {{ $order->courier_service_id ? 'true' : 'false' }};
+        const isAlreadyShipped = currentStatus === 'shipped';
 
-    const allowedTransitions = {
-        'incomplete': ['pending','hold','processing','cancelled'],
-        'pending': ['hold','processing','cancelled'],
-        'hold': ['processing','cancelled'],
-        'processing': ['shipped','courier_delivered','cancelled'],
-        'shipped': ['courier_delivered','courier_cancelled','cancelled'],
-        'courier_delivered': ['courier_cancelled','delivered'],
-        'courier_cancelled': ['shipped','courier_delivered','cancelled'],
-        'delivered': [],
-        'cancelled': []
-    };
+        const allowedTransitions = {
+            'incomplete': ['pending','hold','processing','cancelled'],
+            'pending': ['hold','processing','cancelled'],
+            'hold': ['processing','cancelled'],
+            'processing': ['shipped','courier_delivered','cancelled'],
+            'shipped': ['courier_delivered','courier_cancelled','cancelled'],
+            'courier_delivered': ['courier_cancelled','delivered'],
+            'courier_cancelled': ['shipped','courier_delivered','cancelled'],
+            'delivered': [],
+            'cancelled': []
+        };
 
-    function updateStatusOptions() {
-        Array.from(statusSelect.options).forEach(option => {
-            option.disabled = !allowedTransitions[currentStatus]?.includes(option.value);
-        });
-        statusSelect.value = currentStatus;
-    }
-
-    function toggleCourierField() {
-        if (statusSelect.value === 'shipped' && !isAlreadyShipped) {
-            courierField.style.display = 'block';
-            courierSelect.required = true;
-        } else {
-            courierField.style.display = 'none';
-            courierSelect.required = false;
-            courierSelect.value = '';
-        }
-    }
-
-    function toggleCustomLink() {
-        /**
-         * Show ONLY when:
-         * ✔ current status = processing
-         * ✔ selected status = courier_delivered
-         * ✔ no courier selected
-         */
-        if (
-            currentStatus === 'processing' &&
-            statusSelect.value === 'courier_delivered' &&
-            !hasCourier
-        ) {
-            customLinkWrapper.style.display = 'block';
-        } else {
-            customLinkWrapper.style.display = 'none';
-        }
-    }
-
-    updateStatusOptions();
-    toggleCourierField();
-    toggleCustomLink();
-
-    statusSelect.addEventListener('change', function () {
-
-        if (isAlreadyShipped && statusSelect.value === 'shipped') {
-            alert('This order has already been shipped.');
+        function updateStatusOptions() {
+            Array.from(statusSelect.options).forEach(option => {
+                option.disabled = !allowedTransitions[currentStatus]?.includes(option.value);
+            });
             statusSelect.value = currentStatus;
-            return;
         }
 
+        function toggleCourierField() {
+            if (statusSelect.value === 'shipped' && !isAlreadyShipped) {
+                courierField.style.display = 'block';
+                courierSelect.required = true;
+            } else {
+                courierField.style.display = 'none';
+                courierSelect.required = false;
+                courierSelect.value = '';
+            }
+        }
+
+        function toggleCustomLink() {
+            /**
+             * Show ONLY when:
+             * ✔ current status = processing
+             * ✔ selected status = courier_delivered
+             * ✔ no courier selected
+             */
+            if (
+                currentStatus === 'processing' &&
+                statusSelect.value === 'courier_delivered' &&
+                !hasCourier
+            ) {
+                customLinkWrapper.style.display = 'block';
+            } else {
+                customLinkWrapper.style.display = 'none';
+            }
+        }
+
+        updateStatusOptions();
         toggleCourierField();
         toggleCustomLink();
+
+        statusSelect.addEventListener('change', function () {
+
+            if (isAlreadyShipped && statusSelect.value === 'shipped') {
+                alert('This order has already been shipped.');
+                statusSelect.value = currentStatus;
+                return;
+            }
+
+            toggleCourierField();
+            toggleCustomLink();
+        });
+
+        form.addEventListener('submit', function (e) {
+
+            if (statusSelect.value === 'shipped' && !courierSelect.value && !isAlreadyShipped) {
+                e.preventDefault();
+                alert("Please select a courier before marking as Shipped.");
+                courierSelect.focus();
+                return;
+            }
+
+            if (
+                currentStatus === 'processing' &&
+                statusSelect.value === 'courier_delivered' &&
+                !hasCourier &&
+                !document.getElementById('custom_link').value
+            ) {
+                e.preventDefault();
+                alert('Custom link is required when courier is not selected.');
+                document.getElementById('custom_link').focus();
+            }
+        });
     });
-
-    form.addEventListener('submit', function (e) {
-
-        if (statusSelect.value === 'shipped' && !courierSelect.value && !isAlreadyShipped) {
-            e.preventDefault();
-            alert("Please select a courier before marking as Shipped.");
-            courierSelect.focus();
-            return;
-        }
-
-        if (
-            currentStatus === 'processing' &&
-            statusSelect.value === 'courier_delivered' &&
-            !hasCourier &&
-            !document.getElementById('custom_link').value
-        ) {
-            e.preventDefault();
-            alert('Custom link is required when courier is not selected.');
-            document.getElementById('custom_link').focus();
-        }
-    });
-});
 </script>
 
 
@@ -579,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function () {
             deliveryChargeInput.value = charge;
         });
     });
-    </script>
+</script>
 
 
 
@@ -600,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
-    </script>
+</script>
 
 
 <script>

@@ -64,7 +64,7 @@
                                                 @endphp
                                                 {{ $sku }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price,0) }}</td>
+                                            <td>&#2547;{{ number_format($item->price,2) }}</td>
                                             <td><input type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" class="form-control form-control-sm" style="width:60px;"></td>
                                             <td>
                                                 {{ $item->variantOption?->size?->name ?? $item->product->size?->name ?? '-' }}
@@ -72,7 +72,7 @@
                                             <td>
                                                 {{ $item->variantOption?->variant?->color?->name ?? '-' }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price * $item->quantity,0) }}</td>
+                                            <td>&#2547;{{ number_format($item->price * $item->quantity,2) }}</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
                                         </tr>
                                     @endforeach
@@ -360,6 +360,83 @@
 
 </script>
 
+<script>
+    $(document).ready(function () {
+        const suggestionBox = $('#sku-suggestions');
+
+        $('#new_sku_input').on('input', function () {
+            const query = $(this).val();
+
+            if (query.length < 2) {
+                suggestionBox.hide();
+                return;
+            }
+
+            $.get("{{ route('admin.orders.sku-search') }}", { query: query }, function (data) {
+                suggestionBox.empty().show();
+                data.forEach(item => {
+                    suggestionBox.append(`
+                        <a class="list-group-item list-group-item-action"
+                        data-type="${item.type}"
+                        data-id="${item.id}"
+                        data-sku="${item.sku}"
+                        data-name="${item.name}"
+                        data-price="${item.price}"
+                        data-product-id="${item.product_id ?? item.id}"
+                        data-size="${item.size ?? ''}"
+                        data-color="${item.color ?? ''}">
+                            ${item.sku} - ${item.name}
+                        </a>
+                    `);
+                });
+
+                if (suggestionBox.children().length === 0) {
+                    suggestionBox.hide();
+                }
+            });
+        });
+
+        suggestionBox.on('click', '.list-group-item', function () {
+            const index = $('#order-items-table tbody tr').length;
+            const type = $(this).data('type');
+            const productId = $(this).data('product-id');
+            const name = $(this).data('name');
+            const price = parseFloat($(this).data('price')).toFixed(2);
+            const size = $(this).data('size') || '-';
+            const color = $(this).data('color') || '-';
+            const qty = $('#search-quantity').val() || 1;
+
+            $('#order-items-table tbody').append(`
+                <tr>
+                    <td>
+                        ${name}
+                        <input type="hidden" name="items[${index}][product_id]" value="${productId}">
+                        <input type="hidden" name="items[${index}][product_name]" value="${name}">
+                        <input type="hidden" name="items[${index}][price]" value="${price}">
+                        <input type="hidden" name="items[${index}][size]" value="${size !== '-' ? size : ''}">
+                        <input type="hidden" name="items[${index}][color]" value="${color !== '-' ? color : ''}">
+                    </td>
+                    <td>&#2547;${price}</td>
+                    <td>
+                        <input type="number" name="items[${index}][quantity]" value="${qty}" class="form-control form-control-sm" style="width:60px;">
+                    </td>
+                    <td>${size}</td>
+                    <td>${color}</td>
+                    <td>&#2547;${(price * qty).toFixed(2)}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                    </td>
+                </tr>
+            `);
+
+            suggestionBox.hide();
+            $('#search-product').val('');
+            $('#search-quantity').val(1);
+        });
+    });
+
+</script>
+
 <style>
     .color-badge {
     display: inline-block;
@@ -618,3 +695,4 @@
         });
     });
 </script>
+

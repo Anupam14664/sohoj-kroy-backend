@@ -27,6 +27,7 @@ class BannerController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'url' => 'nullable|url',
             'page_type' => 'required|in:home,offer,campaign',
             'position' => 'required_if:page_type,offer,campaign|in:left,right|nullable',
             'order' => 'nullable|integer',
@@ -42,6 +43,7 @@ class BannerController extends Controller
             $banner = Banner::create([
                 'title' => $validated['title'],
                 'image' => $imagePath,
+                'url' => $validated['url'] ?? null,
                 'page_type' => $validated['page_type'],
                 'position' => $validated['position'] ?? null,
                 'order' => $validated['order'] ?? 0,
@@ -67,6 +69,7 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'url' => 'nullable|url',
             'page_type' => 'required|in:home,offer,campaign',
             'position' => 'required_if:page_type,offer,campaign|in:left,right|nullable',
             'order' => 'nullable|integer',
@@ -74,6 +77,7 @@ class BannerController extends Controller
 
         $data = [
             'title' => $request->title,
+            'url' => $request->url,
             'page_type' => $request->page_type,
             'position' => $request->position,
             'order' => $request->order ?? 0,

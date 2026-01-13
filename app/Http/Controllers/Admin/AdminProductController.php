@@ -461,7 +461,7 @@ public function show(Product $product)
                     ]);
                 }
             }
-
+            $product->touch();
             DB::commit();
 
             return redirect()->route('admin.products.index')

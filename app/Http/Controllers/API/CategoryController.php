@@ -11,10 +11,10 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::with(['children' => function($query) {
-            $query->withCount('products');
+            $query->withCount('products')->orderBy('updated_at', 'desc');
         }])
         ->withCount('products')
-        ->whereNull('parent_id')
+        ->whereNull('parent_id')->orderBy('updated_at', 'desc')
         ->get();
 
         $categories->transform(function ($category) {
@@ -42,7 +42,7 @@ class CategoryController extends Controller
 
     public function show(Category $category)
     {
-        $category->load('children', 'parent');
+        $category->load('children', 'parent')->orderBy('updated_at', 'desc');
 
         // Add full URL to images
         if ($category->image) {
@@ -75,7 +75,7 @@ class CategoryController extends Controller
         $products = $category->products()
             ->with(['category', 'variants.color', 'variants.options.size'])
             ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
+            ->withAvg('reviews', 'rating')->orderBy('updated_at', 'desc')
             ->paginate($perPage);
 
         // Add full URL to all images

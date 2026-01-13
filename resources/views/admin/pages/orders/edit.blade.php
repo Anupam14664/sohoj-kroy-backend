@@ -232,15 +232,16 @@
                                 $hasIncomplete = \App\Models\Order::where('status', 'incomplete')->exists();
                             @endphp
                             <select name="status" id="status" class="form-control">
-                                @if($hasIncomplete)
-                                <option id="incompleteOption" value="incomplete" {{ $order->status == 'incomplete' ? 'selected' : '' }}>Incomplete</option>
-                                @endif
                                 <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="hold" {{ $order->status == 'hold' ? 'selected' : '' }}>Hold</option>
                                 <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>Order Confirmed</option>
-                                <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}
-                                    {{ $order->status == 'shipped' ? 'disabled' : '' }}>Ready to Shipped</option>
-                                <option value="courier_delivered" {{ $order->status == 'courier_delivered' ? 'selected' : '' }}>Courier Delivered</option>
+                                <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>Shipped</option>
+                                <option value="courier_delivered" {{ $order->status == 'courier_delivered' ? 'selected' : '' }}>
+                                    Courier Delivered
+                                </option>
+                                <option value="courier_cancelled" {{ $order->status == 'courier_cancelled' ? 'selected' : '' }}>
+                                    Courier Cancelled
+                                </option>
                                 <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
                                 <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
@@ -268,29 +269,16 @@
                                     {{ $order->status == 'shipped' ? 'readonly' : '' }}>{{ $order->courier_note }}</textarea>
                             </div>
                         </div>
-                        @if($order->status === 'courier_delivered' && !$order->courier_service_id)
-                        <div class="form-group">
-                            <label for="custom_link" class="form-label">Custom Link</label>
-                            <input type="url" name="custom_link" id="custom_link" class="form-control"
-                                value="{{ old('custom_link', $order->custom_link ?? '') }}"
-                                placeholder="https://example.com">
-                        </div>
-                    @elseif($order->status === 'courier_delivered' && $order->courier_service_id)
-                        <div class="form-group" hidden>
-                            <label class="form-label">Custom Link</label>
-                            <input type="url" class="form-control" value="{{ $order->custom_link }}" readonly>
-                        </div>
-                        @elseif($order->status === 'delivered' && $order->courier_service_id)
-                        <div class="form-group" hidden>
-                            <label class="form-label">Custom Link</label>
-                            <input type="url" class="form-control" value="{{ $order->custom_link }}" readonly>
-                        </div>
-                    @elseif($order->status === 'delivered')
-                        <div class="form-group">
-                            <label class="form-label">Custom Link</label>
-                            <input type="url" class="form-control" value="{{ $order->custom_link }}" readonly>
-                        </div>
-                    @endif
+                            <div class="form-group mt-2" id="custom-link-wrapper" style="display:none;">
+                                <label for="custom_link">Custom Link</label>
+                                <input type="url"
+                                    name="custom_link"
+                                    id="custom_link"
+                                    class="form-control"
+                                    value="{{ old('custom_link', $order->custom_link) }}"
+                                    placeholder="https://example.com">
+                            </div>
+
 
 
                         <div class="form-group">
@@ -479,68 +467,106 @@
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const statusSelect = document.getElementById('status');
-        const courierField = document.querySelector('.courier-field');
-        const courierSelect = document.getElementById('courier_service_id');
-        const form = document.getElementById('order-status-form');
-        const isAlreadyShipped = {{ $order->status === 'shipped' ? 'true' : 'false' }};
+document.addEventListener('DOMContentLoaded', function () {
 
-        // Define allowed status transitions based on current status
-        const allowedTransitions = {
-            'incomplete': ['pending', 'hold','processing', 'cancelled'],
-            'pending': ['hold', 'processing', 'cancelled'],
-            'hold': ['processing', 'cancelled'],
-            'processing': ['shipped', 'courier_delivered', 'cancelled'],
-            'shipped': ['courier_delivered', 'cancelled'],
-            'courier_delivered': ['delivered'],
-            'delivered': [],
-            'cancelled': []
-        };
+    const statusSelect = document.getElementById('status');
+    const courierField = document.querySelector('.courier-field');
+    const courierSelect = document.getElementById('courier_service_id');
+    const customLinkWrapper = document.getElementById('custom-link-wrapper');
+    const form = document.getElementById('order-status-form');
 
-        // Current order status
-        const currentStatus = '{{ $order->status }}';
+    const currentStatus = "{{ $order->status }}";
+    const hasCourier = {{ $order->courier_service_id ? 'true' : 'false' }};
+    const isAlreadyShipped = currentStatus === 'shipped';
 
-        // Disable invalid options
-        function updateStatusOptions() {
-            Array.from(statusSelect.options).forEach(option => {
-                option.disabled = !allowedTransitions[currentStatus].includes(option.value);
-            });
+    const allowedTransitions = {
+        'incomplete': ['pending','hold','processing','cancelled'],
+        'pending': ['hold','processing','cancelled'],
+        'hold': ['processing','cancelled'],
+        'processing': ['shipped','courier_delivered','cancelled'],
+        'shipped': ['courier_delivered','courier_cancelled','cancelled'],
+        'courier_delivered': ['courier_cancelled','delivered'],
+        'courier_cancelled': ['shipped','courier_delivered','cancelled'],
+        'delivered': [],
+        'cancelled': []
+    };
 
+    function updateStatusOptions() {
+        Array.from(statusSelect.options).forEach(option => {
+            option.disabled = !allowedTransitions[currentStatus]?.includes(option.value);
+        });
+        statusSelect.value = currentStatus;
+    }
+
+    function toggleCourierField() {
+        if (statusSelect.value === 'shipped' && !isAlreadyShipped) {
+            courierField.style.display = 'block';
+            courierSelect.required = true;
+        } else {
+            courierField.style.display = 'none';
+            courierSelect.required = false;
+            courierSelect.value = '';
+        }
+    }
+
+    function toggleCustomLink() {
+        /**
+         * Show ONLY when:
+         * ✔ current status = processing
+         * ✔ selected status = courier_delivered
+         * ✔ no courier selected
+         */
+        if (
+            currentStatus === 'processing' &&
+            statusSelect.value === 'courier_delivered' &&
+            !hasCourier
+        ) {
+            customLinkWrapper.style.display = 'block';
+        } else {
+            customLinkWrapper.style.display = 'none';
+        }
+    }
+
+    updateStatusOptions();
+    toggleCourierField();
+    toggleCustomLink();
+
+    statusSelect.addEventListener('change', function () {
+
+        if (isAlreadyShipped && statusSelect.value === 'shipped') {
+            alert('This order has already been shipped.');
             statusSelect.value = currentStatus;
+            return;
         }
 
-        function toggleCourierField() {
-            if (statusSelect.value === 'shipped' && !isAlreadyShipped) {
-                courierField.style.display = 'block';
-                courierSelect.required = true;
-            } else {
-                courierField.style.display = 'none';
-                courierSelect.required = false;
-                courierSelect.value = "";
-            }
-        }
-
-        updateStatusOptions();
         toggleCourierField();
-
-        statusSelect.addEventListener('change', function() {
-            if (isAlreadyShipped && statusSelect.value === 'shipped') {
-                alert('This order has already been shipped and cannot be shipped again.');
-                statusSelect.value = currentStatus;
-            }
-            toggleCourierField();
-        });
-
-        form.addEventListener('submit', function (e) {
-            if (statusSelect.value === 'shipped' && !courierSelect.value && !isAlreadyShipped) {
-                e.preventDefault();
-                alert("Please select a courier service before marking as 'Shipped'.");
-                courierSelect.focus();
-            }
-        });
+        toggleCustomLink();
     });
+
+    form.addEventListener('submit', function (e) {
+
+        if (statusSelect.value === 'shipped' && !courierSelect.value && !isAlreadyShipped) {
+            e.preventDefault();
+            alert("Please select a courier before marking as Shipped.");
+            courierSelect.focus();
+            return;
+        }
+
+        if (
+            currentStatus === 'processing' &&
+            statusSelect.value === 'courier_delivered' &&
+            !hasCourier &&
+            !document.getElementById('custom_link').value
+        ) {
+            e.preventDefault();
+            alert('Custom link is required when courier is not selected.');
+            document.getElementById('custom_link').focus();
+        }
+    });
+});
 </script>
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

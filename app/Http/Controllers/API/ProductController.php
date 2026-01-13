@@ -25,7 +25,7 @@ class ProductController extends Controller
                 $q->where('is_approved', true);
             }])
             ->withAvg('reviews', 'rating')
-            ->active()->where('status', true)
+            ->active()->where('status', true)->orderBy('updated_at', 'desc')
             ->latest()
             ->paginate(12);
 
@@ -194,7 +194,7 @@ class ProductController extends Controller
             $products = Product::with(['category', 'variants.color', 'variants.options.size'])
                 ->where('category_id', $category->id)
                 ->withCount('reviews')
-                ->withAvg('reviews', 'rating')
+                ->withAvg('reviews', 'rating')->orderBy('updated_at', 'desc')
                 ->latest()
                 ->paginate($perPage);
 
@@ -263,7 +263,7 @@ class ProductController extends Controller
 public function featured()
 {
     $products = Product::where('is_featured', true)
-        ->with(['category', 'images', 'variants'])
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
         ->latest()
         ->get();
 
@@ -305,7 +305,7 @@ public function featured()
 public function offer()
 {
     $products = Product::where('is_offer', true)
-        ->with(['category', 'images', 'variants'])
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
         ->latest()
         ->get();
 
@@ -347,7 +347,7 @@ public function offer()
 public function campaign()
 {
     $products = Product::where('is_campaign', true)
-        ->with(['category', 'images', 'variants'])
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
         ->latest()
         ->get();
 

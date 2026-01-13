@@ -33,6 +33,10 @@
                         </span>
                     @enderror
                 </div>
+                <div class="form-group">
+                    <label for="url">Banner URL</label>
+                    <input type="url" name="url" id="url" class="form-control @error('url') is-invalid @enderror" value="{{ old('url') }}" placeholder="https://example.com" >
+                </div>
 
                 <div class="form-group">
                     <label for="page_type">Page Type *</label>

@@ -30,6 +30,8 @@ class DashboardController extends Controller
         $yesterdayOrders = Order::whereDate('created_at', $yesterday)->count();
         $monthlyOrders = Order::where('created_at', '>=', $currentMonth)->count();
         $totalOrders = Order::count();
+        $todayConfirmedOrders = Order::whereDate('created_at', $today)->where('status', 'processing')->count();
+        $todayCancelledOrders = Order::whereDate('created_at', $today)->whereIn('status', ['cancelled', 'courier_cancelled'])->count();
 
         // Amount calculations
         $todayAmount = Order::whereDate('created_at', $today)->sum('total');
@@ -120,6 +122,8 @@ class DashboardController extends Controller
             'yesterdayOrders' => $yesterdayOrders,
             'monthlyOrders' => $monthlyOrders,
             'totalOrders' => $totalOrders,
+            'todayConfirmedOrders' => $todayConfirmedOrders,
+            'todayCancelledOrders' => $todayCancelledOrders,
 
             // Amounts
             'todayAmount' => $todayAmount,

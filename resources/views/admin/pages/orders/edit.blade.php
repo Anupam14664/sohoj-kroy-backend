@@ -360,7 +360,7 @@
 
 </script>
 
-{{-- <script>
+<script>
     $(document).ready(function () {
         const suggestionBox = $('#sku-suggestions');
 
@@ -435,7 +435,7 @@
         });
     });
 
-</script> --}}
+</script>
 
 
 <style>

@@ -448,7 +448,6 @@ class AdminOrderController extends Controller
             $query->where('orders.thana', 'like', '%' . $request->thana . '%');
         }
 
-        // Search
         if ($request->filled('search')) {
 
             $searchTerm = trim($request->search);
@@ -456,22 +455,16 @@ class AdminOrderController extends Controller
             if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
 
                 $normalized = preg_replace('/\D/', '', $searchTerm);
-
-                // +880 → 0
                 if (str_starts_with($normalized, '880')) {
                     $normalized = '0' . substr($normalized, 3);
                 }
-
-                // শুধু ১১ ডিজিট হলে search
                 if (strlen($normalized) === 11) {
                     $query->where('orders.phone', $normalized);
                 } else {
-                    // Partial / wrong number → NO RESULT
                     $query->whereRaw('1 = 0');
                 }
 
             }
-            // Non-numeric → name / product / sku search
             else {
 
                 $search = strtolower($searchTerm);

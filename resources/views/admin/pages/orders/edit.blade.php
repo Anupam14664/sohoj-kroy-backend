@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </script>
 
 
-<script>
+{{-- <script>
     $(document).ready(function(){
         let selectedProducts = {};
 
@@ -695,4 +695,113 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+</script> --}}
+<script>
+$(document).ready(function () {
+
+    const $input = $('#search-product');
+    const $qty = $('#search-quantity');
+    const $suggestionBox = $('#sku-suggestions');
+
+    $input.on('input', function () {
+        const query = $(this).val();
+
+        if (query.length < 2) {
+            $suggestionBox.hide();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('admin.orders.sku-search') }}",
+            data: { query: query },
+            success: function (data) {
+
+                let html = '';
+
+                data.forEach(item => {
+                    html += `
+                        <div class="suggestion-item p-2 border-bottom"
+                            data-product-id="${item.product_id}"
+                            data-variant-id="${item.variant_option_id ?? ''}"
+                            data-name="${item.name}"
+                            data-sku="${item.sku}"
+                            data-price="${item.price}"
+                            data-size="${item.size ?? '-'}"
+                            data-color="${item.color ?? '-'}"
+                            data-image="${item.image ?? ''}">
+
+                            <strong>${item.name}</strong>
+                            <small class="text-muted">(${item.sku})</small>
+                        </div>
+                    `;
+                });
+
+                if (html === '') {
+                    $suggestionBox.hide();
+                } else {
+                    $suggestionBox.html(html).show();
+                }
+            }
+        });
+    });
+
+    // Click to add item
+    $(document).on('click', '.suggestion-item', function () {
+
+        const index = $('#order-items-table tbody tr').length;
+        const qty = parseInt($qty.val()) || 1;
+
+        const name = $(this).data('name');
+        const price = parseFloat($(this).data('price'));
+        const size = $(this).data('size');
+        const color = $(this).data('color');
+        const image = $(this).data('image');
+        const productId = $(this).data('product-id');
+        const variantId = $(this).data('variant-id');
+
+        $('#order-items-table tbody').append(`
+            <tr>
+                <td>
+                    ${image
+                        ? `<img src="/storage/${image}" width="50" class="img-thumbnail">`
+                        : '<span class="text-muted">No image</span>'}
+                </td>
+                <td>
+                    ${name}
+                    <input type="hidden" name="items[${index}][product_id]" value="${productId}">
+                    ${variantId ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variantId}">` : ''}
+                    <input type="hidden" name="items[${index}][price]" value="${price}">
+                </td>
+                <td>${$(this).data('sku')}</td>
+                <td>&#2547;${price.toFixed(0)}</td>
+                <td>
+                    <input type="number"
+                        name="items[${index}][quantity]"
+                        value="${qty}"
+                        class="form-control form-control-sm"
+                        style="width:60px;">
+                </td>
+                <td>${size}</td>
+                <td>${color}</td>
+                <td>&#2547;${(price * qty).toFixed(0)}</td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+
+        $suggestionBox.hide();
+        $input.val('');
+        $qty.val(1);
+    });
+
+    // Hide suggestion on outside click
+    $(document).click(function (e) {
+        if (!$(e.target).closest('#search-product, #sku-suggestions').length) {
+            $suggestionBox.hide();
+        }
+    });
+});
 </script>

@@ -84,7 +84,7 @@ class AdminOrderController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled',
+            'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled,courier_cancelled',
             'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
             'delivery_note' => 'nullable|string|max:255',
             'comment' => 'nullable|string',
@@ -95,43 +95,58 @@ class AdminOrderController extends Controller
             'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
             'pending' => ['hold', 'processing', 'cancelled'],
             'hold' => ['processing', 'cancelled'],
-            'processing' => ['shipped','courier_delivered', 'cancelled'],
-            'shipped' => ['courier_delivered', 'cancelled'],
-            'courier_delivered' => ['delivered'],
+            'processing' => ['shipped', 'courier_delivered', 'cancelled'],
+            'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_delivered' => ['delivered', 'courier_cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
             'delivered' => [],
             'cancelled' => [],
         ];
 
-
         $currentStatus = $order->status;
         $newStatus = $validated['status'];
 
-        if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
-            return back()->with('error', 'Invalid status transition from '.$currentStatus.' to '.$newStatus);
+        if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
+            return back()->with('error', "Invalid status transition from $currentStatus to $newStatus");
         }
 
         DB::beginTransaction();
 
-        if ($validated['status'] === 'courier_delivered' || $validated['status'] === 'delivered') {
-            $order->custom_link = $request->custom_link ?? $order->custom_link;
-        }
-
         try {
-            if ($validated['status'] === 'shipped' && $order->status === 'shipped') {
+
+            // Already shipped protection
+            if ($newStatus === 'shipped' && $order->status === 'shipped') {
                 throw new \Exception('This order is already marked as shipped.');
             }
 
-            if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
+            // Cancelled OR Courier Cancelled → return stock
+            if (in_array($newStatus, ['cancelled', 'courier_cancelled']) && $order->status !== $newStatus) {
                 $order->returnStock();
             }
 
-            $order->status = $validated['status'];
+            /**
+             * Custom Link logic
+             * ✔ Only when processing → courier_delivered
+             * ✔ Only if courier_service_id is NULL
+             */
+            if (
+                $newStatus === 'courier_delivered' &&
+                $order->status === 'processing' &&
+                !$order->courier_service_id
+            ) {
+                $order->custom_link = $request->custom_link;
+            }
+
+            $order->status = $newStatus;
+
             if (isset($validated['comment'])) {
                 $order->comment = $validated['comment'];
             }
 
-
-            if ($validated['status'] === 'shipped') {
+            /**
+             * Shipped → Courier API Call
+             */
+            if ($newStatus === 'shipped') {
                 $courier = CourierService::findOrFail($validated['courier_service_id']);
 
                 $payload = [
@@ -149,7 +164,10 @@ class AdminOrderController extends Controller
                     'Api-Key' => $courier->api_key,
                     'Secret-Key' => $courier->secret_key,
                     'Content-Type' => 'application/json',
-                ])->post($courier->base_url . '/' . $courier->create_order_endpoint, $payload);
+                ])->post(
+                    $courier->base_url . '/' . $courier->create_order_endpoint,
+                    $payload
+                );
 
                 $data = $response->json();
 
@@ -166,18 +184,24 @@ class AdminOrderController extends Controller
             $order->save();
             DB::commit();
 
-            return back()->with('success', 'Order updated successfully.' .
-                ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : ''));
+            return back()->with(
+                'success',
+                'Order updated successfully.' .
+                ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : '')
+            );
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             Log::error('Order status update failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
+
             return back()->with('error', 'Failed to update order: ' . $e->getMessage());
         }
     }
+
 
 
 
@@ -402,9 +426,21 @@ class AdminOrderController extends Controller
             ->groupBy('orders.name', 'orders.phone');
 
         // Filters
-        if ($request->filled('phone')) {
-            $query->where('orders.phone', 'like', '%' . $request->phone . '%');
+        if ($request->filled('phone') && !$request->filled('search')) {
+
+            $phone = preg_replace('/\D/', '', $request->phone);
+
+            if (str_starts_with($phone, '880')) {
+                $phone = '0' . substr($phone, 3);
+            }
+
+            if (strlen($phone) === 11) {
+                $query->where('orders.phone', $phone);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
+
         if ($request->filled('district')) {
             $query->where('orders.district', 'like', '%' . $request->district . '%');
         }
@@ -412,25 +448,42 @@ class AdminOrderController extends Controller
             $query->where('orders.thana', 'like', '%' . $request->thana . '%');
         }
 
-        // Search
         if ($request->filled('search')) {
-            $searchTerm = strtolower($request->search);
 
-            $query->where(function($q) use ($searchTerm) {
-                $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$searchTerm}%"])
-                ->orWhereRaw('LOWER(orders.phone) LIKE ?', ["%{$searchTerm}%"])
-                ->orWhereIn('orders.phone', function($sub) use ($searchTerm) {
-                    $sub->select('orders.phone')
-                        ->from('orders')
-                        ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                        ->join('products', 'order_items.product_id', '=', 'products.id')
-                        ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
-                        ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
-                        ->whereRaw('LOWER(products.name) LIKE ?', ["%{$searchTerm}%"])
-                        ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$searchTerm}%"])
-                        ->orWhereRaw('LOWER(product_variant_options.sku) LIKE ?', ["%{$searchTerm}%"]);
+            $searchTerm = trim($request->search);
+
+            if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
+
+                $normalized = preg_replace('/\D/', '', $searchTerm);
+                if (str_starts_with($normalized, '880')) {
+                    $normalized = '0' . substr($normalized, 3);
+                }
+                if (strlen($normalized) === 11) {
+                    $query->where('orders.phone', $normalized);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+
+            }
+            else {
+
+                $search = strtolower($searchTerm);
+
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
+                    ->orWhereIn('orders.phone', function ($sub) use ($search) {
+                        $sub->select('orders.phone')
+                            ->from('orders')
+                            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+                            ->join('products', 'order_items.product_id', '=', 'products.id')
+                            ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
+                            ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
+                            ->whereRaw('LOWER(products.name) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(product_variant_options.sku) LIKE ?', ["%{$search}%"]);
+                    });
                 });
-            });
+            }
         }
 
         $allCustomers = $query->orderBy('orders.phone')->get();

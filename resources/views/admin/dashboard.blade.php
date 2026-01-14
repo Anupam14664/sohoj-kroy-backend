@@ -104,24 +104,6 @@
             </div>
         </div>
 
-        <!-- Today's Revenue -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-secondary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
-                                Today's Revenue</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">&#2547;{{ number_format($todayAmount, 2) }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-money-bill fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Total Products -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
@@ -145,18 +127,36 @@
             </div>
         </div>
 
-        <!-- Today's Profit -->
+        <!-- Today's Order Confirmed -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                Today's Order Confirmed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $todayConfirmedOrders }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Cancelled -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Today's Profit</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">&#2547;{{ number_format($todayProfit, 2) }}</div>
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Today's Cancelled</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $todayCancelledOrders }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
                         </div>
                     </div>
                 </div>

@@ -96,6 +96,7 @@ class AdminCategoryController extends Controller
             'parent_id' => $validated['parent_id'],
             'image' => $imagePath,
         ]);
+        $category->touch();
 
         return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully');
     }

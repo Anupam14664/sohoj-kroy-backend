@@ -59,6 +59,20 @@
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                                 @enderror
                         </div>
+                        <div class="form-group">
+                            <label for="review_date">Review Date (Optional)</label>
+                            <input type="date"
+       class="form-control @error('review_date') is-invalid @enderror"
+       name="review_date"
+       id="review_date"
+       value="{{ old('review_date', date('Y-m-d')) }}"> 
+                            <small class="form-text text-muted">
+                                Select a custom review date.
+                            </small>
+                            @error('review_date')
+                                <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
 
                         <!-- Approve Checkbox -->
                         <div class="form-group">

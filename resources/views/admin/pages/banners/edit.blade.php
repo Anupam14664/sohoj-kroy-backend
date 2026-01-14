@@ -63,6 +63,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="url">Banner URL</label>
+                    <input type="url" name="url" id="url" class="form-control" value="{{ old('url', $banner->url) }}" placeholder="https://example.com">
+                    {{-- <small class="text-muted">Optional: Click করলে এই URL এ যাবে</small> --}}
+                </div>
+
+
+                <div class="form-group">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ $banner->is_active ? 'checked' : '' }}>
                         <label class="form-check-label" for="is_active">

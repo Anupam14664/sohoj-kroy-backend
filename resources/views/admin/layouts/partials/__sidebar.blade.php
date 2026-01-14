@@ -66,6 +66,12 @@
                                                 {{ App\Models\Order::where('status', 'courier_delivered')->count() }}
                                             </span>
                             </a></li>
+							<li><a href="{{ route('admin.orders.index', ['status' => 'courier_cancelled']) }}"><span class="sub-item">Courier Cancelled</span>
+
+                            <span class="badge badge-danger float-right">
+                                                {{ App\Models\Order::where('status', 'courier_cancelled')->count() }}
+                                            </span>
+                            </a></li>
 							<li><a href="{{ route('admin.orders.index', ['status' => 'delivered']) }}"><span class="sub-item">Delivered Orders</span>
                             <span class="badge badge-success float-right">
                                                 {{ App\Models\Order::where('status', 'delivered')->count() }}

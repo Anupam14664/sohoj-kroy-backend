@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\Review;
-use App\Models\ReviewImage;
+use Carbon\Carbon;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Models\Review;
+use App\Models\Product;
+use App\Models\ReviewImage;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class AdminReviewController extends Controller
 {
@@ -47,6 +48,7 @@ class AdminReviewController extends Controller
             'name' => 'required|string|max:255',
             'rating' => 'required|integer|min:1|max:5',
             'description' => 'required|string|max:1000',
+            'review_date' => 'nullable|date',
             'is_approved' => 'sometimes|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:6144',
             'images' => 'max:5'
@@ -61,12 +63,21 @@ class AdminReviewController extends Controller
                 ]
             );
 
+            $reviewDate = now();
+
+            if ($request->filled('review_date')) {
+                $reviewDate = Carbon::parse($request->review_date)
+                    ->setTime(now()->hour, now()->minute, now()->second);
+            }
+
             $review = Review::create([
                 'user_id' => $user->id,
                 'product_id' => $request->product_id,
                 'rating' => $request->rating,
                 'description' => $request->description,
-                'is_approved' => $request->has('is_approved') ? $request->is_approved : false
+                'is_approved' => $request->has('is_approved') ? $request->is_approved : false,
+                'created_at' => $reviewDate,
+                'updated_at' => $reviewDate,
             ]);
 
             if ($request->hasFile('images')) {

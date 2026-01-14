@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model
 {
     use HasFactory;
-
+    // public $timestamps = false;
     protected $fillable = [
-        'user_id', 'product_id', 'rating', 'description', 'is_approved'
+        'user_id', 'product_id', 'rating', 'description', 'is_approved', 'created_at', 'updated_at',
     ];
 
     public function user()

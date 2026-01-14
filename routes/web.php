@@ -93,7 +93,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'update' => 'admin.orders.update',
         'destroy' => 'admin.orders.destroy',
     ]);
-    Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->middleware('can:manage orders')->name('admin.orders.update.items');
+    Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->name('admin.orders.update.items');
     Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->name('admin.orders.update.delivery');
     Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
     Route::get('orders/download/{order}', [AdminOrderController::class, 'download'])->name('admin.orders.download');

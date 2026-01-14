@@ -32,7 +32,7 @@ class Order extends Model
         'courier_service_id',
         'admin_discount',
         'custom_link',
-        'admin_comment'
+        'admin_comment',
     ];
 
 

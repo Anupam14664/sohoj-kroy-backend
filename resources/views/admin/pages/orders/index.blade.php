@@ -46,6 +46,7 @@
                                 <option value="processing" {{ $status == 'processing' ? 'selected' : '' }}>Order Confirmed</option>
                                 <option value="shipped" {{ $status == 'shipped' ? 'selected' : '' }}>Ready to Shipped</option>
                                 <option value="courier_delivered" {{ $status == 'courier_delivered' ? 'selected' : '' }}>Courier Delivered</option>
+                                <option value="courier_cancelled" {{ $status == 'courier_cancelled' ? 'selected' : '' }}>Courier Cancelled</option>
                                 <option value="delivered" {{ $status == 'delivered' ? 'selected' : '' }}>Delivered</option>
                                 <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
@@ -166,6 +167,7 @@
                                     <span class="badge
                                         @if($order->status == 'delivered') badge-success
                                         @elseif($order->status == 'cancelled') badge-danger
+                                        @elseif($order->status == 'courier_cancelled') badge-danger
                                         @elseif($order->status == 'hold') badge-info
                                         @elseif($order->status == 'incomplete') badge-secondary
                                         @elseif($order->status == 'courier_delivered') badge-primary

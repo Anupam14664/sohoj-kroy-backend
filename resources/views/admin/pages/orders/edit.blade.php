@@ -612,116 +612,146 @@
 @endphp
 
 <script>
-    $(document).ready(function(){
+$(document).ready(function(){
 
-        let allProducts = {!! json_encode($allProducts) !!};
-        let allVariants = {!! json_encode($allVariants) !!};
-        let selectedProducts = {};
+    let selectedProducts = {}; // key => row index
 
-        function renderRow(product, variant, quantity) {
-            // Unique key: variant id or product id
-            let key = variant ? 'v' + variant.id : 'p' + product.id;
+    function updateSubtotal(row) {
+        let qty = parseInt(row.find('input[name*="[quantity]"]').val()) || 0;
+        let price = parseFloat(row.find('td').eq(3).text().replace('৳','')) || 0;
+        row.find('td').eq(7).text('৳' + (qty * price));
+    }
 
-            // Prevent duplicate
-            if (selectedProducts[key]) return;
-            selectedProducts[key] = true;
+    function renderRow(product, variant, quantity) {
+        let key = product.id + '-' + (variant ? variant.id : 'null');
 
-            // Null-safe values
-            let img = variant && variant.image ? variant.image : (product.main_image || '');
-            let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
-            let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
-            let size = variant && variant.size && variant.size.name ? variant.size.name : '-';
-            let color = variant && variant.variant && variant.variant.color && variant.variant.color.name ? variant.variant.color.name : '-';
-            let index = $('#order-items-table tbody tr').length;
-
-            let row = `<tr>
-                <td>${img ? `<img src="/storage/${img}" width="50" class="img-thumbnail">` : '<span class="text-muted">No Image</span>'}</td>
-                <td>${product.name}
-                    <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
-                    ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
-                </td>
-                <td>${sku}</td>
-                <td>&#2547;${price}</td>
-                <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control form-control-sm" style="width:60px;"></td>
-                <td>${size}</td>
-                <td>${color}</td>
-                <td>&#2547;${price * quantity}</td>
-                <td><button type="button" class="btn btn-danger btn-sm remove-item">x</button></td>
-            </tr>`;
-
-            $('#order-items-table tbody').append(row);
+        if(selectedProducts[key] !== undefined) {
+            let row = $('#order-items-table tbody tr').eq(selectedProducts[key]);
+            let qtyInput = row.find('input[name*="[quantity]"]');
+            let newQty = (parseInt(qtyInput.val()) || 0) + quantity;
+            qtyInput.val(newQty);
+            updateSubtotal(row);
+            return;
         }
 
-        // Remove row
-        $(document).on('click','.remove-item',function(){
-            let row = $(this).closest('tr');
-            let productId = row.find('input[name*="[product_id]"]').val();
-            let variantInput = row.find('input[name*="[variant_option_id]"]');
-            let key = variantInput.length ? 'v' + variantInput.val() : 'p' + productId;
+        let img = variant && variant.image ? variant.image : (product.main_image || '');
+        let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
+        let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
+        let size = variant && variant.size && variant.size.name ? variant.size.name : '-';
+        let color = variant && variant.variant && variant.variant.color && variant.variant.color.name ? variant.variant.color.name : '-';
+        let index = $('#order-items-table tbody tr').length;
 
-            delete selectedProducts[key]; // allow re-add
-            row.remove();
+        let rowHtml = `<tr>
+            <td>${img ? `<img src="/storage/${img}" width="50" class="img-thumbnail">` : '<span class="text-muted">No Image</span>'}</td>
+            <td>${product.name}
+                <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
+                ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
+            </td>
+            <td>${sku}</td>
+            <td>৳${price}</td>
+            <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control form-control-sm quantity-input" style="width:60px;"></td>
+            <td>${size}</td>
+            <td>${color}</td>
+            <td>৳${price * quantity}</td>
+            <td><button type="button" class="btn btn-danger btn-sm remove-item">x</button></td>
+        </tr>`;
+
+        $('#order-items-table tbody').append(rowHtml);
+        selectedProducts[key] = index;
+    }
+
+    // Remove row
+    $(document).on('click','.remove-item',function(){
+        let row = $(this).closest('tr');
+        let productId = row.find('input[name*="[product_id]"]').val();
+        let variantInput = row.find('input[name*="[variant_option_id]"]');
+        let key = productId + '-' + (variantInput.length ? variantInput.val() : 'null');
+
+        delete selectedProducts[key];
+        row.remove();
+
+        $('#order-items-table tbody tr').each(function(i){
+            let r = $(this);
+            let pid = r.find('input[name*="[product_id]"]').val();
+            let vid = r.find('input[name*="[variant_option_id]"]');
+            let k = pid + '-' + (vid.length ? vid.val() : 'null');
+            selectedProducts[k] = i;
         });
-
-        // Search input
-        $('#search-product').on('input', function(){
-            let query = $(this).val().toLowerCase();
-            if(!query) {
-                $('#sku-suggestions').hide();
-                return;
-            }
-
-            let matches = [];
-
-            // Products without variant
-            allProducts.forEach(function(p){
-                if((p.name && p.name.toLowerCase().includes(query)) || (p.sku && p.sku.toLowerCase().includes(query))){
-                    matches.push({product: p, variant: null});
-                }
-            });
-
-            // Products with variant
-            allVariants.forEach(function(v){
-                if(!v.variant || !v.variant.product) return;
-                let prod = v.variant.product;
-                if((prod.name && prod.name.toLowerCase().includes(query)) ||
-                (prod.sku && prod.sku.toLowerCase().includes(query)) ||
-                (v.sku && v.sku.toLowerCase().includes(query))){
-                    matches.push({product: prod, variant: v});
-                }
-            });
-
-            let html = '';
-            matches.forEach(function(m){
-                let image = m.variant && m.variant.image ? m.variant.image : (m.product.main_image || '');
-                let sku = m.variant && m.variant.sku ? m.variant.sku : m.product.sku;
-                html += `<div class="p-2 border-bottom suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant)}'>
-                            ${image ? `<img src="/storage/${image}" width="40" class="me-2">` : ''}${m.product.name} <small>(${sku})</small>
-                        </div>`;
-            });
-
-            $('#sku-suggestions').html(html).show();
-        });
-
-        // Click suggestion
-        $(document).on('click','.suggestion-item', function(){
-            let product = JSON.parse($(this).attr('data-product'));
-            let variant = $(this).attr('data-variant') !== 'null' ? JSON.parse($(this).attr('data-variant')) : null;
-            let qty = parseInt($('#search-quantity').val() || 1);
-
-            renderRow(product, variant, qty);
-
-            $('#sku-suggestions').hide();
-            $('#search-product').val('');
-            $('#search-quantity').val(1);
-        });
-
-        // Hide suggestions when clicking outside
-        $(document).click(function(e){
-            if(!$(e.target).closest('#sku-suggestions,#search-product').length){
-                $('#sku-suggestions').hide();
-            }
-        });
-
     });
+
+    // Quantity change
+    $(document).on('input','.quantity-input',function(){
+        let row = $(this).closest('tr');
+        updateSubtotal(row);
+    });
+
+    // All products/variants json
+    let allProducts = @json($allProducts, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG);
+    let allVariants = @json($allVariants, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG);
+
+    function renderSuggestions(query) {
+        query = query.toLowerCase();
+        if(!query) {
+            $('#sku-suggestions').hide();
+            return;
+        }
+
+        let html = '';
+
+        // Products without variant
+        allProducts.forEach(function(p){
+            if((p.name && p.name.toLowerCase().includes(query)) || (p.sku && p.sku.toLowerCase().includes(query))){
+                let dataProduct = JSON.stringify(p);
+                html += `<div class="p-2 border-bottom suggestion-item" data-product='${dataProduct}' data-variant='null'>
+                            ${p.main_image ? `<img src="/storage/${p.main_image}" width="40" class="me-2">` : ''}${p.name} <small>(${p.sku})</small>
+                         </div>`;
+            }
+        });
+
+        // Products with variant
+        allVariants.forEach(function(v){
+            if(!v.variant || !v.variant.product) return;
+            let prod = v.variant.product;
+            if((prod.name && prod.name.toLowerCase().includes(query)) ||
+               (prod.sku && prod.sku.toLowerCase().includes(query)) ||
+               (v.sku && v.sku.toLowerCase().includes(query))){
+                let dataProduct = JSON.stringify(prod);
+                let dataVariant = JSON.stringify(v);
+                let image = v.image ? v.image : (prod.main_image || '');
+                html += `<div class="p-2 border-bottom suggestion-item" data-product='${dataProduct}' data-variant='${dataVariant}'>
+                            ${image ? `<img src="/storage/${image}" width="40" class="me-2">` : ''}${prod.name} <small>(${v.sku || prod.sku})</small>
+                         </div>`;
+            }
+        });
+
+        $('#sku-suggestions').html(html).show();
+    }
+
+    $('#search-product').on('input', function(){
+        renderSuggestions($(this).val());
+    });
+
+    $(document).on('click','.suggestion-item', function(){
+        let productStr = $(this).attr('data-product');
+        let variantStr = $(this).attr('data-variant');
+
+        let product = JSON.parse(productStr);
+        let variant = variantStr && variantStr !== 'null' ? JSON.parse(variantStr) : null;
+        let qty = parseInt($('#search-quantity').val() || 1);
+
+        renderRow(product, variant, qty);
+
+        $('#sku-suggestions').hide();
+        $('#search-product').val('');
+        $('#search-quantity').val(1);
+    });
+
+    $(document).click(function(e){
+        if(!$(e.target).closest('#sku-suggestions,#search-product').length){
+            $('#sku-suggestions').hide();
+        }
+    });
+
+});
 </script>
+

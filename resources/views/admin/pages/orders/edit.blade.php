@@ -64,7 +64,7 @@
                                                 @endphp
                                                 {{ $sku }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price,0) }}</td>
                                             <td><input type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" class="form-control form-control-sm" style="width:60px;"></td>
                                             <td>
                                                 {{ $item->variantOption?->size?->name ?? $item->product->size?->name ?? '-' }}
@@ -72,7 +72,7 @@
                                             <td>
                                                 {{ $item->variantOption?->variant?->color?->name ?? '-' }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price * $item->quantity,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price * $item->quantity,0) }}</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
                                         </tr>
                                     @endforeach
@@ -86,7 +86,7 @@
                         <div class="input-group mb-3 position-relative">
                             <input type="text" id="search-product" class="form-control" placeholder="Type name, SKU or Variant SKU" autocomplete="off">
                             <input type="number" id="search-quantity" class="form-control" placeholder="Qty" value="1" style="max-width:100px;">
-                            <div id="sku-suggestions" class="position-absolute bg-white border" style="z-index:1000;width:100%;display:none;"></div>
+                            <div id="sku-suggestions" class="position-absolute bg-white border" style="z-index:1000;width:100%;display:none; margin-top: 6%;"></div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Update Order Items</button>
@@ -602,97 +602,101 @@
 </script>
 
 
+@php
+    $allProducts = \App\Models\Product::select('id','name','sku','main_image','regular_price','discount_price')->get();
+    $allVariants = \App\Models\ProductVariantOption::with([
+        'variant.product:id,name,sku,main_image,regular_price,discount_price',
+        'variant.color:id,name',
+        'size:id,name'
+    ])->get();
+@endphp
+
 <script>
-    $(document).ready(function(){
-        let selectedProducts = {};
+$(document).ready(function(){
 
-        function renderRow(product, variant = null, quantity = 1){
-            let id = variant ? 'v'+variant.id : 'p'+product.id;
-            if(selectedProducts[id]) return;
-            selectedProducts[id] = true;
+    let allProducts = {!! json_encode($allProducts) !!};
+    let allVariants = {!! json_encode($allVariants) !!};
+    let selectedProducts = {};
 
-            let img = variant?.image ?? product.main_image ?? '';
-            let sku = variant?.sku ?? product.sku ?? '';
-            let name = product.name;
-            let price = variant?.price ?? (product.discount_price ?? product.regular_price);
-            let index = $('#order-items-table tbody tr').length;
+    function renderRow(product, variant, quantity) {
+        // Null-safe checks
+        let img = variant && variant.image ? variant.image : (product.main_image || '');
+        let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
+        let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
+        let size = variant && variant.size && variant.size.name ? variant.size.name : '-';
+        let color = variant && variant.variant && variant.variant.color && variant.variant.color.name ? variant.variant.color.name : '-';
+        let index = $('#order-items-table tbody tr').length;
 
-            let row = `
-                <tr data-item-id="">
-                    <td>${img ? `<img src="/storage/${img}" width="50" class="img-thumbnail">` : '<span class="text-muted">No image</span>'}</td>
-                    <td>
-                        ${name}
-                        <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
-                        ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
-                    </td>
-                    <td>${product.sku}${variant ? ' / '+variant.sku : ''}</td>
-                    <td>&#2547;${price.toFixed(2)}</td>
-                    <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control form-control-sm" style="width:60px;"></td>
-                    <td>&#2547;${(price*quantity).toFixed(2)}</td>
-                    <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
-                </tr>
-            `;
-            $('#order-items-table tbody').append(row);
-        }
+        if(selectedProducts[variant ? 'v'+variant.id : 'p'+product.id]) return;
+        selectedProducts[variant ? 'v'+variant.id : 'p'+product.id] = true;
 
-        // Remove row
-        $(document).on('click','.remove-item',function(){
-            $(this).closest('tr').remove();
-        });
+        let row = `<tr>
+            <td>${img ? `<img src="/storage/${img}" width="50">` : 'No Image'}</td>
+            <td>${product.name}
+                <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
+                ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
+            </td>
+            <td>${sku}</td>
+            <td>&#2547;${price}</td>
+            <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control" style="width:60px;"></td>
+            <td>${size}</td>
+            <td>${color}</td>
+            <td>&#2547;${price*quantity}</td>
+            <td><button type="button" class="btn btn-danger btn-sm remove-item">x</button></td>
+        </tr>`;
 
-        // Client-side search without extra route
-        let allProducts = @json(\App\Models\Product::with('variants.options')->get());
-        let allVariants = @json(\App\Models\ProductVariantOption::with('variant.product')->get());
+        $('#order-items-table tbody').append(row);
+    }
 
-        $('#search-product').on('input',function(){
-            let query = $(this).val().toLowerCase();
-            if(query.length < 1){
-                $('#sku-suggestions').hide();
-                return;
-            }
-
-            let matches = [];
-
-            allProducts.forEach(p=>{
-                if(p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query)){
-                    matches.push({product:p, variant:null});
-                }
-            });
-
-            allVariants.forEach(v=>{
-                let prodName = v.variant.product.name.toLowerCase();
-                if(prodName.includes(query) || v.sku.toLowerCase().includes(query) || v.variant.product.sku.toLowerCase().includes(query)){
-                    matches.push({product:v.variant.product, variant:v});
-                }
-            });
-
-            let html = '';
-            matches.forEach(m=>{
-                let image = m.variant?.image ?? m.product.main_image ?? '';
-                let sku = m.variant?.sku ?? m.product.sku ?? '';
-                html += `<div class="p-2 border-bottom suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant ?? null)}'>
-                            <img src="/storage/${image}" width="40" class="me-2">${m.product.name} <small>(${sku})</small>
-                        </div>`;
-            });
-
-            $('#sku-suggestions').html(html).show();
-        });
-
-        // Click suggestion to add
-        $(document).on('click','.suggestion-item',function(){
-            let product = JSON.parse($(this).attr('data-product'));
-            let variant = $(this).attr('data-variant') ? JSON.parse($(this).attr('data-variant')) : null;
-            let qty = parseInt($('#search-quantity').val() || 1);
-            renderRow(product, variant, qty);
-            $('#sku-suggestions').hide();
-            $('#search-product').val('');
-        });
-
-        $(document).click(function(e){
-            if(!$(e.target).closest('#sku-suggestions,#search-product').length){
-                $('#sku-suggestions').hide();
-            }
-        });
+    // Remove row
+    $(document).on('click','.remove-item',function(){
+        $(this).closest('tr').remove();
     });
-</script>
 
+    // Search
+    $('#search-product').on('input', function(){
+        let query = $(this).val().toLowerCase();
+        let matches = [];
+
+        allProducts.forEach(function(p){
+            if((p.name && p.name.toLowerCase().includes(query)) || (p.sku && p.sku.toLowerCase().includes(query))){
+                matches.push({product:p, variant:null});
+            }
+        });
+
+        allVariants.forEach(function(v){
+            if(!v.variant || !v.variant.product) return;
+            let prod = v.variant.product;
+            if((prod.name && prod.name.toLowerCase().includes(query)) || (prod.sku && prod.sku.toLowerCase().includes(query)) || (v.sku && v.sku.toLowerCase().includes(query))){
+                matches.push({product:prod, variant:v});
+            }
+        });
+
+        let html = '';
+        matches.forEach(function(m){
+            let image = m.variant && m.variant.image ? m.variant.image : (m.product.main_image || '');
+            let sku = m.variant && m.variant.sku ? m.variant.sku : m.product.sku;
+            html += `<div class="suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant)}'>${image ? `<img src="/storage/${image}" width="40">` : ''}${m.product.name} (${sku})</div>`;
+        });
+
+        $('#sku-suggestions').html(html).show();
+    });
+
+    // Click suggestion
+    $(document).on('click','.suggestion-item', function(){
+        let product = JSON.parse($(this).attr('data-product'));
+        let variant = $(this).attr('data-variant') !== 'null' ? JSON.parse($(this).attr('data-variant')) : null;
+        renderRow(product, variant, parseInt($('#search-quantity').val() || 1));
+        $('#sku-suggestions').hide();
+        $('#search-product').val('');
+        $('#search-quantity').val(1);
+    });
+
+    $(document).click(function(e){
+        if(!$(e.target).closest('#sku-suggestions,#search-product').length){
+            $('#sku-suggestions').hide();
+        }
+    });
+
+});
+</script>

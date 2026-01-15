@@ -659,7 +659,7 @@
             let variantInput = row.find('input[name*="[variant_option_id]"]');
             let key = variantInput.length ? 'v' + variantInput.val() : 'p' + productId;
 
-            delete selectedProducts[key];
+            delete selectedProducts[key]; // allow re-add
             row.remove();
         });
 

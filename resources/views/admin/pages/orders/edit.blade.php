@@ -625,6 +625,7 @@ $(document).ready(function(){
     function renderRow(product, variant, quantity) {
         let key = product.id + '-' + (variant ? variant.id : 'null');
 
+        // If already added → increment quantity
         if(selectedProducts[key] !== undefined) {
             let row = $('#order-items-table tbody tr').eq(selectedProducts[key]);
             let qtyInput = row.find('input[name*="[quantity]"]');
@@ -634,6 +635,7 @@ $(document).ready(function(){
             return;
         }
 
+        // Null-safe data
         let img = variant && variant.image ? variant.image : (product.main_image || '');
         let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
         let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
@@ -708,18 +710,20 @@ $(document).ready(function(){
             }
         });
 
-        // Products with variant
+        // Products with variant (size optional)
         allVariants.forEach(function(v){
             if(!v.variant || !v.variant.product) return;
             let prod = v.variant.product;
             if((prod.name && prod.name.toLowerCase().includes(query)) ||
                (prod.sku && prod.sku.toLowerCase().includes(query)) ||
                (v.sku && v.sku.toLowerCase().includes(query))){
+
                 let dataProduct = JSON.stringify(prod);
                 let dataVariant = JSON.stringify(v);
                 let image = v.image ? v.image : (prod.main_image || '');
+                let displaySKU = v.sku ? v.sku : prod.sku;
                 html += `<div class="p-2 border-bottom suggestion-item" data-product='${dataProduct}' data-variant='${dataVariant}'>
-                            ${image ? `<img src="/storage/${image}" width="40" class="me-2">` : ''}${prod.name} <small>(${v.sku || prod.sku})</small>
+                            ${image ? `<img src="/storage/${image}" width="40" class="me-2">` : ''}${prod.name} <small>(${displaySKU})</small>
                          </div>`;
             }
         });

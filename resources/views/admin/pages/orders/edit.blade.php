@@ -612,91 +612,116 @@
 @endphp
 
 <script>
-$(document).ready(function(){
+    $(document).ready(function(){
 
-    let allProducts = {!! json_encode($allProducts) !!};
-    let allVariants = {!! json_encode($allVariants) !!};
-    let selectedProducts = {};
+        let allProducts = {!! json_encode($allProducts) !!};
+        let allVariants = {!! json_encode($allVariants) !!};
+        let selectedProducts = {};
 
-    function renderRow(product, variant, quantity) {
-        // Null-safe checks
-        let img = variant && variant.image ? variant.image : (product.main_image || '');
-        let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
-        let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
-        let size = variant && variant.size && variant.size.name ? variant.size.name : '-';
-        let color = variant && variant.variant && variant.variant.color && variant.variant.color.name ? variant.variant.color.name : '-';
-        let index = $('#order-items-table tbody tr').length;
+        function renderRow(product, variant, quantity) {
+            // Unique key: variant id or product id
+            let key = variant ? 'v' + variant.id : 'p' + product.id;
 
-        if(selectedProducts[variant ? 'v'+variant.id : 'p'+product.id]) return;
-        selectedProducts[variant ? 'v'+variant.id : 'p'+product.id] = true;
+            // Prevent duplicate
+            if (selectedProducts[key]) return;
+            selectedProducts[key] = true;
 
-        let row = `<tr>
-            <td>${img ? `<img src="/storage/${img}" width="50">` : 'No Image'}</td>
-            <td>${product.name}
-                <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
-                ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
-            </td>
-            <td>${sku}</td>
-            <td>&#2547;${price}</td>
-            <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control" style="width:60px;"></td>
-            <td>${size}</td>
-            <td>${color}</td>
-            <td>&#2547;${price*quantity}</td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-item">x</button></td>
-        </tr>`;
+            // Null-safe values
+            let img = variant && variant.image ? variant.image : (product.main_image || '');
+            let sku = variant && variant.sku ? product.sku + ' / ' + variant.sku : (product.sku || '');
+            let price = variant && variant.price ? variant.price : (product.discount_price || product.regular_price || 0);
+            let size = variant && variant.size && variant.size.name ? variant.size.name : '-';
+            let color = variant && variant.variant && variant.variant.color && variant.variant.color.name ? variant.variant.color.name : '-';
+            let index = $('#order-items-table tbody tr').length;
 
-        $('#order-items-table tbody').append(row);
-    }
+            let row = `<tr>
+                <td>${img ? `<img src="/storage/${img}" width="50" class="img-thumbnail">` : '<span class="text-muted">No Image</span>'}</td>
+                <td>${product.name}
+                    <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
+                    ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
+                </td>
+                <td>${sku}</td>
+                <td>&#2547;${price}</td>
+                <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control form-control-sm" style="width:60px;"></td>
+                <td>${size}</td>
+                <td>${color}</td>
+                <td>&#2547;${price * quantity}</td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-item">x</button></td>
+            </tr>`;
 
-    // Remove row
-    $(document).on('click','.remove-item',function(){
-        $(this).closest('tr').remove();
-    });
-
-    // Search
-    $('#search-product').on('input', function(){
-        let query = $(this).val().toLowerCase();
-        let matches = [];
-
-        allProducts.forEach(function(p){
-            if((p.name && p.name.toLowerCase().includes(query)) || (p.sku && p.sku.toLowerCase().includes(query))){
-                matches.push({product:p, variant:null});
-            }
-        });
-
-        allVariants.forEach(function(v){
-            if(!v.variant || !v.variant.product) return;
-            let prod = v.variant.product;
-            if((prod.name && prod.name.toLowerCase().includes(query)) || (prod.sku && prod.sku.toLowerCase().includes(query)) || (v.sku && v.sku.toLowerCase().includes(query))){
-                matches.push({product:prod, variant:v});
-            }
-        });
-
-        let html = '';
-        matches.forEach(function(m){
-            let image = m.variant && m.variant.image ? m.variant.image : (m.product.main_image || '');
-            let sku = m.variant && m.variant.sku ? m.variant.sku : m.product.sku;
-            html += `<div class="suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant)}'>${image ? `<img src="/storage/${image}" width="40">` : ''}${m.product.name} (${sku})</div>`;
-        });
-
-        $('#sku-suggestions').html(html).show();
-    });
-
-    // Click suggestion
-    $(document).on('click','.suggestion-item', function(){
-        let product = JSON.parse($(this).attr('data-product'));
-        let variant = $(this).attr('data-variant') !== 'null' ? JSON.parse($(this).attr('data-variant')) : null;
-        renderRow(product, variant, parseInt($('#search-quantity').val() || 1));
-        $('#sku-suggestions').hide();
-        $('#search-product').val('');
-        $('#search-quantity').val(1);
-    });
-
-    $(document).click(function(e){
-        if(!$(e.target).closest('#sku-suggestions,#search-product').length){
-            $('#sku-suggestions').hide();
+            $('#order-items-table tbody').append(row);
         }
-    });
 
-});
+        // Remove row
+        $(document).on('click','.remove-item',function(){
+            let row = $(this).closest('tr');
+            let productId = row.find('input[name*="[product_id]"]').val();
+            let variantInput = row.find('input[name*="[variant_option_id]"]');
+            let key = variantInput.length ? 'v' + variantInput.val() : 'p' + productId;
+
+            delete selectedProducts[key];
+            row.remove();
+        });
+
+        // Search input
+        $('#search-product').on('input', function(){
+            let query = $(this).val().toLowerCase();
+            if(!query) {
+                $('#sku-suggestions').hide();
+                return;
+            }
+
+            let matches = [];
+
+            // Products without variant
+            allProducts.forEach(function(p){
+                if((p.name && p.name.toLowerCase().includes(query)) || (p.sku && p.sku.toLowerCase().includes(query))){
+                    matches.push({product: p, variant: null});
+                }
+            });
+
+            // Products with variant
+            allVariants.forEach(function(v){
+                if(!v.variant || !v.variant.product) return;
+                let prod = v.variant.product;
+                if((prod.name && prod.name.toLowerCase().includes(query)) ||
+                (prod.sku && prod.sku.toLowerCase().includes(query)) ||
+                (v.sku && v.sku.toLowerCase().includes(query))){
+                    matches.push({product: prod, variant: v});
+                }
+            });
+
+            let html = '';
+            matches.forEach(function(m){
+                let image = m.variant && m.variant.image ? m.variant.image : (m.product.main_image || '');
+                let sku = m.variant && m.variant.sku ? m.variant.sku : m.product.sku;
+                html += `<div class="p-2 border-bottom suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant)}'>
+                            ${image ? `<img src="/storage/${image}" width="40" class="me-2">` : ''}${m.product.name} <small>(${sku})</small>
+                        </div>`;
+            });
+
+            $('#sku-suggestions').html(html).show();
+        });
+
+        // Click suggestion
+        $(document).on('click','.suggestion-item', function(){
+            let product = JSON.parse($(this).attr('data-product'));
+            let variant = $(this).attr('data-variant') !== 'null' ? JSON.parse($(this).attr('data-variant')) : null;
+            let qty = parseInt($('#search-quantity').val() || 1);
+
+            renderRow(product, variant, qty);
+
+            $('#sku-suggestions').hide();
+            $('#search-product').val('');
+            $('#search-quantity').val(1);
+        });
+
+        // Hide suggestions when clicking outside
+        $(document).click(function(e){
+            if(!$(e.target).closest('#sku-suggestions,#search-product').length){
+                $('#sku-suggestions').hide();
+            }
+        });
+
+    });
 </script>

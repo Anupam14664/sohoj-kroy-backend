@@ -65,9 +65,17 @@
                 <div class="form-group">
                     <label for="url">Banner URL</label>
                     <input type="url" name="url" id="url" class="form-control" value="{{ old('url', $banner->url) }}" placeholder="https://example.com">
-                    {{-- <small class="text-muted">Optional: Click করলে এই URL এ যাবে</small> --}}
                 </div>
 
+                <div class="form-group">
+                    <label for="order">Order</label>
+                    <input type="number" name="order" id="order" class="form-control @error('order') is-invalid @enderror" value="{{ old('order', $banner->order) }}">
+                    @error('order')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
 
                 <div class="form-group">
                     <div class="form-check">

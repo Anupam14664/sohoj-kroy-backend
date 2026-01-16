@@ -84,19 +84,30 @@
                     <div id="product-list">
                         @foreach($products as $product)
                         <div class="form-check product-item mb-2 d-none"
-                             data-name="{{ strtolower($product->name) }}"
-                             data-category="{{ $product->category ? strtolower($product->category->name) : '' }}"
-                             data-sku="{{ strtolower($product->sku ?? '') }}"
-                             data-selected="false">
+                            data-name="{{ strtolower($product->name) }}"
+                            data-category="{{ $product->category ? strtolower($product->category->name) : '' }}"
+                            data-sku="{{ strtolower($product->sku ?? '') }}"
+                            data-image="{{ $product->main_image ?? '/images/no-image.png' }}"
+                            data-selected="false">
                             <input type="checkbox" name="products[]" id="product-{{ $product->id }}"
-                                   value="{{ $product->id }}" class="form-check-input product-checkbox">
+                                value="{{ $product->id }}" class="form-check-input product-checkbox">
                             <label for="product-{{ $product->id }}" class="form-check-label">
-                                <span class="product-name">{{ $product->name }}</span>
-                                @if($product->category)
-                                <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
-                                @endif
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">
+                                        <img src="{{ $product->main_image ?? '/images/no-image.png' }}"
+                                            alt="{{ $product->name }}" width="40" height="40"
+                                            style="object-fit: cover; border-radius: 4px;">
+                                    </div>
+                                    <div>
+                                        <span class="product-name">{{ $product->name }}</span>
+                                        @if($product->category)
+                                        <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
+                                        @endif
+                                    </div>
+                                </div>
                             </label>
                         </div>
+
                         @endforeach
                     </div>
                 </div>
@@ -180,13 +191,12 @@
                     return;
                 }
 
-                // Show matching items only when there's a search term
                 if (searchTerm === '') {
                     item.classList.add('d-none');
                     removeHighlights(item);
                 } else if (itemName.includes(searchTerm) ||
-                          itemCategory.includes(searchTerm) ||
-                          itemSku.includes(searchTerm)) {
+                        itemCategory.includes(searchTerm) ||
+                        itemSku.includes(searchTerm)) {
                     item.classList.remove('d-none');
                     matchingItems++;
                     highlightMatches(item, searchTerm);
@@ -196,10 +206,10 @@
                 }
             });
 
-            // Update counters
             visibleCount.textContent = matchingItems;
             selectAllVisibleCheckbox.checked = false;
         }
+
 
         // Highlight matching text in product names
         function highlightMatches(item, term) {

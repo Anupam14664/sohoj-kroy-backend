@@ -415,13 +415,21 @@ class AdminOrderController extends Controller
                 DB::raw('MIN(orders.thana) as thana'),
                 DB::raw('COUNT(DISTINCT orders.id) as order_count'),
                 DB::raw('SUM(order_items.quantity) as total_products'),
-                DB::raw('SUM(orders.total) as total_spent'),
+                DB::raw('MAX(order_totals.total_spent) as total_spent'),
                 DB::raw('MAX(orders.created_at) as last_order_at')
             ])
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
             ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
+            ->leftJoin(DB::raw('
+                (
+                    SELECT phone, SUM(total) as total_spent
+                    FROM orders
+                    WHERE status = "delivered"
+                    GROUP BY phone
+                ) as order_totals
+            '), 'orders.phone', '=', 'order_totals.phone')
             ->where('orders.status', 'delivered')
             ->groupBy('orders.name', 'orders.phone');
 
@@ -498,7 +506,7 @@ class AdminOrderController extends Controller
                 'primary_address' => $customer->primary_address,
                 'order_count' => $customer->order_count,
                 'total_products' => $customer->total_products,
-                'total_spent' => number_format($customer->total_spent, 2),
+                'total_spent' => round($customer->total_spent),
                 'last_order_at' => Carbon::parse($customer->last_order_at)->format('M d, Y'),
             ];
         })->filter(function ($customer) {
@@ -533,17 +541,21 @@ class AdminOrderController extends Controller
 
     public function customerOrdersDetail($phone)
     {
-        // Fetch delivered orders for the customer
         $orders = Order::where('phone', $phone)
             ->where('status', 'delivered')
             ->with(['items.product', 'items.variantOption.variant.color', 'items.variantOption.size'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $customerName = $orders->first()?->name ?? 'Unknown Customer';
+        $customer = $orders->first();
 
-        return view('admin.pages.customers.orders_detail', compact('orders', 'customerName', 'phone'));
+        return view('admin.pages.customers.orders_detail', [
+            'orders' => $orders,
+            'customer' => $customer,
+            'phone' => $phone,
+        ]);
     }
+
 
     public function download($id)
     {

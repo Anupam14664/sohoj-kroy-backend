@@ -109,7 +109,7 @@
                                 <td>{{ Str::limit($customer['primary_address'], 30) }}</td>
                                 <td class="text-center">{{ $customer['order_count'] }}</td>
                                 <td class="text-center">{{ $customer['total_products'] }}</td>
-                                <td class="text-right">&#2547;{{ intval($customer['total_spent']) }}</td>
+                                <td class="text-right">&#2547;{{$customer['total_spent']}}</td>
                                 <td class="text-center">{{ $customer['last_order_at'] }}</td>
                                 <td class="text-center">
                                     <a href="{{ route('admin.customers.orders_detail', ['phone' => $customer['phone']]) }}"

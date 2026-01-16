@@ -161,7 +161,7 @@
 
                                 <td>{{ $order->name }}</td>
                                 <td>{{ $order->phone }}</td>
-                                <td>{{ $order->created_at->format('M d, Y') }}</td>
+                                <td>{{ $order->created_at->format('M d, Y h:i A') }}</td>
                                 <td>&#2547;{{ number_format($order->total, 0) }}</td>
                                 <td>
                                     <span class="badge

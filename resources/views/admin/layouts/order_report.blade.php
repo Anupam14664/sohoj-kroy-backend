@@ -11,7 +11,9 @@
         padding: 0;
         color: #333;
     }
-
+    br{
+        line-height: 0;
+    }
     .header {
         text-align: center;
         margin-bottom: 20px;
@@ -62,8 +64,9 @@
     }
 
     .product-details p {
-        margin: 4px 0;
+        padding: 8px 0;
         font-size: 11px;
+        line-height: 1.6;
     }
 
     .product-details p span {
@@ -148,7 +151,7 @@
 
     @foreach($order->items as $item)
     <table class="product-card">
-        <tr>
+        {{-- <tr>
 
             <!-- Product Details -->
             <td class="product-details">
@@ -177,6 +180,7 @@
                 <p><span>Merchant:</span> {{ $order->courier->name ?? 'N/A' }}</p>
                 <p><span>Invoice:</span> {{ $order->order_number }}</p>
                 <p><span>Tracking Code:</span> {{ $order->tracking_code ?? 'N/A' }}</p>
+                <p><span>ID:</span> {{ $order->consignment_id ?? 'N/A' }}</p>
                 <p><span>Delivery Option:</span> {{ $order->deliveryOption?->name ?? 'N/A' }}</p>
                 <p ><span class="admin-comment">Admin Comment:</span>
                     <span style="background: none;">{{ $order->admin_comment ?? 'N/A' }}</span>
@@ -192,7 +196,107 @@
                 @endif
             </td>
 
+        </tr> --}}
+
+        <tr>
+            <!-- Product Details -->
+            <td class="product-details">
+
+                {{-- Product Name --}}
+                @if($item->product?->name || $item->product?->sku)
+                    <p>
+                        <span>Product Name (SKU):</span>
+                        {{ $item->product?->name }}
+                        @if($item->product?->sku)
+                            ({{ $item->product->sku }})
+                        @endif
+                    </p>
+                    <br>
+                @endif
+                {{-- Size --}}
+                @php
+                    $size = null;
+
+                    if ($item->variantOption?->size?->name) {
+                        $size = $item->variantOption->size->name;
+                    } elseif ($item->variantOption?->name) {
+                        $size = $item->variantOption->name;
+                    } elseif ($item->size_name) {
+                        $size = $item->size_name;
+                    }
+                @endphp
+
+                @if($size)
+                    <p><span>Size:</span> {{ $size }}</p>
+                    <br>
+                @endif
+
+                {{-- Color --}}
+                @php
+                    $color = null;
+
+                    if ($item->variantOption?->variant?->color?->name) {
+                        $color = $item->variantOption->variant->color->name;
+                    } elseif ($item->color_name) {
+                        $color = $item->color_name;
+                    }
+                @endphp
+
+                @if($color)
+                    <p><span>Color:</span> {{ $color }}</p>
+                    <br>
+                @endif
+
+                {{-- Merchant --}}
+                @if($order->courier?->name)
+                    <p><span>Merchant:</span> {{ $order->courier->name }}</p>
+                    <br>
+                @endif
+
+                {{-- Invoice --}}
+                @if($order->order_number)
+                    <p><span>Invoice:</span> {{ $order->order_number }}</p>
+                    <br>
+                @endif
+
+                {{-- Tracking Code --}}
+                @if($order->tracking_code)
+                    <p><span>Tracking Code:</span> {{ $order->tracking_code }}</p>
+                    <br>
+                @endif
+
+                {{-- Consignment ID --}}
+                @if($order->consignment_id)
+                    <p><span>ID:</span> {{ $order->consignment_id }}</p>
+                    <br>
+                @endif
+
+                {{-- Delivery Option --}}
+                @if($order->deliveryOption?->name)
+                    <p><span>Delivery Option:</span> {{ $order->deliveryOption->name }}</p>
+                    <br>
+                @endif
+
+                {{-- Admin Comment --}}
+                @if(!empty($order->admin_comment))
+                    <p>
+                        <span class="admin-comment">Admin Comment:</span>
+                        <span style="background:none;">{{ $order->admin_comment }}</span>
+                    </p>
+                @endif
+
+            </td>
+
+            <!-- Product Image -->
+            <td width="200">
+                @if($item->product && $item->product->main_image)
+                    <img src="{{ public_path('storage/'.$item->product->main_image) }}" class="product-image" alt="">
+                @else
+                    <img src="{{ public_path('images/no-image.png') }}" class="product-image" alt="No Image">
+                @endif
+            </td>
         </tr>
+
     </table>
     @endforeach
 </div>

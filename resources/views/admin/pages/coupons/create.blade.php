@@ -87,28 +87,30 @@
                             data-name="{{ strtolower($product->name) }}"
                             data-category="{{ $product->category ? strtolower($product->category->name) : '' }}"
                             data-sku="{{ strtolower($product->sku ?? '') }}"
-                            data-image="{{ $product->main_image ?? '/images/no-image.png' }}"
-                            data-selected="false">
+                            data-selected="false"
+                            style="display: flex; align-items: center;">
+
                             <input type="checkbox" name="products[]" id="product-{{ $product->id }}"
-                                value="{{ $product->id }}" class="form-check-input product-checkbox">
-                            <label for="product-{{ $product->id }}" class="form-check-label">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2">
-                                        <img src="{{ $product->main_image ?? '/images/no-image.png' }}"
-                                            alt="{{ $product->name }}" width="40" height="40"
-                                            style="object-fit: cover; border-radius: 4px;">
-                                    </div>
-                                    <div>
-                                        <span class="product-name">{{ $product->name }}</span>
-                                        @if($product->category)
-                                        <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
-                                        @endif
-                                    </div>
+                                value="{{ $product->id }}" class="form-check-input product-checkbox"
+                                style="margin-right: 10px;">
+
+                            <label for="product-{{ $product->id }}" class="form-check-label"
+                                style="flex: 1; display: flex; align-items: center; cursor: pointer;">
+
+                                <img src="{{ $product->main_image ? asset('storage/'.$product->main_image) : asset('/images/no-image.png') }}"
+                                    alt="{{ $product->name }}" width="40" height="40"
+                                    style="object-fit: cover; border-radius: 4px; margin-right: 8px;">
+
+                                <div>
+                                    <span class="product-name">{{ $product->name }}</span>
+                                    @if($product->category)
+                                    <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
+                                    @endif
                                 </div>
                             </label>
                         </div>
-
                         @endforeach
+
                     </div>
                 </div>
             </div>
@@ -174,42 +176,43 @@
         });
 
         // Filter products based on search terms
-        function filterProducts() {
-            const searchTerm = productSearch.value.toLowerCase().trim();
-            let matchingItems = 0;
+function filterProducts() {
+    const searchTerm = productSearch.value.toLowerCase().trim();
+    let matchingItems = 0;
 
-            productItems.forEach(item => {
-                const isSelected = item.dataset.selected === 'true';
-                const itemName = item.dataset.name;
-                const itemCategory = item.dataset.category;
-                const itemSku = item.dataset.sku;
+    productItems.forEach(item => {
+        const isSelected = item.dataset.selected === 'true';
+        const name = item.dataset.name;
+        const category = item.dataset.category;
+        const sku = item.dataset.sku;
 
-                // Always show selected items
-                if (isSelected) {
-                    item.classList.remove('d-none');
-                    highlightMatches(item, searchTerm);
-                    return;
-                }
-
-                if (searchTerm === '') {
-                    item.classList.add('d-none');
-                    removeHighlights(item);
-                } else if (itemName.includes(searchTerm) ||
-                        itemCategory.includes(searchTerm) ||
-                        itemSku.includes(searchTerm)) {
-                    item.classList.remove('d-none');
-                    matchingItems++;
-                    highlightMatches(item, searchTerm);
-                } else {
-                    item.classList.add('d-none');
-                    removeHighlights(item);
-                }
-            });
-
-            visibleCount.textContent = matchingItems;
-            selectAllVisibleCheckbox.checked = false;
+        if (isSelected || (searchTerm && (name.includes(searchTerm) || category.includes(searchTerm) || sku.includes(searchTerm)))) {
+            item.classList.remove('d-none');
+            if (searchTerm) highlightMatches(item, searchTerm);
+            matchingItems++;
+        } else {
+            item.classList.add('d-none');
+            removeHighlights(item);
         }
+    });
 
+    visibleCount.textContent = matchingItems;
+    selectAllVisibleCheckbox.checked = false;
+}
+
+function highlightMatches(item, term) {
+    const nameEl = item.querySelector('.product-name');
+    if (!nameEl) return;
+    const text = nameEl.textContent;
+    const regex = new RegExp(term, 'gi');
+    nameEl.innerHTML = text.replace(regex, m => `<span class="bg-warning">${m}</span>`);
+}
+
+function removeHighlights(item) {
+    const nameEl = item.querySelector('.product-name');
+    if (!nameEl) return;
+    nameEl.textContent = nameEl.textContent;
+}
 
         // Highlight matching text in product names
         function highlightMatches(item, term) {
@@ -272,15 +275,19 @@
         .product-item {
             padding: 8px 0;
             border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
         }
-        .product-item:last-child {
-            border-bottom: none;
+        .product-item:last-child { border-bottom: none; }
+        .product-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 8px;
         }
-        .bg-warning {
-            background-color: #ffc107;
-            padding: 0 2px;
-            border-radius: 3px;
-        }
+        .bg-warning { background-color: #ffc107; padding: 0 2px; border-radius: 3px; }
+
         #clear-search {
             cursor: pointer;
         }

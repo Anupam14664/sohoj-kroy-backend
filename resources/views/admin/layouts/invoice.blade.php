@@ -23,12 +23,12 @@
         }
 
         body {
-            width: 80mm;
+            width: 75mm;
             background: #fff;
         }
 
         .sticker-container {
-            width: 80mm;
+            width: 75mm;
             padding: 3px;
             background: #fff;
             margin: 0 auto;
@@ -196,12 +196,12 @@
             <tr>
                 <td style="width:55%;">
                     <div class="company-info">
-                        <h2 style="font-size: 11px;">{{ $order->company_name}}</h2>
-                        <p style="font-size:8px; line-height: 1.2px;">Hotline: {{ $order->company_phone }}</p>
-                        <p style="font-size:7px; line-height: 1.2px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
-                        <p style="font-size:8px; line-height: 1.2px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:8px; line-height: 1.2px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
-                        <p style="font-size:8px; line-height: 1.2px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
+                        <h2 style="font-size: 12px;">{{ $order->company_name}}</h2>
+                        <p style="font-size:10px; line-height: 1.2px;">Hotline: {{ $order->company_phone }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
                 <td style="width:45%;">
@@ -209,9 +209,9 @@
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>
-                        <p style="font-size:8px; line-height: 1.2px;"><strong>Name:</strong> {{ $order->name }}</p>
-                        <p style="font-size:8px; line-height: 1.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
-                        <p style="font-size:8px; line-height: 1.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;"><strong>Name:</strong> {{ $order->name }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
+                        <p style="font-size:10px; line-height: 1.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
                     </div>
 
 

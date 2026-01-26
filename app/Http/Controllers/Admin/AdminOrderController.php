@@ -621,8 +621,8 @@ public function download($id)
     $mpdf = new Mpdf([
         'mode' => 'utf-8',
 
-        //POS Printer Size (80mm)
-        'format' => [80, 300],
+        //POS Printer Size (75mm)
+        'format' => [75, 300],
 
         'default_font' => 'solaimanlipi',
         'fontDir' => array_merge($fontDirs, [

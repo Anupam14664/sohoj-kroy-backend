@@ -198,11 +198,11 @@
                 <td style="width:52%;">
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px;">Hotline: {{ $order->company_phone }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Hotline: {{ $order->company_phone }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
                 <td style="width:48%;">

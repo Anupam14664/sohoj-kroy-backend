@@ -198,11 +198,11 @@
                 <td style="width:52%;">
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Hotline: {{ $order->company_phone }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.5px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Hotline: {{ $order->company_phone }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
                 <td style="width:48%;">
@@ -210,9 +210,9 @@
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.5px;"><strong>Name:</strong> {{ $order->name }}</p>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.5px;"><strong>Phone:</strong> {{ $order->phone }}</p>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.5px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Name:</strong> {{ $order->name }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
                     </div>
 
 
@@ -240,13 +240,13 @@
         <tbody>
         @foreach($order->items as $item)
             <tr>
-                <td style="text-align: left; font-size: 9px; letter-spacing: 0.5px;">{{ $item->product_name }}
+                <td style="text-align: left; font-size: 9px; letter-spacing: 0.2px;">{{ $item->product_name }}
                     @if($item->size_name || $item->color_name)
                         ({{ $item->size_name ?? '' }} {{ $item->color_name ? '/' .$item->color_name : '' }})
                     @endif
                 </td>
-                <td style="font-size: 9px; letter-spacing: 0.5px;">{{ $item->quantity }}</td>
-                <td style="font-size: 9px; letter-spacing: 0.5px;">৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
+                <td style="font-size: 9px; letter-spacing: 0.2px;">{{ $item->quantity }}</td>
+                <td style="font-size: 9px; letter-spacing: 0.2px;">৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -255,22 +255,22 @@
     <!-- Totals -->
 <table class="totals-table">
     <tr>
-        <td style="letter-spacing: 0.5px;">Sub Total</td>
-        <td class="amount" style="letter-spacing: 0.5px;">৳ {{ number_format($order->subtotal, 0) }}</td>
+        <td style="letter-spacing: 0.2px;">Sub Total</td>
+        <td class="amount" style="letter-spacing: 0.2px;">৳ {{ number_format($order->subtotal, 0) }}</td>
     </tr>
     <tr>
-        <td style="letter-spacing: 0.5px;">Delivery Fee</td>
-        <td class="amount" style="letter-spacing: 0.5px;">৳ {{ number_format($order->delivery_charge, 0) }}</td>
+        <td style="letter-spacing: 0.2px;">Delivery Fee</td>
+        <td class="amount" style="letter-spacing: 0.2px;">৳ {{ number_format($order->delivery_charge, 0) }}</td>
     </tr>
     @if((float)$order->admin_discount > 0)
     <tr>
-        <td style="letter-spacing: 0.5px;">Discount</td>
-        <td class="amount" style="letter-spacing: 0.5px;">৳ -{{ number_format($order->admin_discount, 0) }}</td>
+        <td style="letter-spacing: 0.2px;">Discount</td>
+        <td class="amount" style="letter-spacing: 0.2px;">৳ -{{ number_format($order->admin_discount, 0) }}</td>
     </tr>
     @endif
     <tr class="grand-total">
-        <td style="letter-spacing: 0.5px;"><strong>Total Amount</strong></td>
-        <td class="amount" style="letter-spacing: 0.5px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
+        <td style="letter-spacing: 0.2px;"><strong>Total Amount</strong></td>
+        <td class="amount" style="letter-spacing: 0.2px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
     </tr>
 </table>
 

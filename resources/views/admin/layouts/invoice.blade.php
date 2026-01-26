@@ -21,7 +21,7 @@
             padding: 10px;
             border: 1px solid #ccc;
             background: #fff;
-            margin: 0 auto;
+            /* margin: 0 auto; */
             border-radius: 6px;
         }
 

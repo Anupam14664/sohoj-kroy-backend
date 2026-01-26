@@ -163,6 +163,7 @@
             border-radius: 6px;
             overflow: hidden;
             font-size: 12px;
+            line-height: 0.50px !important;
         }
 
         .totals-table td {

@@ -209,10 +209,10 @@
 
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
-                        <h4 style="font-size:13px;">Invoice To:</h4>
-                        <p style="font-size:12px; line-height: 1.2px;"><strong>Name:</strong> {{ $order->name }}</p>
-                        <p style="font-size:12px; line-height: 1.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
-                        <p style="font-size:12px; line-height: 1.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                        <h4 style="font-size:12px;">Invoice To:</h4>
+                        <p style="font-size:11px; line-height: 1.2px;"><strong>Name:</strong> {{ $order->name }}</p>
+                        <p style="font-size:11px; line-height: 1.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
+                        <p style="font-size:11px; line-height: 1.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
                     </div>
 
 

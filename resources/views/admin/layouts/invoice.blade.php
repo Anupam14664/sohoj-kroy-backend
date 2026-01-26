@@ -5,7 +5,7 @@
     <title> Invoice</title>
     <style>
         * {
-            /* width: 3in; */
+            width: 'A4';
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -17,7 +17,7 @@
         }
 
         .sticker-container {
-            /* width: 3in; */
+            width: 'A4';
             padding: 10px;
             border: 1px solid #ccc;
             background: #fff;

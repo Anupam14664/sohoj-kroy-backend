@@ -205,7 +205,7 @@
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
-                <td style="width:47%;">
+                <td style="width:47%; margin-left:5px;">
 
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">

@@ -195,7 +195,7 @@
     <div class="sticker-header">
         <table>
             <tr>
-                <td style="width:55%;">
+                <td style="width:52%;">
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
                         <p style="font-size:12px; line-height: 1.2px; letter-spacing: 0.5px;">Hotline: {{ $order->company_phone }}</p>
@@ -205,7 +205,7 @@
                         <p style="font-size:12px; line-height: 1.2px; letter-spacing: 0.5px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
-                <td style="width:45%;">
+                <td style="width:48%;">
 
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">

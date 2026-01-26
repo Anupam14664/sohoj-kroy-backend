@@ -270,7 +270,7 @@
     @endif
     <tr class="grand-total">
         <td style="letter-spacing: 1.2px;"><strong>Total Amount</strong></td>
-        <td class="amount" style="letter-spacing: 1.2px;><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
+        <td class="amount" style="letter-spacing: 1.2px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
     </tr>
 </table>
 

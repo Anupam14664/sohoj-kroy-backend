@@ -5,12 +5,17 @@
     <title> Invoice</title>
     <style>
 
-            /* @page {
-            size: 80mm auto;
-            margin: 0;
-        } */
+        @page {
+            size: auto;
+        }
+
+        @media print {
+            body {
+                width: auto !important;
+                height: auto !important;
+            }
+        }
         * {
-            width: 80mm;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -18,16 +23,15 @@
         }
 
         body {
+            width: 80mm;
             background: #fff;
         }
 
         .sticker-container {
             width: 80mm;
-            padding: 6px;
-            border: 1px solid #ccc;
+            padding: 3px;
             background: #fff;
             margin: 0 auto;
-            border-radius: 6px;
         }
 
         .sticker-header {
@@ -46,14 +50,12 @@
         }
 
         .company-info h2 {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 2px;
+            font-size: 9px !important;
         }
 
         .company-info p {
-            font-size: 11px;
-            margin-bottom: 2px;
+            font-size: 8px !important;
+            margin-bottom: 1.2px;
             color: #333;
         }
 
@@ -94,7 +96,7 @@
         }
 
         table.items-table thead {
-            background: #f1f1f1;
+            background: #000000;
         }
 
         table.items-table th {
@@ -102,14 +104,14 @@
             text-transform: uppercase;
             padding: 5px;
             text-align: center;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #000000;
         }
 
         table.items-table td {
             font-size: 11px;
             padding: 5px;
             text-align: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #000000;
         }
 
         table.items-table tbody tr:last-child td {
@@ -194,31 +196,35 @@
             <tr>
                 <td style="width:55%;">
                     <div class="company-info">
-                        <h2>{{ $order->company_name }}</h2>
-                        <p>Hotline: {{ $order->company_phone }}</p>
-                        <p>Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
-                        <p>Courier: {{ $order->courier->name ?? 'N/A' }}</p>
+                        <h2 style="font-size: 11px;">{{ $order->company_name}}</h2>
+                        <p style="font-size:8px; line-height: 1.2px;">Hotline: {{ $order->company_phone }}</p>
+                        <p style="font-size:7px; line-height: 1.2px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:8px; line-height: 1.2px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
+                        <p style="font-size:8px; line-height: 1.2px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <p style="font-size:8px; line-height: 1.2px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
-                <td style="width:45%; text-align: center;">
-                    <div class="parcel-info">
+                <td style="width:45%;">
+
+                        <!-- Invoice To -->
+                    <div class="invoice-to" style=" ">
+                        <h4 style="font-size:12px;">Invoice To:</h4>
+                        <p style="font-size:8px; line-height: 1.2px;"><strong>Name:</strong> {{ $order->name }}</p>
+                        <p style="font-size:8px; line-height: 1.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
+                        <p style="font-size:8px; line-height: 1.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                    </div>
+
+
+                    {{-- <div class="parcel-info">
                         <h5 style="font-size: 12px;background: #000;color: #fff; padding: 2px 5px; border-radius: 3px;margin-bottom: 10px !important;">Parcel Id: {{ $order->consignment_id ?? 'N/A' }}</h5>
                         <div class="barcode" style="width: 100%;text-align: center;margin: 5px 0;">
                             <img src="https://barcodeapi.org/api/128/{{ $order->order_number }}" alt="Barcode" style="width:120px;height:30px;">
-                            {{-- <p style="font-size:11px;margin-top:3px;">R1</p> --}}
+                            <p style="font-size:11px;margin-top:3px;">R1</p>
                         </div>
-                    </div>
+                    </div> --}}
                 </td>
             </tr>
         </table>
-    </div>
-
-    <!-- Invoice To -->
-    <div class="invoice-to" style=" margin: 8px 0; padding: 8px; padding-top: -8px ; background: #f5f5f5; border-radius: 4px;">
-        <h4>Invoice To:</h4>
-        <p><strong>Name:</strong> {{ $order->name }}</p>
-        <p><strong>Phone:</strong> {{ $order->phone }}</p>
-        <p><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
     </div>
 
     <!-- Product Table -->

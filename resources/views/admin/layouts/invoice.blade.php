@@ -156,7 +156,7 @@
         }
         .totals-table {
             width: 100%;
-            margin-top: 8px;
+            margin-top: 5px;
             border: 1px solid #ddd;
             border-collapse: collapse;
             background: #f5f5f5;

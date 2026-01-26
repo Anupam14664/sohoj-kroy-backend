@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <title> Invoice</title>
     <style>
+
+            /* @page {
+            size: 80mm auto;
+            margin: 0;
+        } */
         * {
-            width: 3in;
+            width: 80mm;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -17,11 +22,11 @@
         }
 
         .sticker-container {
-            width: 3in;
-            padding: 10px;
+            width: 80mm;
+            padding: 6px;
             border: 1px solid #ccc;
             background: #fff;
-            /* margin: 0 auto; */
+            margin: 0 auto;
             border-radius: 6px;
         }
 
@@ -197,7 +202,7 @@
                 </td>
                 <td style="width:45%; text-align: center;">
                     <div class="parcel-info">
-                        <h5 style="font-size: 12px;background: #000;color: #fff; padding: 2px 5px; border-radius: 3px;margin-bottom: 10px !important;">Parcel Id: {{ $order->tracking_code ?? 'N/A' }}</h5>
+                        <h5 style="font-size: 12px;background: #000;color: #fff; padding: 2px 5px; border-radius: 3px;margin-bottom: 10px !important;">Parcel Id: {{ $order->consignment_id ?? 'N/A' }}</h5>
                         <div class="barcode" style="width: 100%;text-align: center;margin: 5px 0;">
                             <img src="https://barcodeapi.org/api/128/{{ $order->order_number }}" alt="Barcode" style="width:120px;height:30px;">
                             {{-- <p style="font-size:11px;margin-top:3px;">R1</p> --}}

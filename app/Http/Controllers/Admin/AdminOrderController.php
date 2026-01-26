@@ -557,49 +557,96 @@ class AdminOrderController extends Controller
     }
 
 
-    public function download($id)
-    {
-        $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
-        $courier = CourierService::all();
+    // public function download($id)
+    // {
+    //     $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
+    //     $courier = CourierService::all();
 
-        $generalSettings = GeneralSetting::first();
-        $order->company_name = $generalSettings->app_name ?? 'Company Name';
-        $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
+    //     $generalSettings = GeneralSetting::first();
+    //     $order->company_name = $generalSettings->app_name ?? 'Company Name';
+    //     $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
 
-        $html = view('admin.layouts.invoice', compact('order','courier'))->render();
+    //     $html = view('admin.layouts.invoice', compact('order','courier'))->render();
 
-        $defaultConfig = (new ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
+    //     $defaultConfig = (new ConfigVariables())->getDefaults();
+    //     $fontDirs = $defaultConfig['fontDir'];
 
-        $defaultFontConfig = (new FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
+    //     $defaultFontConfig = (new FontVariables())->getDefaults();
+    //     $fontData = $defaultFontConfig['fontdata'];
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-                    'default_font' => 'solaimanlipi',
-                'fontDir' => array_merge($fontDirs, [
-                    public_path('assets/admin/fonts'),
-                ]),
-                'fontdata' => $fontData + [
-                    'solaimanlipi' => [
-                        'R' => 'SolaimanLipi.ttf',
-                        'useOTL' => 0xFF,
-                    ]
-                ],
-                'default_font_size' => 9,
-                'margin_left' => 3,
-                'margin_right' => 3,
-                'margin_top' => 3,
-                'margin_bottom' => 3,
-                'margin_header' => 0,
-                'margin_footer' => 0,
-            ]);
+    //     $mpdf = new Mpdf([
+    //         'mode' => 'utf-8',
+    //         'format' => 'A4',
+    //                 'default_font' => 'solaimanlipi',
+    //             'fontDir' => array_merge($fontDirs, [
+    //                 public_path('assets/admin/fonts'),
+    //             ]),
+    //             'fontdata' => $fontData + [
+    //                 'solaimanlipi' => [
+    //                     'R' => 'SolaimanLipi.ttf',
+    //                     'useOTL' => 0xFF,
+    //                 ]
+    //             ],
+    //             'default_font_size' => 9,
+    //             'margin_left' => 3,
+    //             'margin_right' => 3,
+    //             'margin_top' => 3,
+    //             'margin_bottom' => 3,
+    //             'margin_header' => 0,
+    //             'margin_footer' => 0,
+    //         ]);
 
-            $mpdf->WriteHTML($html);
+    //         $mpdf->WriteHTML($html);
 
-            return $mpdf->Output('order-'.$order->order_number.'.pdf', 'D');
-    }
+    //         return $mpdf->Output('order-'.$order->order_number.'.pdf', 'D');
+    // }
+
+
+public function download($id)
+{
+    $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
+
+    $generalSettings = GeneralSetting::first();
+    $order->company_name = $generalSettings->app_name ?? 'Company Name';
+    $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
+
+    $html = view('admin.layouts.invoice', compact('order'))->render();
+
+    $defaultConfig = (new ConfigVariables())->getDefaults();
+    $fontDirs = $defaultConfig['fontDir'];
+
+    $defaultFontConfig = (new FontVariables())->getDefaults();
+    $fontData = $defaultFontConfig['fontdata'];
+
+    $mpdf = new Mpdf([
+        'mode' => 'utf-8',
+
+        //POS Printer Size (80mm)
+        'format' => [80, 300],
+
+        'default_font' => 'solaimanlipi',
+        'fontDir' => array_merge($fontDirs, [
+            public_path('assets/admin/fonts'),
+        ]),
+        'fontdata' => $fontData + [
+            'solaimanlipi' => [
+                'R' => 'SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+            ],
+        ],
+
+        'default_font_size' => 9,
+        'margin_left' => 2,
+        'margin_right' => 2,
+        'margin_top' => 2,
+        'margin_bottom' => 2,
+    ]);
+
+    $mpdf->WriteHTML($html);
+    $mpdf->SetJS('this.print();');
+    return $mpdf->Output('invoice-'.$order->order_number.'.pdf', 'I');
+
+}
 public function update(Request $request, Order $order)
 {
     $request->validate([

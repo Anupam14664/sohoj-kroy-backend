@@ -205,14 +205,19 @@
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
-                <td style="width:48%;">
+                <td style="width:47%;">
 
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Name:</strong> {{ $order->name }}</p>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Phone:</strong> {{ $order->phone }}</p>
-                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;"><strong>Address:</strong> {{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;">
+                            {{-- <strong>Name:</strong> --}}
+                            {{ $order->name }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;">
+                            {{-- <strong>Phone:</strong> --}}
+                            {{ $order->phone }}</p>
+                        <p style="font-size:11px; line-height: 1.2px; letter-spacing: 0.2px;">
+                            <strong>Address:</strong>{{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
                     </div>
 
 

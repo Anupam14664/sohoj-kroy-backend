@@ -260,12 +260,12 @@
     </tr>
     <tr>
         <td style="letter-spacing: 1.2px;">Delivery Fee</td>
-        <td class="amount" style="letter-spacing: 1.2px;>৳ {{ number_format($order->delivery_charge, 0) }}</td>
+        <td class="amount" style="letter-spacing: 1.2px;">৳ {{ number_format($order->delivery_charge, 0) }}</td>
     </tr>
     @if((float)$order->admin_discount > 0)
     <tr>
         <td style="letter-spacing: 1.2px;">Discount</td>
-        <td class="amount" style="letter-spacing: 1.2px;>৳ -{{ number_format($order->admin_discount, 0) }}</td>
+        <td class="amount" style="letter-spacing: 1.2px;">৳ -{{ number_format($order->admin_discount, 0) }}</td>
     </tr>
     @endif
     <tr class="grand-total">

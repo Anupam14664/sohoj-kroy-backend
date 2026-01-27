@@ -177,7 +177,7 @@
                 products.forEach(product => {
                     const price = product.discount_price ?? product.regular_price ?? product.price ?? 0;
                     const hasVariants = product.has_variants ? true : false;
-                    const imageUrl = product.main_image ? `/storage/${product.main_image}` : 'https://via.placeholder.com/40x40?text=N/A';
+                    const imageUrl = product.main_image ? `{{ asset('storage') }}/${product.main_image}` : 'https://via.placeholder.com/40x40?text=N/A';
 
                     html += `
                         <div class="p-1 border mb-1 d-flex align-items-center" style="cursor:pointer;" onclick="addProduct(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${price}, '${product.sku}', ${hasVariants})">

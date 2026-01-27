@@ -803,8 +803,13 @@ public function store(Request $request)
         $delivery = DeliveryOption::find($request->delivery_option_id);
         $subtotal = 0;
 
+        $settings = GeneralSetting::first();
+        $appName = $settings->app_name ?? 'E';
+        $firstLetter = strtoupper(mb_substr(trim($appName), 0, 1));
+        $orderNumber = $firstLetter . "-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
+
         $order = Order::create([
-            'order_number' => 'ORD-' . strtoupper(uniqid()),
+            'order_number' => $orderNumber,
             'name' => $request->name,
             'phone' => $request->phone,
             'district' => $request->district,

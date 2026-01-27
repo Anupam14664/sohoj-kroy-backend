@@ -617,7 +617,7 @@ $(document).ready(function(){
     let allProducts = @json($allProducts);
     let allVariants = @json($allVariants);
 
-    let selectedProducts = {}; 
+    let selectedProducts = {};
 
     function updateSubtotal(row) {
         let qty = parseInt(row.find('.quantity-input').val()) || 0;

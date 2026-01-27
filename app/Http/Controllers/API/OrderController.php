@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\DeliveryOption;
+use App\Models\GeneralSetting;
 use App\Models\ProductVariant;
 use App\Models\BlockedCustomer;
 use Illuminate\Support\Facades\DB;
@@ -224,7 +225,11 @@ class OrderController extends Controller
                 }
 
                 $total = $subtotal + $deliveryOption->charge - $discount;
-                $orderNumber = "H-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
+                
+                $settings = GeneralSetting::first();
+                $appName = $settings->app_name ?? 'E';
+                $firstLetter = strtoupper(mb_substr(trim($appName), 0, 1));
+                $orderNumber = $firstLetter . "-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
 
                 $order = Order::create([
                     'order_number' => $orderNumber,

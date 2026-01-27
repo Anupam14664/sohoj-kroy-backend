@@ -195,9 +195,9 @@
     <div class="sticker-header">
         <table>
             <tr>
-                <td style="width:48%; margin-right:12px;">
+                <td style="width:48%; ">
                         <!-- Invoice To -->
-                    <div class="invoice-to" style=" ">
+                    <div class="invoice-to" style=" margin-right:12px;">
                         <h4 style="font-size:12px;">Invoice To:</h4>
                         <p style="font-size:11px; line-height: 1.4px; letter-spacing: 0.2px;">
                             {{-- <strong>Name:</strong> --}}

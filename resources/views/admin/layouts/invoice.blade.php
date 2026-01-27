@@ -162,7 +162,7 @@
             background: #f5f5f5;
             border-radius: 6px;
             overflow: hidden;
-            font-size: 12px;
+            font-size: 11px;
             line-height: 0.50px !important;
         }
 
@@ -193,9 +193,9 @@
 <div class="sticker-container">
     <!-- Header -->
     <div class="sticker-header">
-        <table>
+        <table style="width:100%; border-collapse: separate; border-spacing: 10px 0;">
             <tr>
-                <td style="width:47%; margin-left:5px;">
+                <td style="width:48%;">
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>

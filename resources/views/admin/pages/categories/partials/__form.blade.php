@@ -47,7 +47,7 @@
     @if(isset($category) && $category->image)
         <div class="mt-2">
             <small>Current image:</small>
-            <img src="{{ asset('public/storage/'.$category->image) }}" width="50" alt="Category Image" class="img-thumbnail">
+            <img src="{{ asset('storage/'.$category->image) }}" width="50" alt="Category Image" class="img-thumbnail">
         </div>
     @elseif(isset($category))
         <div class="mt-2">

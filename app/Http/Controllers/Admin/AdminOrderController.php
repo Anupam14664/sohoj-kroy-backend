@@ -868,39 +868,61 @@ public function search(Request $request)
         return response()->json([]);
     }
 
-    $variantMatch = ProductVariantOption::where('sku', $keyword)->with('variant.product')->first();
+    /**
+     * 🔎 1) Variant SKU exact match
+     */
+    $variantMatch = ProductVariantOption::where('sku', $keyword)
+        ->with(['variant.product'])
+        ->first();
 
-    if ($variantMatch) {
+    if ($variantMatch && $variantMatch->variant && $variantMatch->variant->product) {
+
         $product = $variantMatch->variant->product;
+
         return response()->json([
             [
-                'type' => 'variant',
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $variantMatch->sku,
-                'price' => $variantMatch->price,
-                'has_variants' => true,
+                'type'          => 'variant',
+                'id'            => $product->id,
+                'name'          => $product->name,
+                'sku'           => $variantMatch->sku,
+                'price'         => $variantMatch->price,
+                'has_variants'  => true,
+
+                // ✅ IMAGE (variant first, fallback product)
+                'main_image'    => $variantMatch->image
+                    ? ltrim($variantMatch->image, '/')
+                    : ltrim($product->main_image, '/'),
             ]
         ]);
     }
 
-    $products = Product::where('name', 'LIKE', "%$keyword%")
-        ->orWhere('sku', 'LIKE', "%$keyword%")
+    /**
+     * 🔎 2) Product name / SKU search
+     */
+    $products = Product::where('name', 'LIKE', "%{$keyword}%")
+        ->orWhere('sku', 'LIKE', "%{$keyword}%")
         ->limit(10)
         ->get()
         ->map(function ($product) {
+
             return [
-                'type' => 'product',
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'price' => $product->discount_price ?? $product->regular_price,
-                'has_variants' => $product->has_variants,
+                'type'          => 'product',
+                'id'            => $product->id,
+                'name'          => $product->name,
+                'sku'           => $product->sku,
+                'price'         => $product->discount_price ?? $product->regular_price,
+                'has_variants'  => $product->has_variants,
+
+                // ✅ IMAGE (VERY IMPORTANT)
+                'main_image'    => $product->main_image
+                    ? ltrim($product->main_image, '/')
+                    : null,
             ];
         });
 
     return response()->json($products);
 }
+
 
 
 public function getVariants(Product $product)

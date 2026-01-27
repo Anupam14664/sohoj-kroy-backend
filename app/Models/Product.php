@@ -25,7 +25,6 @@ class Product extends Model
         'is_offer',
         'is_campaign',
         'main_image',
-        'main_image',
         'status',
         'keyword_tags',
     ];

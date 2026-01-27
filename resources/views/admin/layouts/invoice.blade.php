@@ -86,7 +86,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 6px;
+            /* margin-top: 6px; */
             border: 1px solid #ddd;
             border-radius: 6px;
             overflow: hidden;

@@ -270,7 +270,7 @@
     @if((float)$order->admin_discount > 0)
     <tr>
         <td>Discount</td>
-        <td>৳ -{{ number_format($order->admin_discount, 0) }}</td>
+        <td class="amount">৳ -{{ number_format($order->admin_discount, 0) }}</td>
     </tr>
     @endif
     <tr class="grand-total">

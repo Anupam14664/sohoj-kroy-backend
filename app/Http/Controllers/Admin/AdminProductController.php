@@ -9,6 +9,7 @@ use App\Models\Category;
 use Illuminate\Support\Str;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
+use App\Models\GeneralSetting;
 use App\Models\ProductVariant;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,9 @@ class AdminProductController extends Controller
 {
     public function index(Request $request)
     {
+        $generalSettings =GeneralSetting::first();
+        $domain = $generalSettings->domain_url ?? config('app.url');
+
         $query = Product::with(['category', 'variants.color', 'variants.options']);
 
         if ($request->has('search') && $request->search != '') {
@@ -83,9 +87,9 @@ class AdminProductController extends Controller
             return $html;
         }
 
-        
 
-        return view('admin.pages.products.index', compact('products'));
+
+        return view('admin.pages.products.index', compact('products', 'domain'));
     }
 
 

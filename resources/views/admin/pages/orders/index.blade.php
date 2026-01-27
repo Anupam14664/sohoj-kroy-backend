@@ -130,7 +130,7 @@
                                         <input type="checkbox" disabled class="order-checkbox">
                                     @endif
                                 </td>
-                                <td>{{ $order->order_number }}</td>
+                                <td class="text-nowrap">{{ $order->order_number }}</td>
                                 {{-- <td>
                                     @if($order->items->isNotEmpty() && $order->items[0]->product && $order->items[0]->product->main_image)
                                         <img src="{{ asset('storage/'.$order->items[0]->product->main_image) }}"
@@ -161,7 +161,7 @@
 
                                 <td>{{ $order->name }}</td>
                                 <td>{{ $order->phone }}</td>
-                                <td>{{ $order->created_at->format('M d, Y h:i A') }}</td>
+                                <td class="text-nowrap">{{ $order->created_at->format('M d, Y h:i A') }}</td>
                                 <td>&#2547;{{ number_format($order->total, 0) }}</td>
                                 <td>
                                     <span class="badge

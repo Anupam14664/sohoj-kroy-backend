@@ -25,6 +25,7 @@
                         <tr>
                             <th>#</th>
                             <th>Name</th>
+                            <th>SLUG</th>
                             <th>Image</th>
                             <th>Buy Price</th>
                             <th>Regular Price</th>
@@ -40,6 +41,17 @@
                         <tr>
                             <td>{{ ($products->currentPage() - 1) * $products->perPage() + $index + 1 }}</td>
                             <td>{{ $product->name }}</td>
+                            <td>
+                                @php
+                                    $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
+                                    $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
+                                @endphp
+
+                                <span title="{{ $fullUrl }}">{{ $shortUrl }}</span>
+                                <button class="btn btn-sm copy-btn" data-url="{{ $fullUrl }}" title="Copy URL" style="border:none;">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                            </td>
                             <td>
                                 @if($product->main_image)
                                     <img src="{{ asset('storage/'.$product->main_image) }}" width="30" class="img-thumbnail">
@@ -101,6 +113,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(err => console.log(err));
+    });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const url = this.dataset.url;
+            const icon = this.querySelector('i');
+            if (!url || !icon) return;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(url).then(() => {
+                icon.classList.remove('fa-copy');
+                icon.classList.add('fa-clipboard');
+                icon.style.color = 'green';
+
+                setTimeout(() => {
+                    icon.classList.remove('fa-clipboard');
+                    icon.classList.add('fa-copy');
+                    icon.style.color = '';
+                }, 1500);
+            }).catch(() => {
+                alert('Failed to copy URL.');
+            });
+        });
     });
 });
 </script>

@@ -84,16 +84,11 @@
         /* Modern Table */
         table.items-table {
             width: 100%;
-            border-collapse: separate;
+            border-collapse: collapse;
             border-spacing: 0;
             padding-top: -4px;
-            border: none;
             border-radius: 6px;
             overflow: hidden;
-        }
-
-        table.items-table thead {
-            background: #000000;
         }
 
         table.items-table th {
@@ -105,14 +100,16 @@
         }
 
         table.items-table td {
-            font-size: 11px;
             padding: 5px;
             text-align: center;
-            border-bottom: 1px solid #000000;
+            border-bottom: none;
+            text-align: left;
+            font-size: 9px;
+            letter-spacing: 0.2px;
         }
 
-        table.items-table tbody tr:last-child td {
-            border-bottom: none;
+        table.items-table tr.last-row td {
+            border-bottom: 1px solid #000;
         }
 
         .totals {
@@ -129,9 +126,6 @@
             margin-bottom: 3px;
             margin: 2px 0;
         }
-
-
-
 
         .order-note-container {
             margin-top: 8px;
@@ -160,7 +154,7 @@
             border-radius: 6px;
             overflow: hidden;
             font-size: 10px;
-            line-height: 0.35px !important;
+            line-height: 0.3px !important;
         }
 
         .totals-table td {
@@ -219,7 +213,7 @@
 
                 <td style="width:51.6%;">
                     <div class="company-info">
-                        <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
+                        <h2 style="font-size: 14px; text-transform: uppercase;">{{ $order->company_name}}</h2>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ $order->created_at->format('d M, Y') }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
@@ -242,14 +236,14 @@
         </thead>
         <tbody>
         @foreach($order->items as $item)
-            <tr>
-                <td style="text-align: left; font-size: 9px; letter-spacing: 0.2px;">{{ $item->product_name }}
+            <tr  class="{{ $loop->last ? 'last-row' : '' }}">
+                <td>{{ $item->product_name }}
                     @if($item->size_name || $item->color_name)
                         ({{ $item->size_name ?? '' }} {{ $item->color_name ? '/' .$item->color_name : '' }})
                     @endif
                 </td>
-                <td style="font-size: 9px; letter-spacing: 0.2px;">{{ $item->quantity }}</td>
-                <td style="font-size: 9px; letter-spacing: 0.2px;">৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
+                <td>{{ $item->quantity }}</td>
+                <td>৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
             </tr>
         @endforeach
         </tbody>

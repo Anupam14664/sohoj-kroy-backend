@@ -160,7 +160,7 @@
             border-radius: 6px;
             overflow: hidden;
             font-size: 10px;
-            line-height: 0.50px !important;
+            line-height: 0.35px !important;
         }
 
         .totals-table td {
@@ -221,9 +221,9 @@
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ $order->created_at->format('d M, Y') }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant_id: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant ID: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Parcel ID: </strong> {{ $order->consignment_id ?? 'N/A' }}</p>
                     </div>
                 </td>

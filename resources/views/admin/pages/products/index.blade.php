@@ -28,6 +28,7 @@
                             <th>Image</th>
                             <th>Buy Price</th>
                             <th>Regular Price</th>
+                            <th>Discount Price</th>
                             <th>Total Stock</th>
                             <th>Category</th>
                             <th>Variants</th>
@@ -48,6 +49,7 @@
                             </td>
                             <td>&#2547;{{ number_format($product->buy_price, 0) }}</td>
                             <td>&#2547;{{ number_format($product->regular_price, 0) }}</td>
+                            <td>&#2547;{{ number_format($product->discount_price, 0) }}</td>
                             <td>{{ number_format($product->total_stock) }} PCS</td>
                             <td>{{ $product->category->name ?? 'N/A' }}</td>
                             <td>

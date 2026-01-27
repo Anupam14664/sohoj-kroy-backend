@@ -83,6 +83,8 @@ class AdminProductController extends Controller
             return $html;
         }
 
+        
+
         return view('admin.pages.products.index', compact('products'));
     }
 

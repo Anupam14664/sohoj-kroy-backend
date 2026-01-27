@@ -51,6 +51,10 @@
                             <label for="footer_content">Footer Content</label>
                             <textarea name="footer_content" class="form-control" rows="4">{{ old('footer_content', $generalSettings->footer_content) }}</textarea>
                         </div>
+                        <div class="mb-3">
+                            <label for="domain_url">Domain URL</label>
+                            <input type="url" id="domain_url" name="domain_url" class="form-control" placeholder="https://example.com" value="{{ old('domain_url', $generalSettings->domain_url ?? '') }}">
+                        </div>
                     </div>
 
                     <!-- Social Links -->

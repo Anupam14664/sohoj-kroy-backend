@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\PageSection;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\GeneralSetting;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,9 @@ class PageController extends Controller
     public function index()
     {
         $pages = Page::latest()->paginate(15);
-        return view('admin.pages.single-pages.index', compact('pages'));
+        $generalSettings = GeneralSetting::first();
+        $domain = $generalSettings->domain_url ?? config('app.url');
+        return view('admin.pages.single-pages.index', compact('pages', 'domain'));
     }
 
     /**

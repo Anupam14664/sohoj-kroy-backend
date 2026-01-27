@@ -28,7 +28,7 @@
                             <td>{{ $page->name }}</td>
                             <td>
                                 @php
-                                    $fullUrl = config('app.main_domain') . '/landing/' . $page->slug;
+                                    $fullUrl = rtrim($domain, '/') . '/landing/' . $page->slug;
 
                                     $shortUrl = substr($fullUrl, 0, 15) . '....' . substr($fullUrl, -20);
                                 @endphp

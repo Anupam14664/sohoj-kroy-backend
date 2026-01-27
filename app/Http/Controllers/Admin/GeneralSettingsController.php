@@ -24,6 +24,7 @@ class GeneralSettingsController extends Controller
         $request->validate([
 
             'app_name' => 'required|string|max:255',
+            'domain_url' => 'nullable|url',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'favicon' => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
             'facebook_url' => 'nullable|url|max:255',
@@ -47,8 +48,9 @@ class GeneralSettingsController extends Controller
         $generalSettings = GeneralSetting::first();
 
         $data = $request->only([
-             'app_name',
-             'facebook_url',
+            'app_name',
+            'domain_url',
+            'facebook_url',
             'twitter_url',
             'instagram_url',
             'youtube_url',

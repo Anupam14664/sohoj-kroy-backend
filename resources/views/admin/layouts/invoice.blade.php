@@ -32,6 +32,7 @@
             padding: 3px;
             background: #fff;
             margin: 0 auto;
+            border: 0.5px solid black;
         }
 
         .sticker-header {

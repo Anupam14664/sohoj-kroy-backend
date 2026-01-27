@@ -204,6 +204,7 @@
                             {{ $order->phone }}</p>
                         <p style="font-size:11.5px; line-height: 1.4px; letter-spacing: 0.2px;">
                             <strong>Address:</strong>{{ $order->address }}, {{ $order->thana }}, {{ $order->district }}</p>
+                        <p style="font-size:11.5px; line-height: 1.4px; letter-spacing: 0.2px;"> <strong style="font-size:11px;">Order ID:</strong> {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
 
 
@@ -224,7 +225,6 @@
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant_id: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Parcel ID: </strong> {{ $order->consignment_id ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Order ID:</strong> {{ $order->order_number ?? 'N/A' }}</p>
                     </div>
                 </td>
             </tr>

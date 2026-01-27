@@ -104,11 +104,14 @@
 
         table.items-table td {
             padding: 2px;
-            text-align: center;
-            border-bottom: none;
             text-align: left;
+            border-bottom: none;
             font-size: 9px;
             letter-spacing: 0.2px;
+        }
+
+        table .items-table td.price-amount {
+            text-align: right !important;
         }
 
         table.items-table tr.last-row td {
@@ -251,7 +254,7 @@
                     @endif
                 </td>
                 <td>{{ $item->quantity }}</td>
-                <td>৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
+                <td style="text-align: right">৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
             </tr>
         @endforeach
         </tbody>

@@ -195,18 +195,7 @@
     <div class="sticker-header">
         <table>
             <tr>
-                <td style="width:52%;">
-                    <div class="company-info">
-                        <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Hotline: {{ $order->company_phone }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Date: {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Courier: {{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Parcel ID: {{ $order->consignment_id ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;">Order ID: {{ $order->order_number ?? 'N/A' }}</p>
-                    </div>
-                </td>
                 <td style="width:47%; margin-left:5px;">
-
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>
@@ -228,6 +217,18 @@
                             <p style="font-size:11px;margin-top:3px;">R1</p>
                         </div>
                     </div> --}}
+                </td>
+
+                <td style="width:52%;">
+                    <div class="company-info">
+                        <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ \Carbon\Carbon::now()->format('d M, Y') }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant_id: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Parcel ID: </strong> {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Order ID:</strong> {{ $order->order_number ?? 'N/A' }}</p>
+                    </div>
                 </td>
             </tr>
         </table>

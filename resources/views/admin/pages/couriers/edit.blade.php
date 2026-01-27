@@ -15,6 +15,11 @@
                     <label for="name">Courier Name *</label>
                     <input type="text" name="name" class="form-control" required value="{{ old('name', $courier->name) }}">
                 </div>
+                
+                <div class="form-group">
+                    <label for="merchant_id">Merchant ID *</label>
+                    <input type="number" name="merchant_id" class="form-control" required value="{{ old('merchant_id', $courier->merchant_id) }}" >
+                </div>
 
                 <div class="form-group">
                     <label for="base_url">Base API URL *</label>

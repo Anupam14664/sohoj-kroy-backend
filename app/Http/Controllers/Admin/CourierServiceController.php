@@ -22,6 +22,7 @@ class CourierServiceController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'merchant_id' => 'required|integer',
             'name' => 'required|string',
             'base_url' => 'required|url',
             'create_order_endpoint' => 'required|string',
@@ -44,6 +45,7 @@ class CourierServiceController extends Controller
     public function update(Request $request, CourierService $courier)
     {
         $request->validate([
+            'merchant_id' => 'required|integer',
             'name' => 'required|string',
             'base_url' => 'required|url',
             'create_order_endpoint' => 'required|string',

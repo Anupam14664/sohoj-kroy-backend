@@ -37,7 +37,7 @@
 
         .sticker-header {
             width: 100%;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         /* Header using table */
@@ -86,8 +86,8 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            padding-top: -6px;
-            border: 1px solid #ddd;
+            padding-top: -4px;
+            border: none;
             border-radius: 6px;
             overflow: hidden;
         }

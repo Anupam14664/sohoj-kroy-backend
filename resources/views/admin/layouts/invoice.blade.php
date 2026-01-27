@@ -100,7 +100,7 @@
         }
 
         table.items-table td {
-            padding: 5px;
+            padding: 2px;
             text-align: center;
             border-bottom: none;
             text-align: left;

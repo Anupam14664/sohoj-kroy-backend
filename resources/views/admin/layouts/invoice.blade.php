@@ -50,14 +50,17 @@
             vertical-align: top;
         }
 
-        .company-info h2 {
-            font-size: 9px !important;
+        .company-info {
+            white-space: normal;
         }
 
         .company-info p {
-            font-size: 8px !important;
             margin-bottom: 1.2px;
             color: #333;
+            font-size:11.8px;
+            line-height: 1.2px;
+            letter-spacing: 0.2px;
+            margin-right: 0.6px;
         }
 
         .parcel-info h5 {
@@ -154,12 +157,16 @@
             border-radius: 6px;
             overflow: hidden;
             font-size: 10px;
+            text-align: end;
+            justify-content: end;
+            margin-right: -5px;
             line-height: 0.3px !important;
         }
 
         .totals-table td {
             padding: 6px 8px;
             border-bottom: 1px solid #e1e1e1;
+            letter-spacing: 0.2px;
         }
 
         .totals-table tr:last-child td {
@@ -175,6 +182,7 @@
             font-weight: bold;
             font-size: 13px;
             color: #000;
+            letter-spacing: 1px;
         }
 
     </style>
@@ -213,12 +221,12 @@
 
                 <td style="width:51.6%;">
                     <div class="company-info">
-                        <h2 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.7px;">{{ $order->company_name}}</h2>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ $order->created_at->format('d M, Y') }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant ID: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
-                        <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Parcel ID: </strong> {{ $order->consignment_id ?? 'N/A' }}</p>
+                        <h2 style="font-size: 14px;text-transform: uppercase; letter-spacing: 1.5px;">{{ $order->company_name}}</h2>
+                        <p> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
+                        <p> <strong style="font-size:11px;">Date:</strong> {{ $order->created_at->format('d M, Y') }}</p>
+                        <p> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
+                        <p> <strong style="font-size:11px;">Merchant ID: </strong>{{ $order->courier->merchant_id ?? 'N/A' }}</p>
+                        <p> <strong style="font-size:11px;">Parcel ID: </strong> {{ $order->consignment_id ?? 'N/A' }}</p>
                     </div>
                 </td>
             </tr>
@@ -252,22 +260,22 @@
     <!-- Totals -->
 <table class="totals-table">
     <tr>
-        <td style="letter-spacing: 0.2px;">Sub Total</td>
-        <td class="amount" style="letter-spacing: 0.2px;">৳ {{ number_format($order->subtotal, 0) }}</td>
+        <td>Sub Total</td>
+        <td class="amount">৳ {{ number_format($order->subtotal, 0) }}</td>
     </tr>
     <tr>
-        <td style="letter-spacing: 0.2px;">Delivery Fee</td>
-        <td class="amount" style="letter-spacing: 0.2px;">৳ {{ number_format($order->delivery_charge, 0) }}</td>
+        <td>Delivery Charge</td>
+        <td class="amount">৳ {{ number_format($order->delivery_charge, 0) }}</td>
     </tr>
     @if((float)$order->admin_discount > 0)
     <tr>
-        <td style="letter-spacing: 0.2px;">Discount</td>
-        <td class="amount" style="letter-spacing: 0.2px;">৳ -{{ number_format($order->admin_discount, 0) }}</td>
+        <td>Discount</td>
+        <td>৳ -{{ number_format($order->admin_discount, 0) }}</td>
     </tr>
     @endif
     <tr class="grand-total">
-        <td style="letter-spacing: 0.7px;"><strong>Total Amount</strong></td>
-        <td class="amount" style="letter-spacing: 0.7px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
+        <td><strong>Total Amount</strong></td>
+        <td class="amount"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
     </tr>
 </table>
 

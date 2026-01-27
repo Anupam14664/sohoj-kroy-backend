@@ -193,9 +193,9 @@
 <div class="sticker-container">
     <!-- Header -->
     <div class="sticker-header">
-        <table style="width:100%; border-collapse: separate; border-spacing: 10px 0;">
+        <table>
             <tr>
-                <td style="width:47%;">
+                <td style="width:48%; margin-right:8px;">
                         <!-- Invoice To -->
                     <div class="invoice-to" style=" ">
                         <h4 style="font-size:12px;">Invoice To:</h4>
@@ -219,7 +219,7 @@
                     </div> --}}
                 </td>
 
-                <td style="width:53%;">
+                <td style="width:52%;">
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>

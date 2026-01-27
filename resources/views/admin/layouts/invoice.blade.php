@@ -162,7 +162,7 @@
             background: #f5f5f5;
             border-radius: 6px;
             overflow: hidden;
-            font-size: 11px;
+            font-size: 10px;
             line-height: 0.50px !important;
         }
 

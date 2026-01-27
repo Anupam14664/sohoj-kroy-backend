@@ -213,7 +213,7 @@
 
                 <td style="width:51.6%;">
                     <div class="company-info">
-                        <h2 style="font-size: 14px; text-transform: uppercase;">{{ $order->company_name}}</h2>
+                        <h2 style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.3px;">{{ $order->company_name}}</h2>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Date:</strong> {{ $order->created_at->format('d M, Y') }}</p>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Merchant: </strong>{{ $order->courier->name ?? 'N/A' }}</p>
@@ -266,8 +266,8 @@
     </tr>
     @endif
     <tr class="grand-total">
-        <td style="letter-spacing: 0.2px;"><strong>Total Amount</strong></td>
-        <td class="amount" style="letter-spacing: 0.2px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
+        <td style="letter-spacing: 0.4px;"><strong>Total Amount</strong></td>
+        <td class="amount" style="letter-spacing: 0.4px;"><strong>৳ {{ number_format($order->total, 0) }}</strong></td>
     </tr>
 </table>
 

@@ -219,7 +219,7 @@
                     </div> --}}
                 </td>
 
-                <td style="width:52%;">
+                <td style="width:52%; margin-left: 10px;">
                     <div class="company-info">
                         <h2 style="font-size: 14px;">{{ $order->company_name}}</h2>
                         <p style="font-size:11.8px; line-height: 1.2px; letter-spacing: 0.2px; margin-right: 0.6px;"> <strong style="font-size:11px;">Hotline: </strong> {{ $order->company_phone }}</p>

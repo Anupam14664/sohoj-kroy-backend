@@ -58,7 +58,7 @@
         <div class="form-group" id="products-section">
             <label>Select Products (leave empty if applying to all)</label>
 
-            <!-- Enhanced search box with clear button -->
+            <!-- Search Box -->
             <div class="input-group mb-3">
                 <input type="text" id="product-search" class="form-control" placeholder="Search products...">
                 <div class="input-group-append">
@@ -68,7 +68,7 @@
                 </div>
             </div>
 
-            <!-- Product selection area with counters -->
+            <!-- Product List Card -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
@@ -83,12 +83,12 @@
                 <div class="product-checkboxes-container card-body" style="max-height: 300px; overflow-y: auto;">
                     <div id="product-list">
                         @foreach($products as $product)
-                        <div class="form-check product-item mb-2 d-none"
+                        <div class="form-check product-item d-none"
                             data-name="{{ strtolower($product->name) }}"
                             data-category="{{ $product->category ? strtolower($product->category->name) : '' }}"
                             data-sku="{{ strtolower($product->sku ?? '') }}"
                             data-selected="false"
-                            style="display: flex; align-items: center;">
+                            style="display: flex; align-items: center; padding: 5px;">
 
                             <input type="checkbox" name="products[]" id="product-{{ $product->id }}"
                                 value="{{ $product->id }}" class="form-check-input product-checkbox"
@@ -104,17 +104,17 @@
                                 <div>
                                     <span class="product-name">{{ $product->name }}</span>
                                     @if($product->category)
-                                    <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
+                                        <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
                                     @endif
                                 </div>
                             </label>
                         </div>
                         @endforeach
-
                     </div>
                 </div>
             </div>
         </div>
+
 
         <button type="submit" class="btn btn-primary mt-3">Create Coupon</button>
     </form>
@@ -123,149 +123,100 @@
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const applyToAllCheckbox = document.getElementById('apply_to_all');
-        const productsSection = document.getElementById('products-section');
-        const selectAllVisibleCheckbox = document.getElementById('select-all-visible');
-        const productSearch = document.getElementById('product-search');
-        const clearSearch = document.getElementById('clear-search');
-        const productItems = document.querySelectorAll('.product-item');
-        const productCheckboxes = document.querySelectorAll('.product-checkbox');
-        const visibleCount = document.getElementById('visible-count');
-        const selectedCount = document.getElementById('selected-count');
+document.addEventListener('DOMContentLoaded', function() {
+    const applyToAllCheckbox = document.getElementById('apply_to_all');
+    const productsSection = document.getElementById('products-section');
+    const selectAllVisibleCheckbox = document.getElementById('select-all-visible');
+    const productSearch = document.getElementById('product-search');
+    const clearSearch = document.getElementById('clear-search');
+    const productItems = document.querySelectorAll('.product-item');
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    const visibleCount = document.getElementById('visible-count');
+    const selectedCount = document.getElementById('selected-count');
 
-        // Initialize
+    updateSelectedCount();
+
+    applyToAllCheckbox.addEventListener('change', function() {
+        productsSection.style.display = this.checked ? 'none' : 'block';
+    });
+
+    clearSearch.addEventListener('click', function() {
+        productSearch.value = '';
+        filterProducts();
+        productSearch.focus();
+    });
+
+    selectAllVisibleCheckbox.addEventListener('change', function() {
+        const visibleCheckboxes = document.querySelectorAll('.product-item:not(.d-none) .product-checkbox');
+        visibleCheckboxes.forEach(cb => {
+            cb.checked = this.checked;
+            cb.closest('.product-item').dataset.selected = this.checked;
+        });
         updateSelectedCount();
+    });
 
-        // Toggle products section visibility
-        applyToAllCheckbox.addEventListener('change', function() {
-            productsSection.style.display = this.checked ? 'none' : 'block';
+    let searchTimeout;
+    productSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterProducts, 300);
+    });
+
+    function filterProducts() {
+        const term = productSearch.value.toLowerCase().trim();
+        let visible = 0;
+
+        productItems.forEach(item => {
+            const name = item.dataset.name;
+            const cat = item.dataset.category;
+            const sku = item.dataset.sku;
+            const selected = item.dataset.selected === 'true';
+
+            if (selected || (term && (name.includes(term) || cat.includes(term) || sku.includes(term)))) {
+                item.classList.remove('d-none');
+                highlight(item, term);
+                visible++;
+            } else {
+                item.classList.add('d-none');
+                removeHighlight(item);
+            }
         });
 
-        // Clear search field
-        clearSearch.addEventListener('click', function() {
-            productSearch.value = '';
-            filterProducts();
-            productSearch.focus();
-        });
+        visibleCount.textContent = visible;
+        selectAllVisibleCheckbox.checked = false;
+    }
 
-        // Select all VISIBLE products
-        selectAllVisibleCheckbox.addEventListener('change', function() {
-            const visibleCheckboxes = document.querySelectorAll('.product-item:not(.d-none) .product-checkbox');
-            visibleCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
-                const item = checkbox.closest('.product-item');
-                item.dataset.selected = this.checked;
-            });
+    function highlight(item, term) {
+        if(!term) return;
+        const el = item.querySelector('.product-name');
+        el.innerHTML = el.textContent.replace(new RegExp(term, 'gi'), m => `<span class="bg-warning">${m}</span>`);
+    }
+
+    function removeHighlight(item) {
+        const el = item.querySelector('.product-name');
+        if(el) el.innerHTML = el.textContent;
+    }
+
+    function updateSelectedCount() {
+        const selected = document.querySelectorAll('.product-checkbox:checked').length;
+        selectedCount.textContent = selected;
+        productCheckboxes.forEach(cb => cb.closest('.product-item').dataset.selected = cb.checked);
+    }
+
+    document.getElementById('product-list').addEventListener('change', function(e){
+        if(e.target.classList.contains('product-checkbox')) {
+            const item = e.target.closest('.product-item');
+            item.dataset.selected = e.target.checked;
             updateSelectedCount();
-        });
 
-        // Product search functionality with debounce
-        let searchTimeout;
-        productSearch.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(filterProducts, 300);
-        });
-
-        // Allow pressing Enter to search
-        productSearch.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                filterProducts();
+            if(!e.target.checked) selectAllVisibleCheckbox.checked = false;
+            else {
+                const visibleCheckboxes = document.querySelectorAll('.product-item:not(.d-none) .product-checkbox');
+                selectAllVisibleCheckbox.checked = visibleCheckboxes.length && [...visibleCheckboxes].every(cb => cb.checked);
             }
-        });
-
-        // Filter products based on search terms
-function filterProducts() {
-    const searchTerm = productSearch.value.toLowerCase().trim();
-    let matchingItems = 0;
-
-    productItems.forEach(item => {
-        const isSelected = item.dataset.selected === 'true';
-        const name = item.dataset.name;
-        const category = item.dataset.category;
-        const sku = item.dataset.sku;
-
-        if (isSelected || (searchTerm && (name.includes(searchTerm) || category.includes(searchTerm) || sku.includes(searchTerm)))) {
-            item.classList.remove('d-none');
-            if (searchTerm) highlightMatches(item, searchTerm);
-            matchingItems++;
-        } else {
-            item.classList.add('d-none');
-            removeHighlights(item);
         }
     });
+});
 
-    visibleCount.textContent = matchingItems;
-    selectAllVisibleCheckbox.checked = false;
-}
-
-function highlightMatches(item, term) {
-    const nameEl = item.querySelector('.product-name');
-    if (!nameEl) return;
-    const text = nameEl.textContent;
-    const regex = new RegExp(term, 'gi');
-    nameEl.innerHTML = text.replace(regex, m => `<span class="bg-warning">${m}</span>`);
-}
-
-function removeHighlights(item) {
-    const nameEl = item.querySelector('.product-name');
-    if (!nameEl) return;
-    nameEl.textContent = nameEl.textContent;
-}
-
-        // Highlight matching text in product names
-        function highlightMatches(item, term) {
-            if (!term) return;
-
-            const nameElement = item.querySelector('.product-name');
-            const nameText = nameElement.textContent;
-            const regex = new RegExp(term, 'gi');
-
-            nameElement.innerHTML = nameText.replace(regex, match =>
-                `<span class="bg-warning">${match}</span>`);
-        }
-
-        // Remove highlighting
-        function removeHighlights(item) {
-            const nameElement = item.querySelector('.product-name');
-            if (nameElement) {
-                nameElement.innerHTML = nameElement.textContent;
-            }
-        }
-
-        // Update selected products count
-        function updateSelectedCount() {
-            const selected = document.querySelectorAll('.product-checkbox:checked').length;
-            selectedCount.textContent = selected;
-
-            // Update data-selected attribute
-            productCheckboxes.forEach(checkbox => {
-                const item = checkbox.closest('.product-item');
-                item.dataset.selected = checkbox.checked;
-            });
-        }
-
-        // Track checkbox changes
-        document.getElementById('product-list').addEventListener('change', function(e) {
-            if (e.target.classList.contains('product-checkbox')) {
-                const item = e.target.closest('.product-item');
-                item.dataset.selected = e.target.checked;
-
-                updateSelectedCount();
-
-                if (!e.target.checked) {
-                    selectAllVisibleCheckbox.checked = false;
-                } else {
-                    // Check if all VISIBLE products are selected
-                    const visibleCheckboxes = document.querySelectorAll('.product-item:not(.d-none) .product-checkbox');
-                    const allChecked = visibleCheckboxes.length > 0 &&
-                        Array.from(visibleCheckboxes).every(cb => cb.checked);
-                    selectAllVisibleCheckbox.checked = allChecked;
-                }
-            }
-        });
-    });
 </script>
 
     <style>
@@ -273,12 +224,19 @@ function removeHighlights(item) {
             transition: all 0.3s ease;
         }
         .product-item {
-            padding: 8px 0;
             border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
         }
         .product-item:last-child { border-bottom: none; }
+        .product-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+        .bg-warning { background-color: #ffc107; padding: 0 2px; border-radius: 3px; }
+        .d-none { display: none !important; }
+        #clear-search { cursor: pointer; }
         .product-item img {
             width: 40px;
             height: 40px;

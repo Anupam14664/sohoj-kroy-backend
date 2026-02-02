@@ -289,19 +289,66 @@
                         <button type="submit" class="btn btn-primary">Update Status</button>
                     </form>
 
-                    @if($order->courier_service_id && in_array($order->status, ['shipped', 'courier_delivered', 'delivered']))
-                        <div class="mt-4 p-3 bg-light rounded">
-                            <h6>Courier Information</h6>
-                            <p><strong>Courier:</strong> {{ $order->courier->name ?? 'N/A' }}</p>
-                            <p><strong>Tracking Code:</strong> {{ $order->tracking_code }}</p>
-                            <p><strong>Consignment ID:</strong> {{ $order->consignment_id ?? 'N/A' }}</p>
-                            <a href="https://steadfast.com.bd/t/{{ $order->tracking_code }}"
-                            target="_blank"
-                            class="btn btn-sm btn-info">
-                            Track Order
-                            </a>
-                        </div>
-                    @endif
+@if(
+    $order->courier_service_id &&
+    in_array($order->status, ['shipped', 'courier_delivered', 'delivered'])
+)
+@php
+    $trackingUrl = null;
+
+    if ($order->courier) {
+        switch ($order->courier->type) {
+
+            case 'steadfast':
+                if ($order->tracking_code) {
+                    $trackingUrl = 'https://steadfast.com.bd/t/' . $order->tracking_code;
+                }
+                break;
+
+            case 'pathao':
+                if ($order->tracking_code && $order->phone) {
+                    $phone = preg_replace('/\D/', '', $order->phone);
+
+                    $trackingUrl = 'https://merchant.pathao.com/tracking?' . http_build_query([
+                        'consignment_id' => $order->tracking_code,
+                        'phone'          => $phone,
+                    ]);
+                }
+                break;
+        }
+    }
+@endphp
+
+<div class="mt-4 p-3 bg-light rounded">
+    <h6>Courier Information</h6>
+
+    {{-- Courier --}}
+    @if($order->courier?->name)
+        <p><strong>Courier:</strong> {{ $order->courier->name }}</p>
+    @endif
+
+    {{-- Tracking Code --}}
+    @if($order->tracking_code)
+        <p><strong>Tracking Code:</strong> {{ $order->tracking_code }}</p>
+    @endif
+
+    {{-- Consignment ID --}}
+    @if($order->consignment_id)
+        <p><strong>Consignment ID:</strong> {{ $order->consignment_id }}</p>
+    @endif
+
+    {{-- Track Button --}}
+    @if($trackingUrl)
+        <a href="{{ $trackingUrl }}"
+           target="_blank"
+           class="btn btn-sm btn-info">
+            Track Order
+        </a>
+    @endif
+</div>
+@endif
+
+
 
                 </div>
             </div>

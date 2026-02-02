@@ -25,11 +25,16 @@ class CourierServiceController extends Controller
             'merchant_id' => 'required|integer',
             'name' => 'required|string',
             'base_url' => 'required|url',
-            'create_order_endpoint' => 'required|string',
-            'api_key' => 'required|string',
-            'secret_key' => 'required|string',
+            'create_order_endpoint' => 'nullable|string',
+            'auth_endpoint' => 'nullable|string',
+            'api_key' => 'nullable|string',
+            'secret_key' => 'nullable|string',
+            'client_id' => 'nullable|string',
+            'client_secret' => 'nullable|string',
+            'username' => 'nullable|string',
+            'password' => 'nullable|string',
             'headers' => 'nullable|json',
-            'is_active' => 'required|boolean'
+            'is_active' => 'required|boolean',
         ]);
 
         CourierService::create($request->all());
@@ -48,11 +53,16 @@ class CourierServiceController extends Controller
             'merchant_id' => 'required|integer',
             'name' => 'required|string',
             'base_url' => 'required|url',
-            'create_order_endpoint' => 'required|string',
-            'api_key' => 'required|string',
-            'secret_key' => 'required|string',
+            'create_order_endpoint' => 'nullable|string',
+            'auth_endpoint' => 'nullable|string',
+            'api_key' => 'nullable|string',
+            'secret_key' => 'nullable|string',
+            'client_id' => 'nullable|string',
+            'client_secret' => 'nullable|string',
+            'username' => 'nullable|string',
+            'password' => 'nullable|string',
             'headers' => 'nullable|json',
-            'is_active' => 'required|boolean'
+            'is_active' => 'required|boolean',
         ]);
 
         $courier->update($request->all());

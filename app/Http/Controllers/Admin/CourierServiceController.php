@@ -10,7 +10,7 @@ class CourierServiceController extends Controller
 {
     public function index()
     {
-        $couriers = CourierService::paginate('10');
+        $couriers = CourierService::paginate(10);
         return view('admin.pages.couriers.index', compact('couriers'));
     }
 
@@ -21,25 +21,43 @@ class CourierServiceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'merchant_id' => 'required|integer',
             'name' => 'required|string',
+            'type' => 'required|in:pathao,steadfast',
             'base_url' => 'required|url',
             'create_order_endpoint' => 'nullable|string',
-            'auth_endpoint' => 'nullable|string',
-            'api_key' => 'nullable|string',
-            'secret_key' => 'nullable|string',
-            'client_id' => 'nullable|string',
-            'client_secret' => 'nullable|string',
-            'username' => 'nullable|string',
-            'password' => 'nullable|string',
             'headers' => 'nullable|json',
             'is_active' => 'required|boolean',
-        ]);
+        ];
 
-        CourierService::create($request->all());
 
-        return redirect()->route('admin.couriers.index')->with('success', 'Courier created.');
+        if ($request->type === 'pathao') {
+            $rules = array_merge($rules, [
+                'store_id' => 'required|string',
+                'client_id' => 'required|string',
+                'client_secret' => 'required|string',
+                'username' => 'required|string',
+                'password' => 'required|string',
+                'auth_endpoint' => 'required|string',
+            ]);
+        } elseif ($request->type === 'steadfast') {
+            $rules = array_merge($rules, [
+                'api_key' => 'required|string',
+                'secret_key' => 'required|string',
+            ]);
+        }
+
+        $data = $request->validate($rules);
+
+
+        if (!empty($data['headers'])) {
+            $data['headers'] = json_decode($data['headers'], true);
+        }
+
+        CourierService::create($data);
+
+        return redirect()->route('admin.couriers.index')->with('success', 'Courier created successfully.');
     }
 
     public function edit(CourierService $courier)
@@ -49,30 +67,48 @@ class CourierServiceController extends Controller
 
     public function update(Request $request, CourierService $courier)
     {
-        $request->validate([
+        $rules = [
             'merchant_id' => 'required|integer',
             'name' => 'required|string',
+            'type' => 'required|in:pathao,steadfast',
             'base_url' => 'required|url',
             'create_order_endpoint' => 'nullable|string',
-            'auth_endpoint' => 'nullable|string',
-            'api_key' => 'nullable|string',
-            'secret_key' => 'nullable|string',
-            'client_id' => 'nullable|string',
-            'client_secret' => 'nullable|string',
-            'username' => 'nullable|string',
-            'password' => 'nullable|string',
             'headers' => 'nullable|json',
             'is_active' => 'required|boolean',
-        ]);
+        ];
 
-        $courier->update($request->all());
 
-        return redirect()->route('admin.couriers.index')->with('success', 'Courier updated.');
+        if ($request->type === 'pathao') {
+            $rules = array_merge($rules, [
+                'store_id' => 'required|string',
+                'client_id' => 'required|string',
+                'client_secret' => 'required|string',
+                'username' => 'required|string',
+                'password' => 'required|string',
+                'auth_endpoint' => 'required|string',
+            ]);
+        } elseif ($request->type === 'steadfast') {
+            $rules = array_merge($rules, [
+                'api_key' => 'required|string',
+                'secret_key' => 'required|string',
+            ]);
+        }
+
+        $data = $request->validate($rules);
+
+
+        if (!empty($data['headers'])) {
+            $data['headers'] = json_decode($data['headers'], true);
+        }
+
+        $courier->update($data);
+
+        return redirect()->route('admin.couriers.index')->with('success', 'Courier updated successfully.');
     }
 
     public function destroy(CourierService $courier)
     {
         $courier->delete();
-        return back()->with('success', 'Courier deleted.');
+        return back()->with('success', 'Courier deleted successfully.');
     }
 }

@@ -4,7 +4,7 @@
 <div class="container-fluid">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Edit Courier - {{ $courier->name }}</h3>
+            <h3 class="card-title">Edit Courier</h3>
         </div>
         <div class="card-body">
             <form action="{{ route('admin.couriers.update', $courier->id) }}" method="POST">
@@ -15,66 +15,128 @@
                 <div class="form-group">
                     <label for="name">Courier Name *</label>
                     <input type="text" name="name" id="name" class="form-control" required value="{{ old('name', $courier->name) }}">
+                    @error('name')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Merchant ID -->
                 <div class="form-group">
                     <label for="merchant_id">Merchant ID *</label>
                     <input type="number" name="merchant_id" id="merchant_id" class="form-control" required value="{{ old('merchant_id', $courier->merchant_id) }}">
+                    @error('merchant_id')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Type -->
+                <div class="form-group">
+                    <label for="type">Courier Type *</label>
+                    <select name="type" id="type" class="form-control" required>
+                        <option value="">Select Type</option>
+                        <option value="pathao" {{ old('type', $courier->type) == 'pathao' ? 'selected' : '' }}>Pathao</option>
+                        <option value="steadfast" {{ old('type', $courier->type) == 'steadfast' ? 'selected' : '' }}>Steadfast</option>
+                    </select>
+                    @error('type')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Base URL -->
                 <div class="form-group">
                     <label for="base_url">Base API URL *</label>
                     <input type="url" name="base_url" id="base_url" class="form-control" required value="{{ old('base_url', $courier->base_url) }}">
+                    @error('base_url')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Create Order Endpoint -->
                 <div class="form-group">
-                    <label for="create_order_endpoint">Create Order Endpoint *</label>
-                    <input type="text" name="create_order_endpoint" id="create_order_endpoint" class="form-control" required value="{{ old('create_order_endpoint', $courier->create_order_endpoint) }}">
+                    <label for="create_order_endpoint">Create Order Endpoint</label>
+                    <input type="text" name="create_order_endpoint" id="create_order_endpoint" class="form-control" value="{{ old('create_order_endpoint', $courier->create_order_endpoint) }}">
+                    @error('create_order_endpoint')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
-                <!-- Authentication Fields -->
-                <div class="form-group">
-                    <label for="api_key">API Key</label>
-                    <input type="text" name="api_key" id="api_key" class="form-control" value="{{ old('api_key', $courier->api_key) }}">
+                <!-- Pathao Fields -->
+                <div id="pathao-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="store_id">Store ID *</label>
+                        <input type="text" name="store_id" id="store_id" class="form-control" value="{{ old('store_id', $courier->store_id) }}">
+                        @error('store_id')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client_id">Client ID *</label>
+                        <input type="text" name="client_id" id="client_id" class="form-control" value="{{ old('client_id', $courier->client_id) }}">
+                        @error('client_id')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="client_secret">Client Secret *</label>
+                        <input type="text" name="client_secret" id="client_secret" class="form-control" value="{{ old('client_secret', $courier->client_secret) }}">
+                        @error('client_secret')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input type="text" name="username" id="username" class="form-control" value="{{ old('username', $courier->username) }}">
+                        @error('username')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="text" name="password" id="password" class="form-control" value="{{ old('password', $courier->password) }}">
+                        @error('password')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label for="auth_endpoint">Auth Endpoint *</label>
+                        <input type="text" name="auth_endpoint" id="auth_endpoint" class="form-control" value="{{ old('auth_endpoint', $courier->auth_endpoint) }}">
+                        @error('auth_endpoint')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="secret_key">Secret Key</label>
-                    <input type="text" name="secret_key" id="secret_key" class="form-control" value="{{ old('secret_key', $courier->secret_key) }}">
-                </div>
+                <!-- Steadfast Fields -->
+                <div id="steadfast-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="api_key">API Key *</label>
+                        <input type="text" name="api_key" id="api_key" class="form-control" value="{{ old('api_key', $courier->api_key) }}">
+                        @error('api_key')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
 
-                <div class="form-group">
-                    <label for="client_id">Client ID</label>
-                    <input type="text" name="client_id" id="client_id" class="form-control" value="{{ old('client_id', $courier->client_id) }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="client_secret">Client Secret</label>
-                    <input type="text" name="client_secret" id="client_secret" class="form-control" value="{{ old('client_secret', $courier->client_secret) }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" id="username" class="form-control" value="{{ old('username', $courier->username) }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="text" name="password" id="password" class="form-control" value="{{ old('password', $courier->password) }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="auth_endpoint">Auth Endpoint</label>
-                    <input type="text" name="auth_endpoint" id="auth_endpoint" class="form-control" value="{{ old('auth_endpoint', $courier->auth_endpoint) }}">
+                    <div class="form-group">
+                        <label for="secret_key">Secret Key *</label>
+                        <input type="text" name="secret_key" id="secret_key" class="form-control" value="{{ old('secret_key', $courier->secret_key) }}">
+                        @error('secret_key')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
 
                 <!-- Optional Headers -->
                 <div class="form-group">
                     <label for="headers">Optional Headers (JSON)</label>
                     <textarea name="headers" id="headers" class="form-control" rows="3">{{ old('headers', $courier->headers) }}</textarea>
+                    @error('headers')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Status -->
@@ -84,6 +146,9 @@
                         <option value="1" {{ old('is_active', $courier->is_active) == 1 ? 'selected' : '' }}>Active</option>
                         <option value="0" {{ old('is_active', $courier->is_active) == 0 ? 'selected' : '' }}>Inactive</option>
                     </select>
+                    @error('is_active')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <!-- Buttons -->
@@ -94,4 +159,15 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleFields() {
+        const type = document.getElementById('type').value;
+        document.getElementById('pathao-fields').style.display = type === 'pathao' ? 'block' : 'none';
+        document.getElementById('steadfast-fields').style.display = type === 'steadfast' ? 'block' : 'none';
+    }
+
+    document.getElementById('type').addEventListener('change', toggleFields);
+    window.onload = toggleFields;
+</script>
 @endsection

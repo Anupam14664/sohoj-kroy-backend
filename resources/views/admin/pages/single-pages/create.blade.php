@@ -18,13 +18,43 @@
             <input name="slug" id="slug" class="form-control" >
         </div>
 
-        <!-- Product Select -->
-        <div class="mb-3">
-            <label class="form-label">Select Product</label>
-            <input type="text" id="productSearch" class="form-control" placeholder="Type to search products...">
-            <div id="productResults" class="list-group mt-1" style="max-height:200px; overflow-y:auto;"></div>
-            <input type="hidden" name="product_id" id="product_id" value="{{ old('product_id', $page->product_id ?? '') }}">
+<!-- Product Select -->
+<div class="mb-3 position-relative">
+    <label class="form-label">Select Product</label>
+
+    <input type="text" id="productSearch" class="form-control"
+           placeholder="Type to search products...">
+
+    <!-- Dropdown search results -->
+    <div id="productResults"
+         class="list-group position-absolute w-100 mt-1"
+         style="z-index:1000; max-height:220px; overflow-y:auto;">
+    </div>
+
+    <!-- Hidden input for selected product ID -->
+    <input type="hidden" id="product_id" name="product_id">
+
+    <!-- Selected product preview (hidden by default) -->
+    <div id="selectedProductPreview"
+         class="border rounded p-2 mt-2 d-flex align-items-center gap-3"
+         style="display:none !important; background:#f8f9fa;" hidden>
+
+        <img id="selectedProductImage"
+             style="width:70px;height:70px;object-fit:cover;border-radius:6px;" >
+
+        <div class="flex-grow-1">
+            <div id="selectedProductName" class="fw-bold"></div>
+            <div id="selectedProductSku" class="text-muted small"></div>
         </div>
+
+        {{-- <button type="button"
+                id="clearSelectedProduct"
+                class="btn btn-sm btn-outline-danger">
+            Clear
+        </button> --}}
+    </div>
+</div>
+
 
         <!-- Status -->
         <div class="mb-3">
@@ -744,54 +774,78 @@
 </script>
 
 <script>
-    const products = @json($products);
-    const productSearch = document.getElementById('productSearch');
-    const productResults = document.getElementById('productResults');
-    const productIdInput = document.getElementById('product_id');
 
-    productSearch.addEventListener('input', () => {
-        const query = productSearch.value.toLowerCase().trim();
-        productResults.innerHTML = '';
+const products = @json($products);
 
-        if (!query) return;
 
-        products
-            .filter(p => p.name.toLowerCase().includes(query))
-            .forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
+const productSearch  = document.getElementById('productSearch');
+const productResults = document.getElementById('productResults');
+const productIdInput = document.getElementById('product_id');
 
-                const imgSrc = p.image_url ? p.image_url : '/images/no-image.png';
+const previewBox  = document.getElementById('selectedProductPreview');
+const previewImg  = document.getElementById('selectedProductImage');
+const previewName = document.getElementById('selectedProductName');
+const previewSku  = document.getElementById('selectedProductSku');
 
-                item.innerHTML = `
-                    <img src="${imgSrc}" alt="${p.name}"
-                         style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold">${p.name}</div>
-                        <div class="text-muted small">
-                            Price: ${p.discount_price ? p.discount_price + ' ৳' : 'N/A'}
-                        </div>
-                    </div>
-                `;
-                item.dataset.id = p.id;
+function showSelectedProductPreview(product) {
+    previewImg.src = product.image_url ?? '/images/no-image.png';
+    previewName.textContent = product.name;
+    previewSku.textContent = 'SKU: ' + (product.sku ?? 'N/A');
+    previewBox.style.display = 'flex';
+    productIdInput.value = product.id;
+}
 
-                item.addEventListener('click', () => {
-                    productSearch.value = p.name;
-                    productIdInput.value = p.id;
-                    productResults.innerHTML = '';
-                });
+productSearch.addEventListener('input', () => {
+    const query = productSearch.value.toLowerCase().trim();
+    productResults.innerHTML = '';
 
-                productResults.appendChild(item);
-            });
-    });
+    if (!query) return;
 
-    document.addEventListener('click', (e) => {
-        if (!productResults.contains(e.target) && e.target !== productSearch) {
+    const matches = products.filter(p => p.name.toLowerCase().includes(query));
+
+    matches.forEach(p => {
+        const imgSrc = p.image_url ?? '/images/no-image.png';
+
+        const item = document.createElement('div');
+        item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
+
+        item.innerHTML = `
+            <img src="${imgSrc}" style="width:45px;height:45px;object-fit:cover;border-radius:4px;">
+            <div class="flex-grow-1">
+                <div class="fw-semibold">${p.name}</div>
+                <div class="small text-muted">SKU: ${p.sku ?? 'N/A'}</div>
+            </div>
+        `;
+
+
+        item.onclick = () => {
+            productSearch.value = p.name;
             productResults.innerHTML = '';
-        }
-    });
-</script>
+            showSelectedProductPreview(p);
+        };
 
+        productResults.appendChild(item);
+    });
+});
+
+
+document.getElementById('clearSelectedProduct').onclick = () => {
+    productSearch.value = '';
+    productIdInput.value = '';
+    previewBox.style.display = 'none';
+    previewImg.src = '';
+    previewName.textContent = '';
+    previewSku.textContent = '';
+    productResults.innerHTML = '';
+};
+
+
+document.addEventListener('click', (e) => {
+    if (!productResults.contains(e.target) && e.target !== productSearch) {
+        productResults.innerHTML = '';
+    }
+});
+</script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

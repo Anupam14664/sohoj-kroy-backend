@@ -22,10 +22,42 @@
         <!-- Product Select -->
         <div class="mb-3">
             <label class="form-label">Select Product</label>
-            <input type="text" id="productSearch" class="form-control" placeholder="Type to search products..." value="{{ $page->product ? $page->product->name : '' }}">
-            <div id="productResults" class="list-group mt-1" style="max-height:200px; overflow-y:auto;"></div>
-            <input type="hidden" name="product_id" id="product_id" value="{{ old('product_id', $page->product_id) }}">
+
+            <input type="text"
+                id="productSearch"
+                class="form-control"
+                placeholder="Type to search products..."
+                value="{{ $page->product ? $page->product->name : '' }}">
+
+            <div id="productResults"
+                class="list-group mt-1"
+                style="max-height:200px; overflow-y:auto;"></div>
+
+            <!-- Selected Product Info -->
+            <div id="selectedProductInfo"
+                class="d-flex align-items-center gap-2 mt-2 p-2 border rounded"
+                style="display:none; background:#f8f9fa;">
+                <img id="selectedProductImage"
+                    src=""
+                    style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+                <div>
+                    <div id="selectedProductName" class="fw-semibold"></div>
+                    <div id="selectedProductSku" class="small text-muted"></div>
+                </div>
+                {{-- <button type="button"
+                        id="clearSelectedProduct"
+                        class="btn btn-sm btn-outline-danger ms-auto">
+                    ✖
+                </button> --}}
+            </div>
+
+            <input type="hidden"
+                name="product_id"
+                id="product_id"
+                value="{{ old('product_id', $page->product_id) }}">
         </div>
+
+
 
         <!-- Status -->
         <div class="mb-3">
@@ -630,14 +662,20 @@
                     };
                     list.appendChild(div);
                 });
-                document.getElementById('addPoint').onclick=()=>{
-                    const val=document.getElementById('newPoint').value;
-                    if(val){
-                        card._settings.points.push(val);
-                        openSettings(card);
-                        document.getElementById('newPoint').value='';
-                    }
-                }
+                document.getElementById('addPoint').onclick = () => {
+                    const val = document.getElementById('newPoint').value.trim();
+                    if (!val) return;
+
+                    card._settings.heading = document.getElementById('heading')?.value || '';
+                    card._settings.description = document.getElementById('description')?.value || '';
+                    card._settings.cta = document.getElementById('cta')?.value || '';
+
+                    card._settings.points.push(val);
+
+                    openSettings(card);
+
+                    document.getElementById('newPoint').value = '';
+                };
                 const input = document.getElementById('highlightImage');
                 input.onchange = async (e)=>{
                     const f = e.target.files[0];
@@ -819,53 +857,91 @@
 </script>
 
 <script>
-    const products = @json($products);
-    const productSearch = document.getElementById('productSearch');
-    const productResults = document.getElementById('productResults');
-    const productIdInput = document.getElementById('product_id');
+const products = @json($products);
 
-    productSearch.addEventListener('input', () => {
-        const query = productSearch.value.toLowerCase().trim();
-        productResults.innerHTML = '';
+const productSearch  = document.getElementById('productSearch');
+const productResults = document.getElementById('productResults');
+const productIdInput = document.getElementById('product_id');
 
-        if (!query) return;
+const infoBox  = document.getElementById('selectedProductInfo');
+const infoImg  = document.getElementById('selectedProductImage');
+const infoName = document.getElementById('selectedProductName');
+const infoSku  = document.getElementById('selectedProductSku');
+const clearBtn = document.getElementById('clearSelectedProduct');
 
-        products
-            .filter(p => p.name.toLowerCase().includes(query))
-            .forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
+/* Show selected product */
+function showSelectedProduct(product) {
+    infoImg.src = product.image_url ?? '/images/no-image.png';
+    infoName.textContent = product.name;
+    infoSku.textContent = 'SKU: ' + (product.sku ?? 'N/A');
+    infoBox.style.display = 'flex';
+    productIdInput.value = product.id;
+}
 
-                const imgSrc = p.image_url ? p.image_url : '/images/no-image.png';
+/* -------- AUTO SHOW ON EDIT -------- */
+document.addEventListener('DOMContentLoaded', () => {
+    const selectedProductId = productIdInput.value;
 
-                item.innerHTML = `
-                    <img src="${imgSrc}" alt="${p.name}"
-                         style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold">${p.name}</div>
-                        <div class="text-muted small">
-                            Price: ${p.discount_price ? p.discount_price + ' ৳' : 'N/A'}
-                        </div>
-                    </div>
-                `;
-                item.dataset.id = p.id;
-
-                item.addEventListener('click', () => {
-                    productSearch.value = p.name;
-                    productIdInput.value = p.id;
-                    productResults.innerHTML = '';
-                });
-
-                productResults.appendChild(item);
-            });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!productResults.contains(e.target) && e.target !== productSearch) {
-            productResults.innerHTML = '';
+    if (selectedProductId) {
+        const product = products.find(p => p.id == selectedProductId);
+        if (product) {
+            showSelectedProduct(product);
         }
+    }
+});
+
+/* Search input */
+productSearch.addEventListener('input', () => {
+    const query = productSearch.value.toLowerCase().trim();
+    productResults.innerHTML = '';
+
+    if (!query) return;
+
+    const matches = products.filter(p =>
+        p.name.toLowerCase().includes(query)
+    );
+
+    matches.forEach(p => {
+        const imgSrc = p.image_url ?? '/images/no-image.png';
+
+        const item = document.createElement('div');
+        item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2';
+
+        item.innerHTML = `
+            <img src="${imgSrc}"
+                 style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+            <div class="flex-grow-1">
+                <div class="fw-semibold">${p.name}</div>
+                <div class="small text-muted">SKU: ${p.sku ?? 'N/A'}</div>
+            </div>
+        `;
+
+        item.onclick = () => {
+            productSearch.value = p.name;
+            productResults.innerHTML = '';
+            showSelectedProduct(p);
+        };
+
+        productResults.appendChild(item);
     });
+});
+
+/* Clear selected product */
+clearBtn.onclick = () => {
+    productSearch.value = '';
+    productIdInput.value = '';
+    infoBox.style.display = 'none';
+    productResults.innerHTML = '';
+};
+
+/* Close dropdown when clicking outside */
+document.addEventListener('click', (e) => {
+    if (!productResults.contains(e.target) && e.target !== productSearch) {
+        productResults.innerHTML = '';
+    }
+});
 </script>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

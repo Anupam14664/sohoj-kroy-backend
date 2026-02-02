@@ -8,103 +8,128 @@
         @csrf
         @method('PUT')
 
+        {{-- Coupon Code --}}
         <div class="form-group">
-            <label for="code">Coupon Code</label>
-            <input type="text" name="code" id="code" class="form-control" value="{{ old('code', $coupon->code) }}" required>
+            <label>Coupon Code</label>
+            <input type="text" name="code" class="form-control"
+                   value="{{ old('code', $coupon->code) }}" required>
         </div>
 
+        {{-- Type --}}
         <div class="form-group">
-            <label for="type">Type</label>
-            <select name="type" id="type" class="form-control" required>
-                <option value="fixed" {{ old('type', $coupon->type) == 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
-                <option value="percentage" {{ old('type', $coupon->type) == 'percentage' ? 'selected' : '' }}>Percentage</option>
+            <label>Type</label>
+            <select name="type" class="form-control" required>
+                <option value="fixed" {{ $coupon->type == 'fixed' ? 'selected' : '' }}>Fixed</option>
+                <option value="percentage" {{ $coupon->type == 'percentage' ? 'selected' : '' }}>Percentage</option>
             </select>
         </div>
 
+        {{-- Amount --}}
         <div class="form-group">
-            <label for="amount">Amount</label>
-            <input type="number" name="amount" id="amount" class="form-control"
-                   step="1" min="0" value="{{ old('amount', number_format($coupon->amount, 0, '', '')) }}" required>
+            <label>Amount</label>
+            <input type="number" name="amount" class="form-control"
+                   value="{{ old('amount', $coupon->amount) }}" required>
         </div>
 
+        {{-- Dates --}}
         <div class="row">
             <div class="col-md-6">
-                <div class="form-group">
-                    <label for="start_date">Start Date</label>
-                    <input type="date" name="start_date" id="start_date"
-                           class="form-control" value="{{ old('start_date', $coupon->start_date->format('Y-m-d')) }}" required>
-                </div>
+                <label>Start Date</label>
+                <input type="date" name="start_date" class="form-control"
+                       value="{{ $coupon->start_date->format('Y-m-d') }}">
             </div>
             <div class="col-md-6">
-                <div class="form-group">
-                    <label for="end_date">End Date</label>
-                    <input type="date" name="end_date" id="end_date"
-                           class="form-control" value="{{ old('end_date', $coupon->end_date->format('Y-m-d')) }}" required>
-                </div>
+                <label>End Date</label>
+                <input type="date" name="end_date" class="form-control"
+                       value="{{ $coupon->end_date->format('Y-m-d') }}">
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="min_purchase">Minimum Purchase Amount (0 for no minimum)</label>
-            <input type="number" name="min_purchase" id="min_purchase"
-                   class="form-control" step="1" min="0"
-                   value="{{ old('min_purchase', number_format($coupon->min_purchase, 0, '', '')) }}">
+        {{-- Minimum Purchase --}}
+        <div class="form-group mt-2">
+            <label>Minimum Purchase</label>
+            <input type="number" name="min_purchase" class="form-control"
+                   value="{{ $coupon->min_purchase }}">
         </div>
 
-        <div class="form-group form-check">
-            <input type="checkbox" name="is_active" id="is_active"
-                   class="form-check-input" value="1"
-                   {{ old('is_active', $coupon->is_active) ? 'checked' : '' }}>
-            <label for="is_active" class="form-check-label">Active</label>
+        {{-- Active --}}
+        <div class="form-check">
+            <input type="checkbox" name="is_active" class="form-check-input"
+                   {{ $coupon->is_active ? 'checked' : '' }}>
+            <label class="form-check-label">Active</label>
         </div>
 
-        <div class="form-group form-check">
+        {{-- Apply to all --}}
+        <div class="form-check mb-3">
             <input type="checkbox" name="apply_to_all" id="apply_to_all"
-                   class="form-check-input" value="1"
-                   {{ old('apply_to_all', $coupon->apply_to_all) ? 'checked' : '' }}>
-            <label for="apply_to_all" class="form-check-label">Apply to all products</label>
+                   class="form-check-input"
+                   {{ $coupon->apply_to_all ? 'checked' : '' }}>
+            <label class="form-check-label">Apply to all products</label>
         </div>
 
-        <div class="form-group" id="products-section"
-             style="{{ $coupon->apply_to_all ? 'display: none;' : '' }}">
-            <label>Select Products (leave empty if applying to all)</label>
+        {{-- Products --}}
+        <div id="products-section" style="{{ $coupon->apply_to_all ? 'display:none' : '' }}">
+            <label>Select Products</label>
 
-            <div class="input-group mb-3">
+            {{-- Search --}}
+            <div class="input-group mb-2">
                 <input type="text" id="product-search" class="form-control" placeholder="Search products...">
                 <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                    <button type="button" id="clear-search" class="btn btn-outline-secondary">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
 
+            {{-- Card --}}
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between">
                     <div>
-                        <span id="selected-count">{{ count(old('products', $selectedProducts)) }}</span> selected,
+                        <span id="selected-count">{{ count($selectedProducts) }}</span> selected,
                         <span id="visible-count">0</span> matching
                     </div>
                     <div class="form-check">
                         <input type="checkbox" id="select-all-visible" class="form-check-input">
-                        <label for="select-all-visible" class="form-check-label mb-0"><small>Select visible</small></label>
+                        <label class="form-check-label"><small>Select visible</small></label>
                     </div>
                 </div>
-                <div class="product-checkboxes-container card-body" style="max-height: 300px; overflow-y: auto;">
+
+                <div class="card-body product-checkboxes-container" style="max-height:300px; overflow-y:auto">
                     <div id="product-list">
                         @foreach($products as $product)
-                        <div class="form-check product-item mb-2 d-none"
+                        @php
+                            $checked = in_array($product->id, $selectedProducts);
+                        @endphp
+                        <div class="form-check product-item d-none"
                              data-name="{{ strtolower($product->name) }}"
-                             data-category="{{ $product->category ? strtolower($product->category->name) : '' }}"
+                             data-category="{{ strtolower(optional($product->category)->name) }}"
                              data-sku="{{ strtolower($product->sku ?? '') }}"
-                             data-selected="{{ in_array($product->id, old('products', $selectedProducts)) ? 'true' : 'false' }}">
-                            <input type="checkbox" name="products[]" id="product-{{ $product->id }}"
-                                   value="{{ $product->id }}" class="form-check-input product-checkbox"
-                                   {{ in_array($product->id, old('products', $selectedProducts)) ? 'checked' : '' }}>
-                            <label for="product-{{ $product->id }}" class="form-check-label ml-2">
-                                <span class="product-name">{{ $product->name }}</span>
-                                @if($product->category)
-                                <span class="badge badge-info ml-2">{{ $product->category->name }}</span>
-                                @endif
+                             data-selected="{{ $checked ? 'true' : 'false' }}"
+                             style="display:flex; align-items:center; padding:5px;">
+
+                            <input type="checkbox" name="products[]"
+                                   value="{{ $product->id }}"
+                                   class="form-check-input product-checkbox"
+                                   style="margin-right:10px;"
+                                   {{ $checked ? 'checked' : '' }}>
+
+                            <label class="form-check-label"
+                                   style="flex:1; display:flex; align-items:center; cursor:pointer;">
+
+                                <img src="{{ $product->main_image
+                                    ? asset('storage/'.$product->main_image)
+                                    : asset('/images/no-image.png') }}"
+                                     width="40" height="40"
+                                     style="object-fit:cover; border-radius:4px; margin-right:8px;">
+
+                                <div>
+                                    <span class="product-name">{{ $product->name }}</span>
+                                    @if($product->category)
+                                        <span class="badge badge-info ml-2">
+                                            {{ $product->category->name }}
+                                        </span>
+                                    @endif
+                                </div>
                             </label>
                         </div>
                         @endforeach
@@ -113,12 +138,11 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-3">Update Coupon</button>
+        <button class="btn btn-primary mt-3">Update Coupon</button>
         <a href="{{ route('admin.coupons.index') }}" class="btn btn-secondary mt-3">Cancel</a>
     </form>
 </div>
 @endsection
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

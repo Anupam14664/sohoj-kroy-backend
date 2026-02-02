@@ -38,33 +38,81 @@ class AdminProductController extends Controller
                 });
             });
         }
+        // Single Product Filter
+        if ($request->filter === 'stock_out') {
+            $query->where('total_stock', '<=', 0);
+        }
 
+        if ($request->filter === 'active') {
+            $query->where('status', 1);
+        }
+
+        if ($request->filter === 'inactive') {
+            $query->where('status', 0);
+        }
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
         $products = $query->latest()->paginate(10);
 
-        if($request->ajax()) {
-            $html = '';
-            foreach($products as $index => $product) {
-                $html .= '<tr>';
-                $html .= '<td>'.($index + 1).'</td>';
-                $html .= '<td>'.$product->name.'</td>';
-                $html .= '<td>';
-                $html .= $product->main_image
-                        ? '<img src="'.asset('storage/'.$product->main_image).'" width="30" class="img-thumbnail">'
-                        : '<span class="text-muted">No main image</span>';
-                $html .= '</td>';
-                $html .= '<td>&#2547;'.number_format($product->buy_price,2).'</td>';
-                $html .= '<td>&#2547;'.number_format($product->regular_price,2).'</td>';
-                $html .= '<td>'.number_format($product->total_stock).' PCS</td>';
-                $html .= '<td>'.($product->category->name ?? 'N/A').'</td>';
+if ($request->ajax()) {
 
-                // Variant Colors
-                $html .= '<td>';
-                foreach($product->variants as $variant){
-                    $html .= '<span class="badge bg-secondary">'.($variant->color->name ?? '').'</span> ';
-                }
-                $html .= '</td>';
+    $html = '';
+    $start = ($products->currentPage() - 1) * $products->perPage();
 
-                // Actions (View / Edit / Delete)
+    foreach ($products as $index => $product) {
+
+        $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
+        $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
+
+        $html .= '<tr>';
+
+        // #
+        $html .= '<td>' . ($start + $index + 1) . '</td>';
+
+        // Name
+        $html .= '<td>' . e($product->name) . '</td>';
+
+        // Slug / URL
+        $html .= '<td>
+            <span title="'.$fullUrl.'">'.$shortUrl.'</span>
+            <button class="btn btn-sm copy-btn" data-url="'.$fullUrl.'" style="border:none;">
+                <i class="fa fa-copy"></i>
+            </button>
+        </td>';
+
+        // Image
+        $html .= '<td>';
+        if ($product->main_image) {
+            $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="30" class="img-thumbnail">';
+        } else {
+            $html .= '<span class="text-muted">No main image</span>';
+        }
+        $html .= '</td>';
+
+        // Prices
+        $html .= '<td>&#2547;' . number_format($product->buy_price, 0) . '</td>';
+        $html .= '<td>&#2547;' . number_format($product->regular_price, 0) . '</td>';
+        $html .= '<td>&#2547;' . number_format($product->discount_price, 0) . '</td>';
+
+        // Stock
+        $html .= '<td>' . number_format($product->total_stock) . ' PCS</td>';
+
+        // Category
+        $html .= '<td>' . ($product->category->name ?? 'N/A') . '</td>';
+
+        // Variants
+        $html .= '<td>';
+        foreach ($product->variants as $variant) {
+            $html .= '<span class="badge bg-secondary">'
+                   . ($variant->color->name ?? '')
+                   . '</span> ';
+        }
+        $html .= '</td>';
+
+        // Actions
                 $html .= '<td>
                     <div class="btn-group btn-group-sm px-2" role="group">
                         <a href="'.route('admin.products.show', $product->id).'" class="btn btn-info p-1 mx-1" title="View">
@@ -83,13 +131,14 @@ class AdminProductController extends Controller
                 </td>';
 
                 $html .= '</tr>';
-            }
-            return $html;
-        }
+    }
 
+    return $html;
+}
 
+        $categories = Category::orderBy('name')->get();
 
-        return view('admin.pages.products.index', compact('products', 'domain'));
+        return view('admin.pages.products.index', compact('products', 'domain', 'categories'));
     }
 
 

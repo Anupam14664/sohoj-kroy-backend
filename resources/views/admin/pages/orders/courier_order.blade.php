@@ -54,11 +54,11 @@
                             <form style="width: 200px; background:none; border:none;" action="{{ route('admin.orders.shipped') }}" method="GET" class="mb-2 d-flex">
                                 <div class="input-group input-group-sm" style="width: 180px;">
                                     <input type="text"
-                                           name="tracking_code"
+                                           name="keyword"
                                            class="form-control"
-                                           placeholder="Tracking #"
-                                           value="{{ request('tracking_code') }}"
-                                           aria-label="Search by tracking code">
+                                           placeholder="Search..."
+                                           value="{{ $keyword }}"
+                                           aria-label="Search...">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-outline-secondary">
                                             <i class="fas fa-search"></i>

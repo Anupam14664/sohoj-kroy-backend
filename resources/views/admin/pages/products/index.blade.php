@@ -16,9 +16,30 @@
             </div>
 
         <div class="card-body">
-            <div class="mb-3 d-flex justify-content-end">
+            <div class="mb-3 d-flex justify-content-space-between gap-2">
+
+            <!-- Status / Stock Filter -->
+            <select id="product_filter" class="form-control" style="width: 20%;">
+                <option value="">All Products</option>
+                <option value="stock_out">Stock Out</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <!-- Category Filter -->
+            <select id="category_filter" class="form-control" style="width: 25%;">
+                <option value="">All Categories</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                @endforeach
+            </select>
+
+            <input type="text" id="search" class="form-control" placeholder="Search..." style="width: 30%; justify-content: end;">
+        </div>
+
+            {{-- <div class="mb-3 d-flex justify-content-end">
                 <input type="text" id="search" class="form-control" placeholder="Search...." style="width: 30%;">
-            </div>
+            </div> --}}
             <div class="table-responsive">
                 <table class="table table-striped table-hover table-head-bg-primary mt-4" width="100%" cellspacing="0">
                     <thead>
@@ -88,7 +109,7 @@
 @endsection
 
 
-<script>
+{{-- <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search');
     const tableBody = document.getElementById('product-table');
@@ -115,7 +136,39 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => console.log(err));
     });
 });
+</script> --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const searchInput = document.getElementById('search');
+    const productFilter = document.getElementById('product_filter');
+    const categoryFilter = document.getElementById('category_filter');
+    const tableBody = document.getElementById('product-table');
+    const noResults = document.getElementById('no-results');
+
+    function fetchProducts() {
+        const params = new URLSearchParams({
+            search: searchInput.value,
+            filter: productFilter.value,
+            category: categoryFilter.value,
+        });
+
+        fetch(`{{ route('admin.products.index') }}?${params.toString()}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.text())
+        .then(html => {
+            tableBody.innerHTML = html;
+            noResults.style.display = html.trim() === '' ? 'block' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('keyup', fetchProducts);
+    productFilter.addEventListener('change', fetchProducts);
+    categoryFilter.addEventListener('change', fetchProducts);
+});
 </script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const copyButtons = document.querySelectorAll('.copy-btn');

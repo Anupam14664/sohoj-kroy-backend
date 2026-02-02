@@ -81,251 +81,127 @@ class AdminOrderController extends Controller
             'orders', 'status', 'dateFrom', 'dateTo', 'district', 'thana', 'productSearch', 'couriers'
         ));
     }
-
-    // public function updateStatus(Request $request, Order $order)
-    // {
-    //     $validated = $request->validate([
-    //         'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled,courier_cancelled',
-    //         'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
-    //         'delivery_note' => 'nullable|string|max:255',
-    //         'comment' => 'nullable|string',
-    //         'custom_link' => 'nullable|url|max:255',
-    //     ]);
-
-    //     $allowedTransitions = [
-    //         'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
-    //         'pending' => ['hold', 'processing', 'cancelled'],
-    //         'hold' => ['processing', 'cancelled'],
-    //         'processing' => ['shipped', 'courier_delivered', 'cancelled'],
-    //         'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
-    //         'courier_delivered' => ['delivered', 'courier_cancelled'],
-    //         'courier_cancelled' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
-    //         'delivered' => [],
-    //         'cancelled' => [],
-    //     ];
-
-    //     $currentStatus = $order->status;
-    //     $newStatus = $validated['status'];
-
-    //     if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
-    //         return back()->with('error', "Invalid status transition from $currentStatus to $newStatus");
-    //     }
-
-    //     DB::beginTransaction();
-
-    //     try {
-
-    //         // Already shipped protection
-    //         if ($newStatus === 'shipped' && $order->status === 'shipped') {
-    //             throw new \Exception('This order is already marked as shipped.');
-    //         }
-
-    //         // Cancelled OR Courier Cancelled → return stock
-    //         if (in_array($newStatus, ['cancelled', 'courier_cancelled']) && $order->status !== $newStatus) {
-    //             $order->returnStock();
-    //         }
-
-    //         /**
-    //          * Custom Link logic
-    //          * Only when processing → courier_delivered
-    //          * Only if courier_service_id is NULL
-    //          */
-    //         if (
-    //             $newStatus === 'courier_delivered' &&
-    //             $order->status === 'processing' &&
-    //             !$order->courier_service_id
-    //         ) {
-    //             $order->custom_link = $request->custom_link;
-    //         }
-
-    //         $order->status = $newStatus;
-
-    //         if (isset($validated['comment'])) {
-    //             $order->comment = $validated['comment'];
-    //         }
-
-    //         /**
-    //          * Shipped → Courier API Call
-    //          */
-    //         if ($newStatus === 'shipped') {
-    //             $courier = CourierService::findOrFail($validated['courier_service_id']);
-
-    //             $payload = [
-    //                 'invoice' => $order->order_number,
-    //                 'recipient_name' => $order->name,
-    //                 'recipient_phone' => $order->phone,
-    //                 'recipient_address' => $order->address . ', ' . $order->thana . ', ' . $order->district,
-    //                 'cod_amount' => $order->total,
-    //                 'note' => $validated['delivery_note'] ?? 'Handle with care',
-    //                 'item_description' => 'N/A',
-    //                 'delivery_type' => 0,
-    //             ];
-
-    //             $response = Http::withHeaders([
-    //                 'Api-Key' => $courier->api_key,
-    //                 'Secret-Key' => $courier->secret_key,
-    //                 'Content-Type' => 'application/json',
-    //             ])->post(
-    //                 $courier->base_url . '/' . $courier->create_order_endpoint,
-    //                 $payload
-    //             );
-
-    //             $data = $response->json();
-
-    //             if (!$response->successful() || !isset($data['consignment']['tracking_code'])) {
-    //                 throw new \Exception('Courier API Error: ' . ($data['message'] ?? 'Unknown error'));
-    //             }
-
-    //             $order->courier_service_id = $courier->id;
-    //             $order->tracking_code = $data['consignment']['tracking_code'];
-    //             $order->consignment_id = $data['consignment']['consignment_id'];
-    //             $order->courier_response = $data;
-    //         }
-
-    //         $order->save();
-    //         DB::commit();
-
-    //         return back()->with(
-    //             'success',
-    //             'Order updated successfully.' .
-    //             ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : '')
-    //         );
-
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-
-    //         Log::error('Order status update failed', [
-    //             'order_id' => $order->id,
-    //             'error' => $e->getMessage(),
-    //         ]);
-
-    //         return back()->with('error', 'Failed to update order: ' . $e->getMessage());
-    //     }
-    // }
-
-
-
-public function updateStatus(Request $request, Order $order)
-{
-    $validated = $request->validate([
-        'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled,courier_cancelled',
-        'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
-        'delivery_note' => 'nullable|string|max:255',
-        'comment' => 'nullable|string',
-        'custom_link' => 'nullable|url|max:255',
-    ]);
-
-    $allowedTransitions = [
-        'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
-        'pending' => ['hold', 'processing', 'cancelled'],
-        'hold' => ['processing', 'cancelled'],
-        'processing' => ['shipped', 'courier_delivered', 'cancelled'],
-        'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
-        'courier_delivered' => ['delivered', 'courier_cancelled'],
-        'courier_cancelled' => ['courier_delivered', 'cancelled'],
-        'delivered' => [],
-        'cancelled' => [],
-    ];
-
-    $currentStatus = $order->status;
-    $newStatus = $validated['status'];
-
-    if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
-        return back()->with(
-            'error',
-            "Invalid status transition from {$currentStatus} to {$newStatus}"
-        );
-    }
-
-    DB::beginTransaction();
-
-    try {
-
-        /**
-         * Already shipped protection
-         */
-        if ($newStatus === 'shipped' && $order->status === 'shipped') {
-            throw new \Exception('This order is already marked as shipped.');
-        }
-
-        /**
-         * Cancel / Courier Cancel → return stock
-         */
-        if (
-            in_array($newStatus, ['cancelled', 'courier_cancelled']) &&
-            $order->status !== $newStatus
-        ) {
-            $order->returnStock();
-        }
-
-        /**
-         * Custom link
-         * processing → courier_delivered
-         */
-        if (
-            $newStatus === 'courier_delivered' &&
-            $order->status === 'processing' &&
-            !$order->courier_service_id
-        ) {
-            $order->custom_link = $validated['custom_link'] ?? null;
-        }
-
-        /**
-         * Set new status
-         */
-        $order->status = $newStatus;
-
-        if (isset($validated['comment'])) {
-            $order->comment = $validated['comment'];
-        }
-
-        /**
-         * SHIPPED → Create courier order (Dynamic)
-         */
-        if ($newStatus === 'shipped') {
-
-            $courier = CourierService::where('id', $validated['courier_service_id'])
-                ->where('is_active', true)
-                ->firstOrFail();
-
-            $courierService = CourierManager::make($courier);
-
-            $result = $courierService->createOrder(
-                $order,
-                $courier,
-                $validated
-            );
-
-            $order->courier_service_id = $courier->id;
-            $order->tracking_code     = $result['tracking_code'];
-            $order->consignment_id    = $result['consignment_id'];
-            $order->courier_response  = $result['response'];
-        }
-
-        $order->save();
-        DB::commit();
-
-        return back()->with(
-            'success',
-            'Order updated successfully.' .
-            ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : '')
-        );
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        Log::error('Order status update failed', [
-            'order_id' => $order->id,
-            'error' => $e->getMessage(),
+    public function updateStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled,courier_cancelled',
+            'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
+            'delivery_note' => 'nullable|string|max:255',
+            'comment' => 'nullable|string',
+            'custom_link' => 'nullable|url|max:255',
         ]);
 
-        return back()->with(
-            'error',
-            'Failed to update order: ' . $e->getMessage()
-        );
+        $allowedTransitions = [
+            'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
+            'pending' => ['hold', 'processing', 'cancelled'],
+            'hold' => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'courier_delivered', 'cancelled'],
+            'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_delivered' => ['delivered', 'courier_cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => [],
+        ];
+
+        $currentStatus = $order->status;
+        $newStatus = $validated['status'];
+
+        if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
+            return back()->with(
+                'error',
+                "Invalid status transition from {$currentStatus} to {$newStatus}"
+            );
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            /**
+             * Already shipped protection
+             */
+            if ($newStatus === 'shipped' && $order->status === 'shipped') {
+                throw new \Exception('This order is already marked as shipped.');
+            }
+
+            /**
+             * Cancel / Courier Cancel → return stock
+             */
+            if (
+                in_array($newStatus, ['cancelled', 'courier_cancelled']) &&
+                $order->status !== $newStatus
+            ) {
+                $order->returnStock();
+            }
+
+            /**
+             * Custom link
+             * processing → courier_delivered
+             */
+            if (
+                $newStatus === 'courier_delivered' &&
+                $order->status === 'processing' &&
+                !$order->courier_service_id
+            ) {
+                $order->custom_link = $validated['custom_link'] ?? null;
+            }
+
+            /**
+             * Set new status
+             */
+            $order->status = $newStatus;
+
+            if (isset($validated['comment'])) {
+                $order->comment = $validated['comment'];
+            }
+
+            /**
+             * SHIPPED → Create courier order (Dynamic)
+             */
+            if ($newStatus === 'shipped') {
+
+                $courier = CourierService::where('id', $validated['courier_service_id'])
+                    ->where('is_active', true)
+                    ->firstOrFail();
+
+                $courierService = CourierManager::make($courier);
+
+                $result = $courierService->createOrder(
+                    $order,
+                    $courier,
+                    $validated
+                );
+
+                $order->courier_service_id = $courier->id;
+                $order->tracking_code     = $result['tracking_code'];
+                $order->consignment_id    = $result['consignment_id'];
+                $order->courier_response  = $result['response'];
+            }
+
+            $order->save();
+            DB::commit();
+
+            return back()->with(
+                'success',
+                'Order updated successfully.' .
+                ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : '')
+            );
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            Log::error('Order status update failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with(
+                'error',
+                'Failed to update order: ' . $e->getMessage()
+            );
+        }
     }
-}
 
     public function edit(Order $order)
     {
@@ -939,9 +815,16 @@ public function getVariants(Product $product)
             $query->where('courier_service_id', $request->courier_service_id);
         }
 
-        if ($request->filled('tracking_code')) {
-            $query->where('tracking_code', 'like', '%' . $request->tracking_code . '%');
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('phone', 'like', "%{$keyword}%")
+                ->orWhere('order_number', 'like', "%{$keyword}%")
+                ->orWhere('tracking_code', 'like', "%{$keyword}%");
+            });
         }
+
 
         $orders = $query->paginate(10);
 
@@ -955,7 +838,7 @@ public function getVariants(Product $product)
         $dateFrom = $request->date_from ?? '';
         $dateTo = $request->date_to ?? '';
         $courierServiceId = $request->courier_service_id ?? '';
-        $trackingCode = $request->tracking_code ?? '';
+        $keyword = $request->keyword ?? '';
 
         $couriers = CourierService::all();
 
@@ -964,7 +847,7 @@ public function getVariants(Product $product)
             'dateFrom',
             'dateTo',
             'courierServiceId',
-            'trackingCode',
+            'keyword',
             'couriers'
         ));
     }

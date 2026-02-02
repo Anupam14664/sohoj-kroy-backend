@@ -138,11 +138,12 @@
             </div>
         </div>
 
-        <button class="btn btn-primary mt-3">Update Coupon</button>
+        <button type="submit" class="btn btn-primary mt-3">Update Coupon</button>
         <a href="{{ route('admin.coupons.index') }}" class="btn btn-secondary mt-3">Cancel</a>
     </form>
 </div>
 @endsection
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

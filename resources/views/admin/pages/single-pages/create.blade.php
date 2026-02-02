@@ -135,7 +135,6 @@
                     };
                 case 'premium_product_promotion':
                 case 'featured_product':
-                case 'product_highlight':
                 case 'exclusive_product':
                     return {
                         ...baseSettings,

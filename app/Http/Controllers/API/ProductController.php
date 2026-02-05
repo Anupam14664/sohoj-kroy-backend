@@ -263,9 +263,7 @@ class ProductController extends Controller
 public function featured()
 {
     $products = Product::where('is_featured', true)
-        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
-        ->latest()
-        ->get();
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])->withAvg('reviews', 'rating')->latest()->get();
 
     // Add full URL to all images
     $products->transform(function ($product) {
@@ -305,9 +303,7 @@ public function featured()
 public function offer()
 {
     $products = Product::where('is_offer', true)
-        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
-        ->latest()
-        ->get();
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true); }])->withAvg('reviews', 'rating')->latest()->get();
 
     // Add full URL to all images
     $products->transform(function ($product) {
@@ -348,6 +344,8 @@ public function campaign()
 {
     $products = Product::where('is_campaign', true)
         ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
+        ->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])
+        ->withAvg('reviews', 'rating')
         ->latest()
         ->get();
 
@@ -383,6 +381,7 @@ public function campaign()
     return response()->json([
         'status' => true,
         'data' => $products
+
     ]);
 }
 

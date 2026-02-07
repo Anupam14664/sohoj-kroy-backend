@@ -141,12 +141,6 @@
                                                     @endphp
                                                     @break
 
-                                                @case('custom')
-                                                    @php
-                                                        $trackUrl = $order->custom_link;
-                                                    @endphp
-                                                    @break
-
                                             @endswitch
 
                                             @if($trackUrl)
@@ -158,6 +152,12 @@
                                             @else
                                                 <span class="text-muted">No tracking</span>
                                             @endif
+                                        @elseif($order->custom_link)
+                                            <a href="{{ $order->custom_link }}"
+                                            target="_blank"
+                                            class="btn btn-sm btn-secondary">
+                                                Track
+                                            </a>
                                         @else
                                             <span class="text-muted">No tracking</span>
                                         @endif

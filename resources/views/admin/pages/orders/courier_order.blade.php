@@ -18,18 +18,20 @@
                             <!-- Combined Filter Form -->
                             <form style="width: 700px; background:none; border:none;" action="{{ route('admin.orders.shipped') }}" method="GET" class="mb-0 d-flex flex-wrap align-items-end gap-2">
                                 <!-- Courier Select -->
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Courier</label>
-                                    <select name="courier_service_id" class="form-control form-control-sm">
-                                        <option value="">All Couriers</option>
-                                        @foreach($couriers as $courier)
-                                            <option value="{{ $courier->id }}" {{ request('courier_service_id') == $courier->id ? 'selected' : '' }}>
-                                                {{ $courier->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
+                            <div class="form-group mb-0">
+                                <label class="form-label">Courier</label>
+                                <select name="courier_service_id" class="form-control form-control-sm">
+                                    <option value="">All Couriers</option>
+                                    @foreach($couriers as $courier)
+                                        <option value="{{ $courier->id }}" {{ request('courier_service_id') == $courier->id ? 'selected' : '' }}>
+                                            {{ $courier->name }}
+                                        </option>
+                                    @endforeach
+                                    <option value="custom" {{ request('courier_service_id') === 'custom' ? 'selected' : '' }}>
+                                        Custom Link
+                                    </option>
+                                </select>
+                            </div>
                                 <!-- Date From -->
                                 <div class="form-group mb-0">
                                     <label class="form-label">From</label>

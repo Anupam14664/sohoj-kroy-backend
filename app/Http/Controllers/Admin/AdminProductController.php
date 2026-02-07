@@ -50,6 +50,17 @@ class AdminProductController extends Controller
         if ($request->filter === 'inactive') {
             $query->where('status', 0);
         }
+        if ($request->filter === 'best_sale') {
+            $query->where('is_featured', true);
+        }
+
+        if ($request->filter === 'offer') {
+            $query->where('is_offer', true);
+        }
+
+        if ($request->filter === 'campaign') {
+            $query->where('is_campaign', true);
+        }
 
         // Category filter
         if ($request->filled('category')) {
@@ -57,84 +68,84 @@ class AdminProductController extends Controller
         }
         $products = $query->latest()->paginate(10);
 
-if ($request->ajax()) {
+        if ($request->ajax()) {
 
-    $html = '';
-    $start = ($products->currentPage() - 1) * $products->perPage();
+            $html = '';
+            $start = ($products->currentPage() - 1) * $products->perPage();
 
-    foreach ($products as $index => $product) {
+            foreach ($products as $index => $product) {
 
-        $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
-        $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
+                $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
+                $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
 
-        $html .= '<tr>';
+                $html .= '<tr>';
 
-        // #
-        $html .= '<td>' . ($start + $index + 1) . '</td>';
+                // #
+                $html .= '<td>' . ($start + $index + 1) . '</td>';
 
-        // Name
-        $html .= '<td>' . e($product->name) . '</td>';
+                // Name
+                $html .= '<td>' . e($product->name) . '</td>';
 
-        // Slug / URL
-        $html .= '<td>
-            <span title="'.$fullUrl.'">'.$shortUrl.'</span>
-            <button class="btn btn-sm copy-btn" data-url="'.$fullUrl.'" style="border:none;">
-                <i class="fa fa-copy"></i>
-            </button>
-        </td>';
-
-        // Image
-        $html .= '<td>';
-        if ($product->main_image) {
-            $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="30" class="img-thumbnail">';
-        } else {
-            $html .= '<span class="text-muted">No main image</span>';
-        }
-        $html .= '</td>';
-
-        // Prices
-        $html .= '<td>&#2547;' . number_format($product->buy_price, 0) . '</td>';
-        $html .= '<td>&#2547;' . number_format($product->regular_price, 0) . '</td>';
-        $html .= '<td>&#2547;' . number_format($product->discount_price, 0) . '</td>';
-
-        // Stock
-        $html .= '<td>' . number_format($product->total_stock) . ' PCS</td>';
-
-        // Category
-        $html .= '<td>' . ($product->category->name ?? 'N/A') . '</td>';
-
-        // Variants
-        $html .= '<td>';
-        foreach ($product->variants as $variant) {
-            $html .= '<span class="badge bg-secondary">'
-                   . ($variant->color->name ?? '')
-                   . '</span> ';
-        }
-        $html .= '</td>';
-
-        // Actions
+                // Slug / URL
                 $html .= '<td>
-                    <div class="btn-group btn-group-sm px-2" role="group">
-                        <a href="'.route('admin.products.show', $product->id).'" class="btn btn-info p-1 mx-1" title="View">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="'.route('admin.products.edit', $product->id).'" class="btn btn-primary p-1 mx-1" title="Edit">
-                            <i class="fas fa-edit bg-none"></i>
-                        </a>
-                        <form action="'.route('admin.products.destroy', $product->id).'" method="POST" class="d-inline m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
-                            '.csrf_field().method_field('DELETE').'
-                            <button type="submit" class="btn btn-danger p-0 py-1 px-2 border-none" title="Delete" onclick="return confirm(\'Are you sure?\')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                    </div>
+                    <span title="'.$fullUrl.'">'.$shortUrl.'</span>
+                    <button class="btn btn-sm copy-btn" data-url="'.$fullUrl.'" style="border:none;">
+                        <i class="fa fa-copy"></i>
+                    </button>
                 </td>';
 
-                $html .= '</tr>';
-    }
+                // Image
+                $html .= '<td>';
+                if ($product->main_image) {
+                    $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="30" class="img-thumbnail">';
+                } else {
+                    $html .= '<span class="text-muted">No main image</span>';
+                }
+                $html .= '</td>';
 
-    return $html;
-}
+                // Prices
+                $html .= '<td>&#2547;' . number_format($product->buy_price, 0) . '</td>';
+                $html .= '<td>&#2547;' . number_format($product->regular_price, 0) . '</td>';
+                $html .= '<td>&#2547;' . number_format($product->discount_price, 0) . '</td>';
+
+                // Stock
+                $html .= '<td>' . number_format($product->total_stock) . ' PCS</td>';
+
+                // Category
+                $html .= '<td>' . ($product->category->name ?? 'N/A') . '</td>';
+
+                // Variants
+                $html .= '<td>';
+                foreach ($product->variants as $variant) {
+                    $html .= '<span class="badge bg-secondary">'
+                        . ($variant->color->name ?? '')
+                        . '</span> ';
+                }
+                $html .= '</td>';
+
+                // Actions
+                        $html .= '<td>
+                            <div class="btn-group btn-group-sm px-2" role="group">
+                                <a href="'.route('admin.products.show', $product->id).'" class="btn btn-info p-1 mx-1" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="'.route('admin.products.edit', $product->id).'" class="btn btn-primary p-1 mx-1" title="Edit">
+                                    <i class="fas fa-edit bg-none"></i>
+                                </a>
+                                <form action="'.route('admin.products.destroy', $product->id).'" method="POST" class="d-inline m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
+                                    '.csrf_field().method_field('DELETE').'
+                                    <button type="submit" class="btn btn-danger p-0 py-1 px-2 border-none" title="Delete" onclick="return confirm(\'Are you sure?\')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>';
+
+                        $html .= '</tr>';
+            }
+
+            return $html;
+        }
 
         $categories = Category::orderBy('name')->get();
 

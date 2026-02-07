@@ -812,9 +812,12 @@ public function getVariants(Product $product)
         }
 
         if ($request->filled('courier_service_id')) {
-            $query->where('courier_service_id', $request->courier_service_id);
+            if ($request->courier_service_id === 'custom') {
+                $query->whereNotNull('custom_tracking_url');
+            } else {
+                $query->where('courier_service_id', $request->courier_service_id);
+            }
         }
-
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
 

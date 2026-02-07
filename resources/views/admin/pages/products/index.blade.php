@@ -21,9 +21,12 @@
             <!-- Status / Stock Filter -->
             <select id="product_filter" class="form-control" style="width: 20%;">
                 <option value="">All Products</option>
-                <option value="stock_out">Stock Out</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="stock_out" {{ request('filter') === 'stock_out' ? 'selected' : '' }}>Stock Out</option>
+                <option value="active" {{ request('filter') === 'active' ? 'selected' : '' }}>Active</option>
+                <option value="inactive" {{ request('filter') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                <option value="best_sale" {{ request('filter') === 'best_sale' ? 'selected' : '' }}>Best Sale</option>
+                <option value="offer" {{ request('filter') === 'offer' ? 'selected' : '' }}>Offer</option>
+                <option value="campaign" {{ request('filter') === 'campaign' ? 'selected' : '' }}>Campaign</option>
             </select>
 
             <!-- Category Filter -->

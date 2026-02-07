@@ -114,9 +114,9 @@
                                         @endif
                                     </td> --}}
                                     <td>
-                                        @if($order->tracking_code && $order->courierService)
+                                        @if($order->tracking_code && $order->courier)
                                             @php
-                                                $courier = $order->courierService;
+                                                $courier = $order->courier;
                                                 $trackUrl = null;
                                             @endphp
 

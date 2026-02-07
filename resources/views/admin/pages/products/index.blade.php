@@ -75,7 +75,7 @@
                             </td>
                             <td>
                                 @if($product->main_image)
-                                    <img src="{{ asset('storage/'.$product->main_image) }}" width="60" class="img-thumbnail">
+                                    <img src="{{ asset('storage/'.$product->main_image) }}" width="70" class="img-thumbnail">
                                 @else
                                     <span class="text-muted">No main image</span>
                                 @endif

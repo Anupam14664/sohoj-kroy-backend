@@ -102,7 +102,7 @@
                                         <small>{{ $order->delivery_status_description }}</small> --}}
                                     </td>
 
-                                    <td>
+                                    {{-- <td>
                                         @if($order->tracking_code)
                                             <a href="https://steadfast.com.bd/t/{{ $order->tracking_code }}"
                                             target="_blank"
@@ -112,7 +112,57 @@
                                         @else
                                             <span class="text-muted">No tracking</span>
                                         @endif
+                                    </td> --}}
+                                    <td>
+                                        @if($order->tracking_code && $order->courierService)
+                                            @php
+                                                $courier = $order->courierService;
+                                                $trackUrl = null;
+                                            @endphp
+
+                                            @switch($courier->type)
+
+                                                @case('steadfast')
+                                                    @php
+                                                        $trackUrl = 'https://steadfast.com.bd/t/' . $order->tracking_code;
+                                                    @endphp
+                                                    @break
+
+                                                @case('pathao')
+                                                    @php
+                                                        if ($order->phone) {
+                                                            $phone = preg_replace('/\D/', '', $order->phone);
+
+                                                            $trackUrl = 'https://merchant.pathao.com/tracking?' . http_build_query([
+                                                                'consignment_id' => $order->tracking_code,
+                                                                'phone'          => $phone,
+                                                            ]);
+                                                        }
+                                                    @endphp
+                                                    @break
+
+                                                @case('custom')
+                                                    @php
+                                                        $trackUrl = $order->custom_link;
+                                                    @endphp
+                                                    @break
+
+                                            @endswitch
+
+                                            @if($trackUrl)
+                                                <a href="{{ $trackUrl }}"
+                                                target="_blank"
+                                                class="btn btn-sm btn-info">
+                                                    Track
+                                                </a>
+                                            @else
+                                                <span class="text-muted">No tracking</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">No tracking</span>
+                                        @endif
                                     </td>
+
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-primary  p-1 mx-1">

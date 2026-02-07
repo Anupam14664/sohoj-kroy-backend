@@ -91,27 +91,27 @@ class AdminOrderController extends Controller
             'custom_link' => 'nullable|url|max:255',
         ]);
 
-        // $allowedTransitions = [
-        //     'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
-        //     'pending' => ['hold', 'processing', 'cancelled'],
-        //     'hold' => ['processing', 'cancelled'],
-        //     'processing' => ['shipped', 'courier_delivered', 'cancelled'],
-        //     'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
-        //     'courier_delivered' => ['delivered', 'courier_cancelled'],
-        //     'courier_cancelled' => ['courier_delivered', 'cancelled'],
-        //     'delivered' => [],
-        //     'cancelled' => [],
-        // ];
         $allowedTransitions = [
-            'incomplete' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'pending' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'hold' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'processing' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'shipped' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'courier_delivered' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'courier_cancelled' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'delivered' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'cancelled' => ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
+            'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
+            'pending' => ['hold', 'processing', 'cancelled'],
+            'hold' => ['processing', 'cancelled'],
+            'processing' => ['hold','shipped', 'courier_delivered', 'cancelled'],
+            'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_delivered' => ['delivered', 'courier_cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => [],
+        ];
+        $allowedTransitions = [
+            'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
+            'pending' => ['hold', 'processing', 'cancelled'],
+            'hold' => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'courier_delivered', 'cancelled'],
+            'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_delivered' => ['delivered', 'courier_cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => [],
         ];
         $currentStatus = $order->status;
         $newStatus = $validated['status'];

@@ -527,14 +527,14 @@
 
         const allowedTransitions = {
             'incomplete': ['pending','hold','processing','cancelled'],
-            'pending': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'hold': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'processing': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'shipped': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'courier_delivered': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'courier_cancelled': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'delivered': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled'],
-            'cancelled': ['pending','hold','processing','shipped','courier_delivered','delivered','cancelled','courier_cancelled']
+            'pending': ['hold','processing','cancelled'],
+            'hold': ['processing','cancelled'],
+            'processing': ['hold','shipped','courier_delivered','cancelled'],
+            'shipped': ['courier_delivered','courier_cancelled','cancelled'],
+            'courier_delivered': ['courier_cancelled','delivered'],
+            'courier_cancelled': ['shipped','courier_delivered','cancelled'],
+            'delivered': [],
+            'cancelled': []
         };
 
         function updateStatusOptions() {

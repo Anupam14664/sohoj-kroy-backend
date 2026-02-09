@@ -97,7 +97,7 @@ class AdminProductController extends Controller
                 // Image
                 $html .= '<td>';
                 if ($product->main_image) {
-                    $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="30" class="img-thumbnail">';
+                    $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="100" class="img-thumbnail" style="max-width: none;">';
                 } else {
                     $html .= '<span class="text-muted">No main image</span>';
                 }

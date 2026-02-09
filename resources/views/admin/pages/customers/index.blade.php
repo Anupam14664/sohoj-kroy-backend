@@ -14,8 +14,8 @@
                 </button>
             </div> --}}
         </div>
-        <div class="card-body">
-                    <div class="table-responsive">
+        <div class="card-body table-responsive">
+                    <div class=" ">
                 @php
                     $districts = config('bd_location');
                     $selDist = request('district'); // Filter value
@@ -105,7 +105,22 @@
                                 </td>
                                 <td>{{ $customer['customer_id'] }}</td>
                                 <td>{{ $customer['name'] }}</td>
-                                <td>{{ $customer['phone'] }}</td>
+                                <td style="white-space: nowrap;">
+                                    {{ $customer['phone'] }} <br>
+
+                                    @php
+                                        $summary = $courierReports[$customer['phone']] ?? null;
+                                    @endphp
+
+                                    @if($summary)
+                                        <span class="badge bg-info text-white me-1" title="Total Parcel">P: {{ $summary['total_parcel'] }}</span>
+                                        <span class="badge bg-success text-white me-1" title="Success Parcel">S: {{ $summary['success_parcel'] }}</span>
+                                        <span class="badge bg-danger text-white me-1" title="Cancelled Parcel">C: {{ $summary['cancelled_parcel'] }}</span>
+                                        <span class="badge bg-warning text-dark" title="Success Ratio">R: {{ $summary['success_ratio'] }}%</span>
+                                    @else
+                                        <span class="badge bg-secondary text-white">No Data</span>
+                                    @endif
+                                </td>
                                 <td>{{ Str::limit($customer['primary_address'], 30) }}</td>
                                 <td class="text-center">{{ $customer['order_count'] }}</td>
                                 <td class="text-center">{{ $customer['total_products'] }}</td>

@@ -269,4 +269,9 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     Route::get('download-database', [DatabaseController::class, 'downloadDatabase'])->middleware('can:manage downloadDB')
     ->name('admin.download.database');
 
+    Route::get('fraud-check', [CourierServiceController::class, 'courierCheckPage'])
+    ->name('admin.courier.fraud.check');
+    Route::post('fraud-check', [CourierServiceController::class, 'customerReport'])->name('admin.courier.check');
+
+
 });

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\CourierService;
 use Illuminate\Http\Request;
+use App\Models\CourierService;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
 
 class CourierServiceController extends Controller
 {
@@ -110,5 +111,43 @@ class CourierServiceController extends Controller
     {
         $courier->delete();
         return back()->with('success', 'Courier deleted successfully.');
+    }
+
+    public function courierCheckPage()
+    {
+        return view('admin.pages.couriers.fraud_checker', [
+        'response' => null
+    ]);
+    }
+    public function customerReport(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required'
+        ]);
+
+        $phone = $request->phone;
+
+        if (str_starts_with($phone, '01')) {
+            $phone = '+88' . $phone;
+        }
+
+        $response = Http::withHeaders([
+            'Accept'        => 'application/json',
+            'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
+        ])
+        ->timeout(config('bd_courier.timeout'))
+        ->post(
+            config('bd_courier.base_url') . '/courier-check',
+            ['phone' => $phone]
+        );
+
+        if ($response->failed()) {
+            return back()->with('error', 'Courier Insight API failed');
+        }
+
+        return view('admin.pages.couriers.fraud_checker', [
+            'response' => $response->json(),
+            'phone'    => $phone
+        ]);
     }
 }

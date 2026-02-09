@@ -253,6 +253,13 @@
 				</li>
 				@endcan
 
+                <li class="nav-item">
+                    <a href="{{ route('admin.courier.fraud.check') }}">
+                        <i class="fas fa-shield-alt"></i>
+                        <p>Fraud Checker</p>
+                    </a>
+                </li>
+
 				{{-- Settings (Super Admin Only) --}}
 
 				@role('Super Admin')

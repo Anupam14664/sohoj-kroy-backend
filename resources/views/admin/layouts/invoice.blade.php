@@ -248,12 +248,12 @@
         <tbody>
         @foreach($order->items as $item)
             <tr  class="{{ $loop->last ? 'last-row' : '' }}">
-                <td>{{ $item->product_name }}
+                <td style="padding-right: 5px;">{{ $item->product_name }}
                     @if($item->size_name || $item->color_name)
                         ({{ $item->size_name ?? '' }} {{ $item->color_name ? '/' .$item->color_name : '' }})
                     @endif
                 </td>
-                <td>{{ $item->quantity }}</td>
+                <td style="text-align: center">{{ $item->quantity }}</td>
                 <td style="text-align: right">৳ {{ number_format($item->price * $item->quantity, 0) }}</td>
             </tr>
         @endforeach

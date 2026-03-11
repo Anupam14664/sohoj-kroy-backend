@@ -1062,20 +1062,70 @@ public function unblockCustomer(Request $request)
 
     return back()->with('success', 'Customer unblocked successfully');
 }
+// public function export(Request $request)
+// {
+//     if ($request->has('all_filtered')) {
+//         $orders = Order::query()
+//             ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered'])
+//             ->when($request->status !== 'all', fn($q) => $q->where('status', $request->status))
+//             ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+//             ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+//             ->when($request->district, fn($q) => $q->where('district', $request->district))
+//             ->when($request->thana, fn($q) => $q->where('thana', $request->thana))
+//             ->with(['items.product', 'courier'])
+//             ->orderBy('created_at', 'desc')
+//             ->get();
+//     } else {
+//         $request->validate([
+//             'order_ids' => 'required|array',
+//             'order_ids.*' => 'exists:orders,id',
+//         ]);
+
+//         $orders = Order::whereIn('id', $request->order_ids)
+//             ->with(['items.product', 'courier'])
+//             ->orderBy('created_at', 'desc')
+//             ->get();
+//     }
+
+//     if ($orders->isEmpty()) {
+//         return back()->with('error', 'No valid orders selected for export.');
+//     }
+
+//     $fileName = 'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+
+//     $status = $request->status ?? 'all';
+
+// return Excel::download(
+//     new OrdersExport($orders, $status, $request->date_from, $request->date_to),
+//     'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
+// );
+
+// }
+
+
 public function export(Request $request)
 {
+    // Check if "Select All Filtered" is active
     if ($request->has('all_filtered')) {
         $orders = Order::query()
+            // Only fetch orders with relevant statuses
             ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered'])
-            ->when($request->status !== 'all', fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
-            ->when($request->district, fn($q) => $q->where('district', $request->district))
-            ->when($request->thana, fn($q) => $q->where('thana', $request->thana))
+            // Apply filters if they are present
+            ->when($request->filled('status') && $request->status !== 'all', fn($q) => $q->where('status', $request->status))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->filled('district'), fn($q) => $q->where('district', $request->district))
+            ->when($request->filled('thana'), fn($q) => $q->where('thana', $request->thana))
+            ->when($request->filled('product_search'), function($q) use ($request) {
+                $q->whereHas('items.product', function($q2) use ($request) {
+                    $q2->where('name', 'like', '%' . $request->product_search . '%');
+                });
+            })
             ->with(['items.product', 'courier'])
             ->orderBy('created_at', 'desc')
             ->get();
     } else {
+        // Manual selection
         $request->validate([
             'order_ids' => 'required|array',
             'order_ids.*' => 'exists:orders,id',
@@ -1092,16 +1142,13 @@ public function export(Request $request)
     }
 
     $fileName = 'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
     $status = $request->status ?? 'all';
 
-return Excel::download(
-    new OrdersExport($orders, $status, $request->date_from, $request->date_to),
-    'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
-);
-
+    return Excel::download(
+        new OrdersExport($orders, $status, $request->date_from ?? null, $request->date_to ?? null),
+        $fileName
+    );
 }
-
 
 
 public function bulkDelete(Request $request)
@@ -1225,6 +1272,39 @@ public function exportCustomers(Request $request)
 
         return response($mpdf->Output('orders_report.pdf', 'I'))
             ->header('Content-Type', 'application/pdf');
+    }
+
+
+    public function orderCheck(Request $request)
+    {
+        $phone = $request->phone;
+
+        $apiPhone = str_starts_with($phone,'01') ? '+88'.$phone : $phone;
+
+        try {
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer '.config('bd_courier.api_key'),
+            ])
+            ->timeout(config('bd_courier.timeout'))
+            ->post(config('bd_courier.base_url').'/courier-check',[
+                'phone'=>$apiPhone
+            ]);
+
+            if($response->successful()){
+                return response()->json([
+                    'success'=>true,
+                    'data'=>$response->json()['data']['summary'] ?? null
+                ]);
+            }
+
+        } catch(\Exception $e){
+            return response()->json([
+                'success'=>false
+            ]);
+        }
+
     }
 
 }

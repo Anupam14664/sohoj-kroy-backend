@@ -273,5 +273,5 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     ->name('admin.courier.fraud.check');
     Route::post('fraud-check', [CourierServiceController::class, 'customerReport'])->name('admin.courier.check');
 
-
+    Route::post('order-check', [AdminOrderController::class,'orderCheck'])->name('admin.order.check');
 });

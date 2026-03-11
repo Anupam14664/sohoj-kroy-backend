@@ -20,140 +20,197 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminProductController extends Controller
 {
-    public function index(Request $request)
-    {
-        $generalSettings =GeneralSetting::first();
-        $domain = $generalSettings->domain_url ?? config('app.url');
+    // public function index(Request $request)
+    // {
+    //     $generalSettings =GeneralSetting::first();
+    //     $domain = $generalSettings->domain_url ?? config('app.url');
 
-        $query = Product::with(['category', 'variants.color', 'variants.options']);
+    //     $query = Product::with(['category', 'variants.color', 'variants.options']);
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
+    //     if ($request->has('search') && $request->search != '') {
+    //         $search = $request->search;
 
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                ->orWhere('sku', 'like', "%$search%")
-                ->orWhereHas('variants.options', function($q2) use ($search) {
-                    $q2->where('sku', 'like', "%$search%");
-                });
-            });
-        }
-        // Single Product Filter
-        if ($request->filter === 'stock_out') {
-            $query->where('total_stock', '<=', 0);
-        }
+    //         $query->where(function($q) use ($search) {
+    //             $q->where('name', 'like', "%$search%")
+    //             ->orWhere('sku', 'like', "%$search%")
+    //             ->orWhereHas('variants.options', function($q2) use ($search) {
+    //                 $q2->where('sku', 'like', "%$search%");
+    //             });
+    //         });
+    //     }
+    //     // Single Product Filter
+    //     if ($request->filter === 'stock_out') {
+    //         $query->where('total_stock', '<=', 0);
+    //     }
 
-        if ($request->filter === 'active') {
-            $query->where('status', 1);
-        }
+    //     if ($request->filter === 'active') {
+    //         $query->where('status', 1);
+    //     }
 
-        if ($request->filter === 'inactive') {
-            $query->where('status', 0);
-        }
-        if ($request->filter === 'best_sale') {
-            $query->where('is_featured', true);
-        }
+    //     if ($request->filter === 'inactive') {
+    //         $query->where('status', 0);
+    //     }
+    //     if ($request->filter === 'best_sale') {
+    //         $query->where('is_featured', true);
+    //     }
 
-        if ($request->filter === 'offer') {
-            $query->where('is_offer', true);
-        }
+    //     if ($request->filter === 'offer') {
+    //         $query->where('is_offer', true);
+    //     }
 
-        if ($request->filter === 'campaign') {
-            $query->where('is_campaign', true);
-        }
+    //     if ($request->filter === 'campaign') {
+    //         $query->where('is_campaign', true);
+    //     }
 
-        // Category filter
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
-        }
-        $products = $query->latest()->paginate(10);
+    //     // Category filter
+    //     if ($request->filled('category')) {
+    //         $query->where('category_id', $request->category);
+    //     }
+    //     $products = $query->latest()->paginate(10);
 
-        if ($request->ajax()) {
+    //     if ($request->ajax()) {
 
-            $html = '';
-            $start = ($products->currentPage() - 1) * $products->perPage();
+    //         $html = '';
+    //         $start = ($products->currentPage() - 1) * $products->perPage();
 
-            foreach ($products as $index => $product) {
+    //         foreach ($products as $index => $product) {
 
-                $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
-                $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
+    //             $fullUrl = rtrim($domain ?? config('app.url'), '/') . '/product/' . $product->slug;
+    //             $shortUrl = substr($fullUrl, 0, 20) . '....' . substr($fullUrl, -20);
 
-                $html .= '<tr>';
+    //             $html .= '<tr>';
 
-                // #
-                $html .= '<td>' . ($start + $index + 1) . '</td>';
+    //             // #
+    //             $html .= '<td>' . ($start + $index + 1) . '</td>';
 
-                // Name
-                $html .= '<td>' . e($product->name) . '</td>';
+    //             // Name
+    //             $html .= '<td>' . e($product->name) . '</td>';
 
-                // Slug / URL
-                $html .= '<td>
-                    <span title="'.$fullUrl.'">'.$shortUrl.'</span>
-                    <button class="btn btn-sm copy-btn" data-url="'.$fullUrl.'" style="border:none;">
-                        <i class="fa fa-copy"></i>
-                    </button>
-                </td>';
+    //             // Slug / URL
+    //             $html .= '<td>
+    //                 <span title="'.$fullUrl.'">'.$shortUrl.'</span>
+    //                 <button class="btn btn-sm copy-btn" data-url="'.$fullUrl.'" style="border:none;">
+    //                     <i class="fa fa-copy"></i>
+    //                 </button>
+    //             </td>';
 
-                // Image
-                $html .= '<td>';
-                if ($product->main_image) {
-                    $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="100" class="img-thumbnail" style="max-width: none;">';
-                } else {
-                    $html .= '<span class="text-muted">No main image</span>';
-                }
-                $html .= '</td>';
+    //             // Image
+    //             $html .= '<td>';
+    //             if ($product->main_image) {
+    //                 $html .= '<img src="'.asset('storage/'.$product->main_image).'" width="100" class="img-thumbnail" style="max-width: none;">';
+    //             } else {
+    //                 $html .= '<span class="text-muted">No main image</span>';
+    //             }
+    //             $html .= '</td>';
 
-                // Prices
-                $html .= '<td>&#2547;' . number_format($product->buy_price, 0) . '</td>';
-                $html .= '<td>&#2547;' . number_format($product->regular_price, 0) . '</td>';
-                $html .= '<td>&#2547;' . number_format($product->discount_price, 0) . '</td>';
+    //             // Prices
+    //             $html .= '<td>&#2547;' . number_format($product->buy_price, 0) . '</td>';
+    //             $html .= '<td>&#2547;' . number_format($product->regular_price, 0) . '</td>';
+    //             $html .= '<td>&#2547;' . number_format($product->discount_price, 0) . '</td>';
 
-                // Stock
-                $html .= '<td>' . number_format($product->total_stock) . ' PCS</td>';
+    //             // Stock
+    //             $html .= '<td>' . number_format($product->total_stock) . ' PCS</td>';
 
-                // Category
-                $html .= '<td>' . ($product->category->name ?? 'N/A') . '</td>';
+    //             // Category
+    //             $html .= '<td>' . ($product->category->name ?? 'N/A') . '</td>';
 
-                // Variants
-                $html .= '<td>';
-                foreach ($product->variants as $variant) {
-                    $html .= '<span class="badge bg-secondary">'
-                        . ($variant->color->name ?? '')
-                        . '</span> ';
-                }
-                $html .= '</td>';
+    //             // Variants
+    //             $html .= '<td>';
+    //             foreach ($product->variants as $variant) {
+    //                 $html .= '<span class="badge bg-secondary">'
+    //                     . ($variant->color->name ?? '')
+    //                     . '</span> ';
+    //             }
+    //             $html .= '</td>';
 
-                // Actions
-                        $html .= '<td>
-                            <div class="btn-group btn-group-sm px-2" role="group">
-                                <a href="'.route('admin.products.show', $product->id).'" class="btn btn-info p-1 mx-1" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="'.route('admin.products.edit', $product->id).'" class="btn btn-primary p-1 mx-1" title="Edit">
-                                    <i class="fas fa-edit bg-none"></i>
-                                </a>
-                                <form action="'.route('admin.products.destroy', $product->id).'" method="POST" class="d-inline m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
-                                    '.csrf_field().method_field('DELETE').'
-                                    <button type="submit" class="btn btn-danger p-0 py-1 px-2 border-none" title="Delete" onclick="return confirm(\'Are you sure?\')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>';
+    //             // Actions
+    //                     $html .= '<td>
+    //                         <div class="btn-group btn-group-sm px-2" role="group">
+    //                             <a href="'.route('admin.products.show', $product->id).'" class="btn btn-info p-1 mx-1" title="View">
+    //                                 <i class="fas fa-eye"></i>
+    //                             </a>
+    //                             <a href="'.route('admin.products.edit', $product->id).'" class="btn btn-primary p-1 mx-1" title="Edit">
+    //                                 <i class="fas fa-edit bg-none"></i>
+    //                             </a>
+    //                             <form action="'.route('admin.products.destroy', $product->id).'" method="POST" class="d-inline m-0 p-0 border-none bg-none" style="width: 0px; height:0px;">
+    //                                 '.csrf_field().method_field('DELETE').'
+    //                                 <button type="submit" class="btn btn-danger p-0 py-1 px-2 border-none" title="Delete" onclick="return confirm(\'Are you sure?\')">
+    //                                     <i class="fas fa-trash"></i>
+    //                                 </button>
+    //                             </form>
+    //                         </div>
+    //                     </td>';
 
-                        $html .= '</tr>';
-            }
+    //                     $html .= '</tr>';
+    //         }
 
-            return $html;
-        }
+    //         return $html;
+    //     }
 
-        $categories = Category::orderBy('name')->get();
+    //     $categories = Category::orderBy('name')->get();
 
-        return view('admin.pages.products.index', compact('products', 'domain', 'categories'));
+    //     return view('admin.pages.products.index', compact('products', 'domain', 'categories'));
+    // }
+
+
+
+
+public function index(Request $request)
+{
+    $query = Product::with(['category','variants.color']);
+
+    // Search
+    if ($request->filled('search')) {
+        $search = $request->search;
+
+        $query->where(function ($q) use ($search) {
+            $q->where('name','like',"%{$search}%")
+              ->orWhere('slug','like',"%{$search}%")
+              ->orWhere('sku','like',"%{$search}%");
+        });
     }
 
+    // Category filter
+    if ($request->filled('category')) {
+        $query->where('category_id',$request->category);
+    }
 
+    // Status filter
+    if ($request->filled('filter')) {
 
+        switch ($request->filter) {
+
+            case 'stock_out':
+                $query->where('total_stock','<=',0);
+                break;
+
+            case 'active':
+                $query->where('status',1);
+                break;
+
+            case 'inactive':
+                $query->where('status',0);
+                break;
+
+            case 'best_sale':
+                $query->where('is_featured',1);
+                break;
+
+            case 'offer':
+                $query->where('is_offer',1);
+                break;
+
+            case 'campaign':
+                $query->where('is_campaign',1);
+                break;
+        }
+    }
+
+    $products = $query->latest()->paginate(15);
+    $categories = Category::orderBy('name')->get();
+
+    return view('admin.pages.products.index', compact('products','categories'));
+}
     public function create()
     {
         $categories = Category::all();

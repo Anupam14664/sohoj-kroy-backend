@@ -19,7 +19,7 @@
             <div class="mb-3 d-flex justify-content-space-between gap-2">
 
             <!-- Status / Stock Filter -->
-            <select id="product_filter" class="form-control" style="width: 20%;">
+            <select id="product_filter" name="filter" class="form-control" style="width: 20%;">
                 <option value="">All Products</option>
                 <option value="stock_out" {{ request('filter') === 'stock_out' ? 'selected' : '' }}>Stock Out</option>
                 <option value="active" {{ request('filter') === 'active' ? 'selected' : '' }}>Active</option>
@@ -30,7 +30,7 @@
             </select>
 
             <!-- Category Filter -->
-            <select id="category_filter" class="form-control" style="width: 25%;">
+            <select id="category_filter" name="category" class="form-control" style="width: 25%;">
                 <option value="">All Categories</option>
                 @foreach($categories as $category)
                     <option value="{{ $category->id }}">{{ $category->name }}</option>
@@ -44,7 +44,7 @@
                 <input type="text" id="search" class="form-control" placeholder="Search...." style="width: 30%;">
             </div> --}}
             <div class="table-responsive">
-                <table class="table table-striped table-hover table-head-bg-primary mt-4" width="100%" cellspacing="0">
+                <table class="table table-striped table-hover table-head-bg-primary mt-4" width="100%" cellspacing="0" id="product-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -100,10 +100,9 @@
                         @endforeach
                     </tbody>
                 </table>
-
                 <div class="mt-3" id="no-results" style="display: none;">No products found.</div>
             </div>
-            <div class="d-flex justify-content-center mt-4">
+            <div class="d-flex justify-content-center mt-4"  id="pagination-links">
                 {{ $products->appends(['search' => request('search')])->links('admin.layouts.partials.__pagination') }}
             </div>
         </div>
@@ -140,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script> --}}
-<script>
+{{-- <script>
 document.addEventListener('DOMContentLoaded', function () {
 
     const searchInput = document.getElementById('search');
@@ -169,6 +168,87 @@ document.addEventListener('DOMContentLoaded', function () {
     searchInput.addEventListener('keyup', fetchProducts);
     productFilter.addEventListener('change', fetchProducts);
     categoryFilter.addEventListener('change', fetchProducts);
+});
+</script> --}}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const searchInput = document.getElementById('search');
+    const filterSelect = document.getElementById('product_filter');
+    const categorySelect = document.getElementById('category_filter');
+
+    function fetchProducts(page = 1){
+
+        let search = searchInput.value;
+        let filter = filterSelect.value;
+        let category = categorySelect.value;
+
+        let url = `{{ route('admin.products.index') }}?page=${page}&search=${search}&filter=${filter}&category=${category}`;
+
+        fetch(url,{
+            headers:{
+                'X-Requested-With':'XMLHttpRequest'
+            }
+        })
+        .then(res => res.text())
+        .then(data => {
+
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(data,'text/html');
+
+            let newTable = doc.querySelector('#product-table');
+            let newPagination = doc.querySelector('#pagination-links');
+
+            document.querySelector('#product-table').innerHTML = newTable.innerHTML;
+            document.querySelector('#pagination-links').innerHTML = newPagination.innerHTML;
+
+            // 🔴 No result check
+            let rows = newTable.querySelectorAll('tr');
+
+            if(rows.length === 0){
+                document.getElementById('no-results').style.display = 'block';
+                document.getElementById('pagination-links').style.display = 'none';
+            }else{
+                document.getElementById('no-results').style.display = 'none';
+                document.getElementById('pagination-links').style.display = 'flex';
+            }
+
+        });
+
+    }
+
+    // Search typing
+    let typingTimer;
+    searchInput.addEventListener('keyup',function(){
+
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => fetchProducts(), 500);
+
+    });
+
+    // Filter change
+    filterSelect.addEventListener('change',() => fetchProducts());
+    categorySelect.addEventListener('change',() => fetchProducts());
+
+
+    // Pagination click
+    document.addEventListener('click',function(e){
+
+        if(e.target.closest('#pagination-links a')){
+
+            e.preventDefault();
+
+            let url = e.target.closest('a').getAttribute('href');
+            let page = new URL(url).searchParams.get('page');
+
+            fetchProducts(page);
+
+        }
+
+    });
+
 });
 </script>
 

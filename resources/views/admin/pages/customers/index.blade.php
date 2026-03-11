@@ -108,7 +108,7 @@
                                 <td style="white-space: nowrap;">
                                     {{ $customer['phone'] }} <br>
 
-                                    @php
+                                    {{-- @php
                                         $summary = $courierReports[$customer['phone']] ?? null;
                                     @endphp
 
@@ -119,7 +119,7 @@
                                         <span class="badge bg-warning text-dark" title="Success Ratio">R: {{ $summary['success_ratio'] }}%</span>
                                     @else
                                         <span class="badge bg-secondary text-white">No Data</span>
-                                    @endif
+                                    @endif --}}
                                 </td>
                                 <td>{{ Str::limit($customer['primary_address'], 30) }}</td>
                                 <td class="text-center">{{ $customer['order_count'] }}</td>

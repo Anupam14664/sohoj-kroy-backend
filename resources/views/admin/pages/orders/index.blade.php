@@ -157,23 +157,20 @@
                                 </td>
 
                                 <td>{{ $order->name }}</td>
-<td style="white-space: nowrap;">
-    {{ $order->phone }}
+                                <td style="white-space: nowrap;">
+                                    {{ $order->phone }}
 
-    <!-- Courier check button -->
-    <button
-        class="btn btn-sm courier-check"
-        data-phone="{{ $order->phone }}"
-        style="padding:2px 6px; border:none;"
-        title="Click to check courier status">
-        <i class="fas fa-shipping-fast text-primary"></i>
-    </button>
-
-    <!-- Container for badges -->
-    <div id="courier-{{ $order->id }}" class="mt-1">
-        <span class="badge bg-secondary text-white">No Data</span>
-    </div>
-</td>
+                                    <button
+                                        class="btn btn-sm courier-check"
+                                        data-phone="{{ $order->phone }}"
+                                        style="padding:2px 6px; border:none;"
+                                        title="Click to check courier status">
+                                        <i class="fas fa-shield-alt text-primary"></i>
+                                    </button>
+                                    <div id="courier-{{ $order->id }}" class="mt-1">
+                                        <span class="badge bg-secondary text-white">No Data</span>
+                                    </div>
+                                </td>
                                 <td class="text-nowrap">{{ $order->created_at->format('M d, Y h:i A') }}</td>
                                 <td>&#2547;{{ number_format($order->total, 0) }}</td>
                                 <td>

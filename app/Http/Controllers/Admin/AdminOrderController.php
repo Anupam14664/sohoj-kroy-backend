@@ -1062,45 +1062,61 @@ public function unblockCustomer(Request $request)
 
     return back()->with('success', 'Customer unblocked successfully');
 }
-public function export(Request $request)
-{
-    if ($request->has('all_filtered')) {
-        $orders = Order::query()
-            ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered'])
-            ->when($request->status !== 'all', fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
-            ->when($request->district, fn($q) => $q->where('district', $request->district))
-            ->when($request->thana, fn($q) => $q->where('thana', $request->thana))
-            ->with(['items.product', 'courier'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-    } else {
-        $request->validate([
-            'order_ids' => 'required|array',
-            'order_ids.*' => 'exists:orders,id',
-        ]);
+    public function export(Request $request)
+    {
+        // DEBUG (optional - check once)
+        // dd($request->all());
 
-        $orders = Order::whereIn('id', $request->order_ids)
-            ->with(['items.product', 'courier'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        if ($request->filled('all_filtered')) {
+
+            $query = Order::query()
+                ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered']);
+
+            if ($request->filled('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            if ($request->filled('district')) {
+                $query->where('district', $request->district);
+            }
+
+            if ($request->filled('thana')) {
+                $query->where('thana', $request->thana);
+            }
+
+            $orders = $query->with(['items.product', 'courier'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+        } else {
+
+            if (!$request->filled('order_ids')) {
+                return back()->with('error', 'No valid orders selected for export.');
+            }
+
+            $orders = Order::whereIn('id', $request->order_ids)
+                ->with(['items.product', 'courier'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        if ($orders->isEmpty()) {
+            return back()->with('error', 'No data found for export.');
+        }
+
+        return Excel::download(
+            new OrdersExport($orders),
+            'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
+        );
     }
-
-    if ($orders->isEmpty()) {
-        return back()->with('error', 'No valid orders selected for export.');
-    }
-
-    $fileName = 'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
-    $status = $request->status ?? 'all';
-
-return Excel::download(
-    new OrdersExport($orders, $status, $request->date_from, $request->date_to),
-    'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
-);
-
-}
 
 
 

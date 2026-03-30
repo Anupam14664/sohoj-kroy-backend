@@ -231,206 +231,9 @@
 @endsection
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
 {{-- <script>
-$(document).ready(function() {
-
-
-    $('#selectAllCheckbox').on('change', function() {
-        const checked = $(this).prop('checked');
-        $('.order-checkbox:not(:disabled)').prop('checked', checked);
-
-
-        if(checked) {
-            if($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: true
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-
-    $('.order-checkbox').on('change', function() {
-        const allChecked = $('.order-checkbox:not(:disabled)').length === $('.order-checkbox:checked:not(:disabled)').length;
-        $('#selectAllCheckbox').prop('checked', allChecked);
-
-        if(allChecked) {
-            if($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: true
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-
-    $('#selectAllBtn').click(function() {
-        $('.order-checkbox:not(:disabled)').prop('checked', true);
-        $('#selectAllCheckbox').prop('checked', true);
-
-        if($('#allFilteredInput').length === 0) {
-            $('<input>').attr({
-                type: 'hidden',
-                id: 'allFilteredInput',
-                name: 'all_filtered',
-                value: true
-            }).appendTo('#bulkActionForm');
-        }
-    });
-
-    $('#deselectAllBtn').click(function() {
-        $('.order-checkbox:not(:disabled)').prop('checked', false);
-        $('#selectAllCheckbox').prop('checked', false);
-        $('#allFilteredInput').remove();
-    });
-
-
-    $('#exportBtn').click(function() {
-
-        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
-
-        const dateFrom = $('input[name="date_from"]').val();
-        const dateTo = $('input[name="date_to"]').val();
-        const status = $('select[name="status"]').val();
-        const district = $('input[name="district"]').val();
-        const thana = $('input[name="thana"]').val();
-        const productSearch = $('input[name="product_search"]').val();
-
-        const form = $('<form>', {
-            method: 'POST',
-            action: "{{ route('admin.orders.export.order') }}",
-            target: '_blank'
-        });
-
-        form.append($('<input>', { type: 'hidden', name: '_token', value: "{{ csrf_token() }}" }));
-
-        if($('#allFilteredInput').length) {
-
-            form.append($('<input>', { type: 'hidden', name: 'all_filtered', value: true }));
-            form.append($('<input>', { type: 'hidden', name: 'date_from', value: dateFrom }));
-            form.append($('<input>', { type: 'hidden', name: 'date_to', value: dateTo }));
-            form.append($('<input>', { type: 'hidden', name: 'status', value: status }));
-            form.append($('<input>', { type: 'hidden', name: 'district', value: district }));
-            form.append($('<input>', { type: 'hidden', name: 'thana', value: thana }));
-            form.append($('<input>', { type: 'hidden', name: 'product_search', value: productSearch }));
-
-        } else {
-
-            if(selectedOrders.length === 0) {
-                alert('Please select at least one order to export');
-                return;
-            }
-
-            selectedOrders.each(function() {
-                form.append($('<input>', { type: 'hidden', name: 'order_ids[]', value: $(this).val() }));
-            });
-        }
-
-        $('body').append(form);
-        form.submit();
-    });
-
-
-    $('#exportAllBtn').click(function() {
-        const dateFrom = $('input[name="date_from"]').val();
-        const dateTo = $('input[name="date_to"]').val();
-        const status = $('select[name="status"]').val();
-        const district = $('input[name="district"]').val();
-        const thana = $('input[name="thana"]').val();
-        const productSearch = $('input[name="product_search"]').val();
-
-        const form = $('<form>', {
-            method: 'POST',
-            action: "{{ route('admin.orders.export') }}",
-            target: '_blank'
-        });
-
-        form.append($('<input>', { type: 'hidden', name: '_token', value: "{{ csrf_token() }}" }));
-        form.append($('<input>', { type: 'hidden', name: 'date_from', value: dateFrom }));
-        form.append($('<input>', { type: 'hidden', name: 'date_to', value: dateTo }));
-        form.append($('<input>', { type: 'hidden', name: 'status', value: status }));
-        form.append($('<input>', { type: 'hidden', name: 'district', value: district }));
-        form.append($('<input>', { type: 'hidden', name: 'thana', value: thana }));
-        form.append($('<input>', { type: 'hidden', name: 'product_search', value: productSearch }));
-        form.append($('<input>', { type: 'hidden', name: 'all_filtered', value: true }));
-
-        $('body').append(form);
-        form.submit();
-    });
-
-
-    $('#bulkDeleteBtn').click(function() {
-        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
-
-        if(selectedOrders.length === 0) {
-            alert('Please select at least one order to delete');
-            return;
-        }
-
-        $('#confirmModal').modal('show');
-
-        $('#confirmModal .modal-title').text('Are You Sure?');
-        $('#confirmModal .modal-body p').html(`Do you really want to delete <strong>${selectedOrders.length}</strong> orders? This process cannot be undone.`);
-
-        $('#confirmButton').off('click');
-
-        $('#confirmButton').on('click', function() {
-            const orderIds = selectedOrders.map(function() {
-                return $(this).val();
-            }).get();
-
-            $.ajax({
-                url: "{{ route('admin.orders.bulk-delete') }}",
-                method: 'POST',
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    order_ids: orderIds
-                },
-                beforeSend: function() {
-                    $('#confirmButton').html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
-                },
-                success: function(response) {
-                    $('#confirmModal').modal('hide');
-                    $('#successModal').modal('show');
-                    $('#successModal .modal-title').text('Success');
-                    $('#successModal .modal-body p').html(`<strong>${selectedOrders.length}</strong> orders have been deleted successfully.`);
-                    setTimeout(function() { location.reload(); }, 2000);
-                },
-                error: function(xhr) {
-                    $('#confirmModal').modal('hide');
-                    $('#successModal').modal('show');
-                    $('#successModal .modal-title').text('Error');
-                    $('#successModal .modal-body p').html(`<div class="alert alert-danger">${xhr.responseJSON?.message || 'Something went wrong while deleting orders.'}</div>`);
-                    $('#confirmButton').html('Delete');
-                }
-            });
-        });
-    });
-
-
-    // ================================
-    // 5. Auto-submit Filter Form
-    // ================================
-    $('.auto-submit').on('change', function() {
-        setTimeout(function() {
-            $('#filterForm').submit();
-        }, 300);
-    });
-
-});
-</script> --}}
-
-<script>
 $(document).ready(function() {
 
     // ===========================
@@ -479,14 +282,17 @@ $(document).ready(function() {
     // Export Excel / PDF
     // ===========================
     function exportOrders(url, type) {
+
         const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
 
-        const dateFrom = $('input[name="date_from"]').val();
-        const dateTo = $('input[name="date_to"]').val();
-        const status = $('select[name="status"]').val();
-        const district = $('input[name="district"]').val();
-        const thana = $('input[name="thana"]').val();
-        const productSearch = $('input[name="product_search"]').val();
+        const params = new URLSearchParams(window.location.search);
+
+        const dateFrom = params.get('date_from');
+        const dateTo = params.get('date_to');
+        const status = params.get('status');
+        const district = params.get('district');
+        const thana = params.get('thana');
+        const productSearch = params.get('product_search');
 
         const form = $('<form>', {
             method: 'POST',
@@ -496,21 +302,24 @@ $(document).ready(function() {
 
         form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
 
-        // If "Select All Filtered" is active
         if ($('#allFilteredInput').length) {
+
             form.append(`<input type="hidden" name="all_filtered" value="1">`);
-            form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
-            form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
-            form.append(`<input type="hidden" name="status" value="${status}">`);
-            form.append(`<input type="hidden" name="district" value="${district}">`);
-            form.append(`<input type="hidden" name="thana" value="${thana}">`);
-            form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
+
+            if (dateFrom) form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
+            if (dateTo) form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
+            if (status) form.append(`<input type="hidden" name="status" value="${status}">`);
+            if (district) form.append(`<input type="hidden" name="district" value="${district}">`);
+            if (thana) form.append(`<input type="hidden" name="thana" value="${thana}">`);
+            if (productSearch) form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
+
         } else {
-            // If no orders selected, alert
+
             if (selectedOrders.length === 0) {
                 alert(`Please select at least one order to export ${type}.`);
                 return;
             }
+
             selectedOrders.each(function() {
                 form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
             });
@@ -519,7 +328,6 @@ $(document).ready(function() {
         $('body').append(form);
         form.submit();
     }
-
         $('#selectAllCheckbox').on('change', function() {
         const checked = $(this).prop('checked');
 
@@ -695,8 +503,147 @@ $(document).ready(function() {
     });
 
 });
-</script>
+</script> --}}
 
+
+<script>
+$(document).ready(function () {
+
+    // ===========================
+    // Select All Checkbox
+    // ===========================
+    $('#selectAllCheckbox').on('change', function () {
+        const checked = $(this).is(':checked');
+
+        $('.order-checkbox:not(:disabled)').prop('checked', checked);
+
+        if (checked) {
+            if ($('#allFilteredInput').length === 0) {
+                $('<input>', {
+                    type: 'hidden',
+                    id: 'allFilteredInput',
+                    name: 'all_filtered',
+                    value: 1
+                }).appendTo('#bulkActionForm');
+            }
+        } else {
+            $('#allFilteredInput').remove();
+        }
+    });
+
+    // ===========================
+    // Individual Checkbox Change
+    // ===========================
+    $('.order-checkbox').on('change', function () {
+
+        const total = $('.order-checkbox:not(:disabled)').length;
+        const checked = $('.order-checkbox:checked:not(:disabled)').length;
+
+        $('#selectAllCheckbox').prop('checked', total === checked);
+
+        if (total === checked) {
+            if ($('#allFilteredInput').length === 0) {
+                $('<input>', {
+                    type: 'hidden',
+                    id: 'allFilteredInput',
+                    name: 'all_filtered',
+                    value: 1
+                }).appendTo('#bulkActionForm');
+            }
+        } else {
+            $('#allFilteredInput').remove();
+        }
+    });
+
+    // ===========================
+    // EXPORT EXCEL
+    // ===========================
+    $('#exportXlsBtn').on('click', function () {
+
+        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
+
+        const form = $('<form>', {
+            method: 'POST',
+            action: "{{ route('admin.orders.export') }}",
+            target: '_blank'
+        });
+
+        form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
+
+        // ✅ Select All (Filtered Export)
+        if ($('#selectAllCheckbox').is(':checked')) {
+
+            form.append(`<input type="hidden" name="all_filtered" value="1">`);
+
+            form.append(`<input type="hidden" name="date_from" value="${$('input[name="date_from"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="date_to" value="${$('input[name="date_to"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="status" value="${$('select[name="status"]').val() || 'all'}">`);
+            form.append(`<input type="hidden" name="district" value="${$('input[name="district"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="thana" value="${$('input[name="thana"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="product_search" value="${$('input[name="product_search"]').val() || ''}">`);
+
+        }
+        // ✅ Selected Only
+        else {
+
+            if (selectedOrders.length === 0) {
+                alert('Please select at least one order to export');
+                return;
+            }
+
+            selectedOrders.each(function () {
+                form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
+            });
+        }
+
+        $('body').append(form);
+        form.submit();
+    });
+
+    // ===========================
+    // EXPORT PDF
+    // ===========================
+    $('#exportPdfBtn').on('click', function () {
+
+        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
+
+        const form = $('<form>', {
+            method: 'POST',
+            action: "{{ route('admin.orders.export.order') }}",
+            target: '_blank'
+        });
+
+        form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
+
+        if ($('#selectAllCheckbox').is(':checked')) {
+
+            form.append(`<input type="hidden" name="all_filtered" value="1">`);
+
+            form.append(`<input type="hidden" name="date_from" value="${$('input[name="date_from"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="date_to" value="${$('input[name="date_to"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="status" value="${$('select[name="status"]').val() || 'all'}">`);
+            form.append(`<input type="hidden" name="district" value="${$('input[name="district"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="thana" value="${$('input[name="thana"]').val() || ''}">`);
+            form.append(`<input type="hidden" name="product_search" value="${$('input[name="product_search"]').val() || ''}">`);
+
+        } else {
+
+            if (selectedOrders.length === 0) {
+                alert('Please select at least one order to export PDF');
+                return;
+            }
+
+            selectedOrders.each(function () {
+                form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
+            });
+        }
+
+        $('body').append(form);
+        form.submit();
+    });
+
+});
+</script>
 
 <style>
     .color-preview {

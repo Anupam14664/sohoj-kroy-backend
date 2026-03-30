@@ -4,10 +4,39 @@
 <div class="container-fluid">
     <div class="card">
         <div class="card-header">
-            <h4>Orders of {{ $customerName }} ({{ $phone }})</h4>
+            <h4>Orders of {{ $customer->name }} ({{ $phone }})</h4>
             <a href="{{ route('admin.customers.index') }}" class="btn btn-secondary btn-sm float-right">Back to Customers</a>
         </div>
 
+        <div>
+            @if($customer)
+            <div class="card mb-4 shadow-sm border-left-primary">
+                <div class="card-body">
+                    <h5 class="mb-3 text-primary">
+                        <i class="fas fa-user"></i> Customer Information
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Name:</strong> {{ $customer->name }}</p>
+                            <p><strong>Phone:</strong> {{ $customer->phone }}</p>
+                        </div>
+
+                        <div class="col-md-4">
+                            <p><strong>District:</strong> {{ $customer->district ?? 'N/A' }}</p>
+                            <p><strong>Thana:</strong> {{ $customer->thana ?? 'N/A' }}</p>
+                        </div>
+
+                        <div class="col-md-4">
+                            <p><strong>Address:</strong><br>
+                                {{ $customer->address ?? 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
         <div class="card-body">
             @forelse($orders as $order)
                 <div class="card mb-4 shadow-sm">

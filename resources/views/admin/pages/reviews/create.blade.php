@@ -62,10 +62,10 @@
                         <div class="form-group">
                             <label for="review_date">Review Date (Optional)</label>
                             <input type="date"
-       class="form-control @error('review_date') is-invalid @enderror"
-       name="review_date"
-       id="review_date"
-       value="{{ old('review_date', date('Y-m-d')) }}"> 
+                                class="form-control @error('review_date') is-invalid @enderror"
+                                name="review_date"
+                                id="review_date"
+                                value="{{ old('review_date', date('Y-m-d')) }}">
                             <small class="form-text text-muted">
                                 Select a custom review date.
                             </small>
@@ -156,8 +156,12 @@
                 let item = document.createElement('a');
                 item.href = 'javascript:void(0)';
                 item.classList.add('list-group-item', 'list-group-item-action');
+                const imageUrl = product.main_image ? `/storage/${product.main_image}` : 'https://via.placeholder.com/40x40?text=N/A';
                 item.innerHTML = `
                     <div class="d-flex align-items-center">
+                        <div class="me-2">
+                            <img src="${imageUrl}" alt="${product.name}" width="40" height="40" style="object-fit:cover; border-radius:4px;">
+                        </div>
                         <div>
                             <strong>${product.name}</strong>
                             ${product.sku ? `<small class="d-block text-muted">SKU: ${product.sku}</small>` : ''}

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\PageSection;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\GeneralSetting;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,9 @@ class PageController extends Controller
     public function index()
     {
         $pages = Page::latest()->paginate(15);
-        return view('admin.pages.single-pages.index', compact('pages'));
+        $generalSettings = GeneralSetting::first();
+        $domain = $generalSettings->domain_url ?? config('app.url');
+        return view('admin.pages.single-pages.index', compact('pages', 'domain'));
     }
 
     /**
@@ -34,6 +37,7 @@ class PageController extends Controller
         return [
             'id' => $p->id,
             'name' => $p->name,
+            'sku' => $p->sku,
             'discount_price' => $p->discount_price,
             'image_url' => $p->main_image
                             ? asset('storage/' . $p->main_image)
@@ -86,35 +90,36 @@ class PageController extends Controller
     /**
      * Show the form for editing the specified page.
      */
-public function edit(Page $page)
-{
-    $sectionTypes = $this->getSectionTypes();
-    $products = Product::all()->map(function($p) {
-        return [
-            'id' => $p->id,
-            'name' => $p->name,
-            'discount_price' => $p->discount_price,
-            'image_url' => $p->main_image
-                            ? asset('storage/' . $p->main_image)
-                            : null
-        ];
-    });
+    public function edit(Page $page)
+    {
+        $sectionTypes = $this->getSectionTypes();
+        $products = Product::all()->map(function($p) {
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'discount_price' => $p->discount_price,
+                'image_url' => $p->main_image
+                                ? asset('storage/' . $p->main_image)
+                                : null
+            ];
+        });
 
-    // Load sections with proper ordering
-    $page->load(['sections' => function($query) {
-        $query->orderBy('position', 'asc');
-    }]);
+        // Load sections with proper ordering
+        $page->load(['sections' => function($query) {
+            $query->orderBy('position', 'asc');
+        }]);
 
-    // Transform sections to ensure settings is decoded
-    $page->sections->transform(function($section) {
-        if (is_string($section->settings)) {
-            $section->settings = json_decode($section->settings, true);
-        }
-        return $section;
-    });
+        // Transform sections to ensure settings is decoded
+        $page->sections->transform(function($section) {
+            if (is_string($section->settings)) {
+                $section->settings = json_decode($section->settings, true);
+            }
+            return $section;
+        });
 
-    return view('admin.pages.single-pages.edit', compact('page', 'sectionTypes', 'products'));
-}
+        return view('admin.pages.single-pages.edit', compact('page', 'sectionTypes', 'products'));
+    }
 
 
     /**

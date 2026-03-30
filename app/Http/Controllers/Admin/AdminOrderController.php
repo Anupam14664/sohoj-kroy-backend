@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use id;
+use Mpdf\Mpdf;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\OrderItem;
@@ -12,9 +13,11 @@ use App\Models\CourierService;
 use App\Models\DeliveryOption;
 use App\Models\GeneralSetting;
 use Illuminate\Support\Carbon;
-use App\Models\BlockedCustomer;
 // use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Config\FontVariables;
+use App\Models\BlockedCustomer;
 use App\Exports\CustomersExport;
+use Mpdf\Config\ConfigVariables;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -22,10 +25,8 @@ use App\Models\ProductVariantOption;
 use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Couriers\CourierManager;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Mpdf\Mpdf;
-use Mpdf\Config\FontVariables;
-use Mpdf\Config\ConfigVariables;
 
 class AdminOrderController extends Controller
 {
@@ -80,7 +81,6 @@ class AdminOrderController extends Controller
             'orders', 'status', 'dateFrom', 'dateTo', 'district', 'thana', 'productSearch', 'couriers'
         ));
     }
-
     public function updateStatus(Request $request, Order $order)
     {
         $validated = $request->validate([
@@ -95,48 +95,70 @@ class AdminOrderController extends Controller
             'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
             'pending' => ['hold', 'processing', 'cancelled'],
             'hold' => ['processing', 'cancelled'],
-            'processing' => ['shipped', 'courier_delivered', 'cancelled'],
+            'processing' => ['hold','shipped', 'courier_delivered', 'cancelled'],
             'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
             'courier_delivered' => ['delivered', 'courier_cancelled'],
-            'courier_cancelled' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'cancelled'],
             'delivered' => [],
             'cancelled' => [],
         ];
-
+        $allowedTransitions = [
+            'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
+            'pending' => ['hold', 'processing', 'cancelled'],
+            'hold' => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'courier_delivered', 'cancelled'],
+            'shipped' => ['courier_delivered', 'courier_cancelled', 'cancelled'],
+            'courier_delivered' => ['delivered', 'courier_cancelled'],
+            'courier_cancelled' => ['courier_delivered', 'cancelled'],
+            'delivered' => [],
+            'cancelled' => [],
+        ];
         $currentStatus = $order->status;
         $newStatus = $validated['status'];
 
         if (!in_array($newStatus, $allowedTransitions[$currentStatus] ?? [])) {
-            return back()->with('error', "Invalid status transition from $currentStatus to $newStatus");
+            return back()->with(
+                'error',
+                "Invalid status transition from {$currentStatus} to {$newStatus}"
+            );
         }
 
         DB::beginTransaction();
 
         try {
 
-            // Already shipped protection
+            /**
+             * Already shipped protection
+             */
             if ($newStatus === 'shipped' && $order->status === 'shipped') {
                 throw new \Exception('This order is already marked as shipped.');
             }
 
-            // Cancelled OR Courier Cancelled → return stock
-            if (in_array($newStatus, ['cancelled', 'courier_cancelled']) && $order->status !== $newStatus) {
+            /**
+             * Cancel / Courier Cancel → return stock
+             */
+            if (
+                in_array($newStatus, ['cancelled', 'courier_cancelled']) &&
+                $order->status !== $newStatus
+            ) {
                 $order->returnStock();
             }
 
             /**
-             * Custom Link logic
-             * ✔ Only when processing → courier_delivered
-             * ✔ Only if courier_service_id is NULL
+             * Custom link
+             * processing → courier_delivered
              */
             if (
                 $newStatus === 'courier_delivered' &&
                 $order->status === 'processing' &&
                 !$order->courier_service_id
             ) {
-                $order->custom_link = $request->custom_link;
+                $order->custom_link = $validated['custom_link'] ?? null;
             }
 
+            /**
+             * Set new status
+             */
             $order->status = $newStatus;
 
             if (isset($validated['comment'])) {
@@ -144,41 +166,26 @@ class AdminOrderController extends Controller
             }
 
             /**
-             * Shipped → Courier API Call
+             * SHIPPED → Create courier order (Dynamic)
              */
             if ($newStatus === 'shipped') {
-                $courier = CourierService::findOrFail($validated['courier_service_id']);
 
-                $payload = [
-                    'invoice' => $order->order_number,
-                    'recipient_name' => $order->name,
-                    'recipient_phone' => $order->phone,
-                    'recipient_address' => $order->address . ', ' . $order->thana . ', ' . $order->district,
-                    'cod_amount' => $order->total,
-                    'note' => $validated['delivery_note'] ?? 'Handle with care',
-                    'item_description' => 'N/A',
-                    'delivery_type' => 0,
-                ];
+                $courier = CourierService::where('id', $validated['courier_service_id'])
+                    ->where('is_active', true)
+                    ->firstOrFail();
 
-                $response = Http::withHeaders([
-                    'Api-Key' => $courier->api_key,
-                    'Secret-Key' => $courier->secret_key,
-                    'Content-Type' => 'application/json',
-                ])->post(
-                    $courier->base_url . '/' . $courier->create_order_endpoint,
-                    $payload
+                $courierService = CourierManager::make($courier);
+
+                $result = $courierService->createOrder(
+                    $order,
+                    $courier,
+                    $validated
                 );
 
-                $data = $response->json();
-
-                if (!$response->successful() || !isset($data['consignment']['tracking_code'])) {
-                    throw new \Exception('Courier API Error: ' . ($data['message'] ?? 'Unknown error'));
-                }
-
                 $order->courier_service_id = $courier->id;
-                $order->tracking_code = $data['consignment']['tracking_code'];
-                $order->consignment_id = $data['consignment']['consignment_id'];
-                $order->courier_response = $data;
+                $order->tracking_code     = $result['tracking_code'];
+                $order->consignment_id    = $result['consignment_id'];
+                $order->courier_response  = $result['response'];
             }
 
             $order->save();
@@ -191,6 +198,7 @@ class AdminOrderController extends Controller
             );
 
         } catch (\Exception $e) {
+
             DB::rollBack();
 
             Log::error('Order status update failed', [
@@ -198,164 +206,12 @@ class AdminOrderController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Failed to update order: ' . $e->getMessage());
+            return back()->with(
+                'error',
+                'Failed to update order: ' . $e->getMessage()
+            );
         }
     }
-
-
-
-
-// public function updateStatus(Request $request, Order $order)
-// {
-//     $validated = $request->validate([
-//         'status' => 'required|string|in:incomplete,pending,hold,processing,shipped,courier_delivered,delivered,cancelled',
-//         'courier_service_id' => 'nullable|required_if:status,shipped|exists:courier_services,id',
-//         'delivery_note' => 'nullable|string|max:255',
-//         'comment' => 'nullable|string',
-//         'custom_link' => 'nullable|url|max:255',
-//     ]);
-
-//     $allowedTransitions = [
-//         'incomplete' => ['pending', 'hold', 'processing', 'cancelled'],
-//         'pending' => ['hold', 'processing', 'cancelled'],
-//         'hold' => ['processing', 'cancelled'],
-//         'processing' => ['shipped','courier_delivered', 'cancelled'],
-//         'shipped' => ['courier_delivered', 'cancelled'],
-//         'courier_delivered' => ['delivered'],
-//         'delivered' => [],
-//         'cancelled' => [],
-//     ];
-
-//     $currentStatus = $order->status;
-//     $newStatus = $validated['status'];
-
-//     if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
-//         return back()->with('error', 'Invalid status transition from '.$currentStatus.' to '.$newStatus);
-//     }
-
-//     DB::beginTransaction();
-
-//     try {
-//         if ($validated['status'] === 'shipped' && $order->status === 'shipped') {
-//             throw new \Exception('This order is already marked as shipped.');
-//         }
-
-//         if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
-//             $order->returnStock();
-//         }
-
-//         $order->status = $validated['status'];
-//         $order->comment = $validated['comment'] ?? $order->comment;
-
-//         // 🔵 If shipped → call courier API
-//         if ($validated['status'] === 'shipped') {
-//             $courier = CourierService::findOrFail($validated['courier_service_id']);
-
-//             if ($courier->name === 'Steadfast') {
-//                 $this->createSteadfastOrder($order, $courier);
-//             }
-
-//             if ($courier->name === 'Pathao') {
-//                 $this->createPathaoOrder($order, $courier);
-//             }
-//         }
-
-//         $order->save();
-//         DB::commit();
-
-//         return back()->with('success', 'Order updated successfully.' .
-//             ($order->tracking_code ? ' Tracking: ' . $order->tracking_code : ''));
-
-//     } catch (\Exception $e) {
-//         DB::rollBack();
-//         Log::error('Order status update failed', [
-//             'order_id' => $order->id,
-//             'error' => $e->getMessage(),
-//         ]);
-
-//         return back()->with('error', 'Failed to update order: ' . $e->getMessage());
-//     }
-// }
-// private function createSteadfastOrder($order, $courier)
-// {
-//     $payload = [
-//         'invoice' => $order->order_number,
-//         'recipient_name' => $order->name,
-//         'recipient_phone' => $order->phone,
-//         'recipient_address' => $order->address . ', ' . $order->thana . ', ' . $order->district,
-//         'cod_amount' => $order->total,
-//         'note' => 'Handle with care',
-//         'item_description' => 'N/A',
-//         'delivery_type' => 0,
-//     ];
-
-//     $response = Http::withHeaders([
-//         'Api-Key' => $courier->api_key,
-//         'Secret-Key' => $courier->secret_key,
-//         'Content-Type' => 'application/json',
-//     ])->post($courier->base_url . '/' . $courier->create_order_endpoint, $payload);
-
-//     $data = $response->json();
-
-//     if (!$response->successful() || !isset($data['consignment']['tracking_code'])) {
-//         throw new \Exception('Steadfast Error: ' . ($data['message'] ?? 'Unknown error'));
-//     }
-
-//     $order->courier_service_id = $courier->id;
-//     $order->tracking_code = $data['consignment']['tracking_code'];
-//     $order->consignment_id = $data['consignment']['consignment_id'];
-//     $order->courier_response = $data;
-// }
-// private function createPathaoOrder($order, $courier)
-// {
-//     // Step 1: Get Access Token
-//     $tokenResponse = Http::post($courier->base_url . '/aladdin/api/v1/issue-token', [
-//         'client_id' => $courier->client_id,
-//         'client_secret' => $courier->client_secret,
-//         'username' => $courier->username,
-//         'password' => $courier->password,
-//         'grant_type' => 'password',
-//     ]);
-
-//     if (!$tokenResponse->successful()) {
-//         throw new \Exception("Pathao Token Error: " . $tokenResponse->body());
-//     }
-
-//     $accessToken = $tokenResponse->json()['access_token'];
-
-//     // Step 2: Create Order
-//     $payload = [
-//         'store_id' => $courier->store_id,
-//         'merchant_order_id' => $order->order_number,
-//         'recipient_name' => $order->name,
-//         'recipient_phone' => $order->phone,
-//         'recipient_address' => $order->address,
-//         'city_id' => $order->city_id,
-//         'zone_id' => $order->zone_id,
-//         'area_id' => $order->area_id,
-//         'item_quantity' => 1,
-//         'delivery_type' => 48,
-//         'amount_to_collect' => $order->total,
-//     ];
-
-//     $response = Http::withHeaders([
-//         'Authorization' => 'Bearer ' . $accessToken,
-//         'Content-Type' => 'application/json',
-//     ])->post($courier->base_url . '/aladdin/api/v1/orders', $payload);
-
-//     $data = $response->json();
-
-//     if (!$response->successful() || !isset($data['data']['consignment_id'])) {
-//         throw new \Exception('Pathao Error: ' . json_encode($data));
-//     }
-
-//     $order->courier_service_id = $courier->id;
-//     $order->tracking_code = $data['data']['tracking_code'] ?? null;
-//     $order->consignment_id = $data['data']['consignment_id'] ?? null;
-//     $order->courier_response = $data;
-// }
-
-
 
     public function edit(Order $order)
     {
@@ -388,8 +244,160 @@ class AdminOrderController extends Controller
         return view('admin.pages.orders.show', compact('order', 'couriers'));
     }
 
+    // public function customerList(Request $request)
+    // {
+    //     $customerBase = Order::select([
+    //             'phone',
+    //             DB::raw('MIN(name) as name'),
+    //             DB::raw('MIN(created_at) as first_order_at')
+    //         ])
+    //         ->where('status', 'delivered')
+    //         ->groupBy('phone')
+    //         ->orderBy('first_order_at')
+    //         ->get();
+
+    //     $customerIdMap = [];
+    //     $startingId = 101;
+
+    //     foreach ($customerBase as $customer) {
+    //         $customerIdMap[$customer->phone] = $startingId++;
+    //     }
+
+    //     $query = Order::select([
+    //             'orders.name',
+    //             'orders.phone',
+    //             DB::raw('MIN(orders.address) as primary_address'),
+    //             DB::raw('MIN(orders.district) as district'),
+    //             DB::raw('MIN(orders.thana) as thana'),
+    //             DB::raw('COUNT(DISTINCT orders.id) as order_count'),
+    //             DB::raw('SUM(order_items.quantity) as total_products'),
+    //             DB::raw('MAX(order_totals.total_spent) as total_spent'),
+    //             DB::raw('MAX(orders.created_at) as last_order_at')
+    //         ])
+    //         ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+    //         ->join('products', 'order_items.product_id', '=', 'products.id')
+    //         ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
+    //         ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
+    //         ->leftJoin(DB::raw('
+    //             (
+    //                 SELECT phone, SUM(total) as total_spent
+    //                 FROM orders
+    //                 WHERE status = "delivered"
+    //                 GROUP BY phone
+    //             ) as order_totals
+    //         '), 'orders.phone', '=', 'order_totals.phone')
+    //         ->where('orders.status', 'delivered')
+    //         ->groupBy('orders.name', 'orders.phone');
+
+    //     // Filters
+    //     if ($request->filled('phone') && !$request->filled('search')) {
+
+    //         $phone = preg_replace('/\D/', '', $request->phone);
+
+    //         if (str_starts_with($phone, '880')) {
+    //             $phone = '0' . substr($phone, 3);
+    //         }
+
+    //         if (strlen($phone) === 11) {
+    //             $query->where('orders.phone', $phone);
+    //         } else {
+    //             $query->whereRaw('1 = 0');
+    //         }
+    //     }
+
+    //     if ($request->filled('district')) {
+    //         $query->where('orders.district', 'like', '%' . $request->district . '%');
+    //     }
+    //     if ($request->filled('thana')) {
+    //         $query->where('orders.thana', 'like', '%' . $request->thana . '%');
+    //     }
+
+    //     if ($request->filled('search')) {
+
+    //         $searchTerm = trim($request->search);
+
+    //         if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
+
+    //             $normalized = preg_replace('/\D/', '', $searchTerm);
+    //             if (str_starts_with($normalized, '880')) {
+    //                 $normalized = '0' . substr($normalized, 3);
+    //             }
+    //             if (strlen($normalized) === 11) {
+    //                 $query->where('orders.phone', $normalized);
+    //             } else {
+    //                 $query->whereRaw('1 = 0');
+    //             }
+
+    //         }
+    //         else {
+
+    //             $search = strtolower($searchTerm);
+
+    //             $query->where(function ($q) use ($search) {
+    //                 $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
+    //                 ->orWhereIn('orders.phone', function ($sub) use ($search) {
+    //                     $sub->select('orders.phone')
+    //                         ->from('orders')
+    //                         ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+    //                         ->join('products', 'order_items.product_id', '=', 'products.id')
+    //                         ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
+    //                         ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
+    //                         ->whereRaw('LOWER(products.name) LIKE ?', ["%{$search}%"])
+    //                         ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$search}%"])
+    //                         ->orWhereRaw('LOWER(product_variant_options.sku) LIKE ?', ["%{$search}%"]);
+    //                 });
+    //             });
+    //         }
+    //     }
+
+    //     $allCustomers = $query->orderBy('orders.phone')->get();
+
+    //     $customersWithIds = $allCustomers->map(function ($customer) use ($customerIdMap) {
+    //         return [
+    //             'customer_id' => $customerIdMap[$customer->phone] ?? null,
+    //             'name' => $customer->name,
+    //             'phone' => $customer->phone,
+    //             'district' => $customer->district,
+    //             'thana' => $customer->thana,
+    //             'primary_address' => $customer->primary_address,
+    //             'order_count' => $customer->order_count,
+    //             'total_products' => $customer->total_products,
+    //             'total_spent' => round($customer->total_spent),
+    //             'last_order_at' => Carbon::parse($customer->last_order_at)->format('M d, Y'),
+    //         ];
+    //     })->filter(function ($customer) {
+    //         return !is_null($customer['customer_id']);
+    //     });
+
+    //     $customersWithIds = $customersWithIds->sortBy('customer_id')->values();
+
+    //     // Pagination
+    //     $page = LengthAwarePaginator::resolveCurrentPage();
+    //     $perPage = 20;
+    //     $currentPageItems = $customersWithIds->slice(($page - 1) * $perPage, $perPage)->values();
+
+    //     $customers = new LengthAwarePaginator(
+    //         $currentPageItems,
+    //         $customersWithIds->count(),
+    //         $perPage,
+    //         $page,
+    //         ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    //     );
+
+    //     return view('admin.pages.customers.index', [
+    //         'customers' => $customers,
+    //         'phone' => $request->phone,
+    //         'district' => $request->district,
+    //         'thana' => $request->thana,
+    //         'search' => $request->search,
+    //     ]);
+    // }
+
+
+
     public function customerList(Request $request)
     {
+
         $customerBase = Order::select([
                 'phone',
                 DB::raw('MIN(name) as name'),
@@ -415,60 +423,44 @@ class AdminOrderController extends Controller
                 DB::raw('MIN(orders.thana) as thana'),
                 DB::raw('COUNT(DISTINCT orders.id) as order_count'),
                 DB::raw('SUM(order_items.quantity) as total_products'),
-                DB::raw('SUM(orders.total) as total_spent'),
+                DB::raw('MAX(order_totals.total_spent) as total_spent'),
                 DB::raw('MAX(orders.created_at) as last_order_at')
             ])
             ->join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
             ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
+            ->leftJoin(DB::raw('
+                (
+                    SELECT phone, SUM(total) as total_spent
+                    FROM orders
+                    WHERE status = "delivered"
+                    GROUP BY phone
+                ) as order_totals
+            '), 'orders.phone', '=', 'order_totals.phone')
             ->where('orders.status', 'delivered')
             ->groupBy('orders.name', 'orders.phone');
 
-        // Filters
         if ($request->filled('phone') && !$request->filled('search')) {
-
             $phone = preg_replace('/\D/', '', $request->phone);
-
-            if (str_starts_with($phone, '880')) {
-                $phone = '0' . substr($phone, 3);
-            }
-
-            if (strlen($phone) === 11) {
-                $query->where('orders.phone', $phone);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            if (str_starts_with($phone, '880')) $phone = '0' . substr($phone, 3);
+            if (strlen($phone) === 11) $query->where('orders.phone', $phone);
+            else $query->whereRaw('1 = 0');
         }
 
-        if ($request->filled('district')) {
-            $query->where('orders.district', 'like', '%' . $request->district . '%');
-        }
-        if ($request->filled('thana')) {
-            $query->where('orders.thana', 'like', '%' . $request->thana . '%');
-        }
+        if ($request->filled('district')) $query->where('orders.district', 'like', '%' . $request->district . '%');
+        if ($request->filled('thana')) $query->where('orders.thana', 'like', '%' . $request->thana . '%');
 
         if ($request->filled('search')) {
-
             $searchTerm = trim($request->search);
 
             if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
-
                 $normalized = preg_replace('/\D/', '', $searchTerm);
-                if (str_starts_with($normalized, '880')) {
-                    $normalized = '0' . substr($normalized, 3);
-                }
-                if (strlen($normalized) === 11) {
-                    $query->where('orders.phone', $normalized);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-
-            }
-            else {
-
+                if (str_starts_with($normalized, '880')) $normalized = '0' . substr($normalized, 3);
+                if (strlen($normalized) === 11) $query->where('orders.phone', $normalized);
+                else $query->whereRaw('1 = 0');
+            } else {
                 $search = strtolower($searchTerm);
-
                 $query->where(function ($q) use ($search) {
                     $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
                     ->orWhereIn('orders.phone', function ($sub) use ($search) {
@@ -498,20 +490,16 @@ class AdminOrderController extends Controller
                 'primary_address' => $customer->primary_address,
                 'order_count' => $customer->order_count,
                 'total_products' => $customer->total_products,
-                'total_spent' => number_format($customer->total_spent, 2),
+                'total_spent' => round($customer->total_spent),
                 'last_order_at' => Carbon::parse($customer->last_order_at)->format('M d, Y'),
             ];
-        })->filter(function ($customer) {
-            return !is_null($customer['customer_id']);
-        });
+        })->filter(fn($c) => !is_null($c['customer_id']));
 
         $customersWithIds = $customersWithIds->sortBy('customer_id')->values();
 
-        // Pagination
         $page = LengthAwarePaginator::resolveCurrentPage();
         $perPage = 20;
         $currentPageItems = $customersWithIds->slice(($page - 1) * $perPage, $perPage)->values();
-
         $customers = new LengthAwarePaginator(
             $currentPageItems,
             $customersWithIds->count(),
@@ -520,74 +508,146 @@ class AdminOrderController extends Controller
             ['path' => LengthAwarePaginator::resolveCurrentPath()]
         );
 
+        // --- Step 6: Get Courier Summary for each customer ---
+        // $courierReports = [];
+        // foreach ($customers as $customer) {
+        //     $phone = $customer['phone'];
+        //     $apiPhone = str_starts_with($phone, '01') ? '+88' . $phone : $phone;
+
+        //     try {
+        //         $response = Http::withHeaders([
+        //             'Accept' => 'application/json',
+        //             'Authorization' => 'Bearer '.config('bd_courier.api_key'),
+        //         ])->timeout(config('bd_courier.timeout'))
+        //         ->post(config('bd_courier.base_url') . '/courier-check', ['phone' => $apiPhone]);
+
+        //         $courierReports[$phone] = $response->successful() ? ($response->json()['data']['summary'] ?? null) : null;
+
+        //     } catch (\Exception $e) {
+        //         $courierReports[$phone] = null;
+        //     }
+        // }
+
+        // --- Step 7: Return view ---
         return view('admin.pages.customers.index', [
             'customers' => $customers,
+            // 'courierReports' => $courierReports, // Blade এ show করা যাবে
             'phone' => $request->phone,
             'district' => $request->district,
             'thana' => $request->thana,
             'search' => $request->search,
+            'districts' => config('bd_location')
         ]);
     }
 
-
-
     public function customerOrdersDetail($phone)
     {
-        // Fetch delivered orders for the customer
         $orders = Order::where('phone', $phone)
             ->where('status', 'delivered')
             ->with(['items.product', 'items.variantOption.variant.color', 'items.variantOption.size'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $customerName = $orders->first()?->name ?? 'Unknown Customer';
+        $customer = $orders->first();
 
-        return view('admin.pages.customers.orders_detail', compact('orders', 'customerName', 'phone'));
+        return view('admin.pages.customers.orders_detail', [
+            'orders' => $orders,
+            'customer' => $customer,
+            'phone' => $phone,
+        ]);
     }
 
-    public function download($id)
-    {
-        $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
-        $courier = CourierService::all();
 
-        $generalSettings = GeneralSetting::first();
-        $order->company_name = $generalSettings->app_name ?? 'Company Name';
-        $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
+    // public function download($id)
+    // {
+    //     $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
+    //     $courier = CourierService::all();
 
-        $html = view('admin.layouts.invoice', compact('order','courier'))->render();
+    //     $generalSettings = GeneralSetting::first();
+    //     $order->company_name = $generalSettings->app_name ?? 'Company Name';
+    //     $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
 
-        $defaultConfig = (new ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
+    //     $html = view('admin.layouts.invoice', compact('order','courier'))->render();
 
-        $defaultFontConfig = (new FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
+    //     $defaultConfig = (new ConfigVariables())->getDefaults();
+    //     $fontDirs = $defaultConfig['fontDir'];
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-                    'default_font' => 'solaimanlipi',
-                'fontDir' => array_merge($fontDirs, [
-                    public_path('assets/admin/fonts'),
-                ]),
-                'fontdata' => $fontData + [
-                    'solaimanlipi' => [
-                        'R' => 'SolaimanLipi.ttf',
-                        'useOTL' => 0xFF,
-                    ]
-                ],
-                'default_font_size' => 9,
-                'margin_left' => 3,
-                'margin_right' => 3,
-                'margin_top' => 3,
-                'margin_bottom' => 3,
-                'margin_header' => 0,
-                'margin_footer' => 0,
-            ]);
+    //     $defaultFontConfig = (new FontVariables())->getDefaults();
+    //     $fontData = $defaultFontConfig['fontdata'];
 
-            $mpdf->WriteHTML($html);
+    //     $mpdf = new Mpdf([
+    //         'mode' => 'utf-8',
+    //         'format' => 'A4',
+    //                 'default_font' => 'solaimanlipi',
+    //             'fontDir' => array_merge($fontDirs, [
+    //                 public_path('assets/admin/fonts'),
+    //             ]),
+    //             'fontdata' => $fontData + [
+    //                 'solaimanlipi' => [
+    //                     'R' => 'SolaimanLipi.ttf',
+    //                     'useOTL' => 0xFF,
+    //                 ]
+    //             ],
+    //             'default_font_size' => 9,
+    //             'margin_left' => 3,
+    //             'margin_right' => 3,
+    //             'margin_top' => 3,
+    //             'margin_bottom' => 3,
+    //             'margin_header' => 0,
+    //             'margin_footer' => 0,
+    //         ]);
 
-            return $mpdf->Output('order-'.$order->order_number.'.pdf', 'D');
-    }
+    //         $mpdf->WriteHTML($html);
+
+    //         return $mpdf->Output('order-'.$order->order_number.'.pdf', 'D');
+    // }
+
+
+public function download($id)
+{
+    $order = Order::with(['items.product', 'deliveryOption', 'courier'])->findOrFail($id);
+
+    $generalSettings = GeneralSetting::first();
+    $order->company_name = $generalSettings->app_name ?? 'Company Name';
+    $order->company_phone = $generalSettings->contact_number_1 ?? 'N/A';
+
+    $html = view('admin.layouts.invoice', compact('order'))->render();
+
+    $defaultConfig = (new ConfigVariables())->getDefaults();
+    $fontDirs = $defaultConfig['fontDir'];
+
+    $defaultFontConfig = (new FontVariables())->getDefaults();
+    $fontData = $defaultFontConfig['fontdata'];
+
+    $mpdf = new Mpdf([
+        'mode' => 'utf-8',
+
+        //POS Printer Size (75mm)
+        'format' => [75, 300],
+
+        'default_font' => 'solaimanlipi',
+        'fontDir' => array_merge($fontDirs, [
+            public_path('assets/admin/fonts'),
+        ]),
+        'fontdata' => $fontData + [
+            'solaimanlipi' => [
+                'R' => 'SolaimanLipi.ttf',
+                'useOTL' => 0xFF,
+            ],
+        ],
+
+        'default_font_size' => 9,
+        'margin_left' => 2,
+        'margin_right' => 2,
+        'margin_top' => 2,
+        'margin_bottom' => 2,
+    ]);
+
+    $mpdf->WriteHTML($html);
+    $mpdf->SetJS('this.print();');
+    return $mpdf->Output('invoice-'.$order->order_number.'.pdf', 'I');
+
+}
 public function update(Request $request, Order $order)
 {
     $request->validate([
@@ -744,8 +804,13 @@ public function store(Request $request)
         $delivery = DeliveryOption::find($request->delivery_option_id);
         $subtotal = 0;
 
+        $settings = GeneralSetting::first();
+        $appName = $settings->app_name ?? 'E';
+        $firstLetter = strtoupper(mb_substr(trim($appName), 0, 1));
+        $orderNumber = $firstLetter . "-" . str_pad(mt_rand(1, 99999), 6, '0', STR_PAD_LEFT);
+
         $order = Order::create([
-            'order_number' => 'ORD-' . strtoupper(uniqid()),
+            'order_number' => $orderNumber,
             'name' => $request->name,
             'phone' => $request->phone,
             'district' => $request->district,
@@ -804,39 +869,61 @@ public function search(Request $request)
         return response()->json([]);
     }
 
-    $variantMatch = ProductVariantOption::where('sku', $keyword)->with('variant.product')->first();
+    /**
+     * 🔎 1) Variant SKU exact match
+     */
+    $variantMatch = ProductVariantOption::where('sku', $keyword)
+        ->with(['variant.product'])
+        ->first();
 
-    if ($variantMatch) {
+    if ($variantMatch && $variantMatch->variant && $variantMatch->variant->product) {
+
         $product = $variantMatch->variant->product;
+
         return response()->json([
             [
-                'type' => 'variant',
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $variantMatch->sku,
-                'price' => $variantMatch->price,
-                'has_variants' => true,
+                'type'          => 'variant',
+                'id'            => $product->id,
+                'name'          => $product->name,
+                'sku'           => $variantMatch->sku,
+                'price'         => $variantMatch->price,
+                'has_variants'  => true,
+
+                // ✅ IMAGE (variant first, fallback product)
+                'main_image'    => $variantMatch->image
+                    ? ltrim($variantMatch->image, '/')
+                    : ltrim($product->main_image, '/'),
             ]
         ]);
     }
 
-    $products = Product::where('name', 'LIKE', "%$keyword%")
-        ->orWhere('sku', 'LIKE', "%$keyword%")
+    /**
+     * 🔎 2) Product name / SKU search
+     */
+    $products = Product::where('name', 'LIKE', "%{$keyword}%")
+        ->orWhere('sku', 'LIKE', "%{$keyword}%")
         ->limit(10)
         ->get()
         ->map(function ($product) {
+
             return [
-                'type' => 'product',
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'price' => $product->discount_price ?? $product->regular_price,
-                'has_variants' => $product->has_variants,
+                'type'          => 'product',
+                'id'            => $product->id,
+                'name'          => $product->name,
+                'sku'           => $product->sku,
+                'price'         => $product->discount_price ?? $product->regular_price,
+                'has_variants'  => $product->has_variants,
+
+                // ✅ IMAGE (VERY IMPORTANT)
+                'main_image'    => $product->main_image
+                    ? ltrim($product->main_image, '/')
+                    : null,
             ];
         });
 
     return response()->json($products);
 }
+
 
 
 public function getVariants(Product $product)
@@ -880,12 +967,24 @@ public function getVariants(Product $product)
         }
 
         if ($request->filled('courier_service_id')) {
-            $query->where('courier_service_id', $request->courier_service_id);
+            if ($request->courier_service_id === 'custom') {
+                $query->whereNotNull('custom_link')
+                    ->where('custom_link', '!=', '');
+            } else {
+                $query->where('courier_service_id', $request->courier_service_id);
+            }
         }
 
-        if ($request->filled('tracking_code')) {
-            $query->where('tracking_code', 'like', '%' . $request->tracking_code . '%');
+        if ($request->filled('keyword')) {
+            $keyword = $request->keyword;
+
+            $query->where(function ($q) use ($keyword) {
+                $q->where('phone', 'like', "%{$keyword}%")
+                ->orWhere('order_number', 'like', "%{$keyword}%")
+                ->orWhere('tracking_code', 'like', "%{$keyword}%");
+            });
         }
+
 
         $orders = $query->paginate(10);
 
@@ -899,7 +998,7 @@ public function getVariants(Product $product)
         $dateFrom = $request->date_from ?? '';
         $dateTo = $request->date_to ?? '';
         $courierServiceId = $request->courier_service_id ?? '';
-        $trackingCode = $request->tracking_code ?? '';
+        $keyword = $request->keyword ?? '';
 
         $couriers = CourierService::all();
 
@@ -908,7 +1007,7 @@ public function getVariants(Product $product)
             'dateFrom',
             'dateTo',
             'courierServiceId',
-            'trackingCode',
+            'keyword',
             'couriers'
         ));
     }
@@ -963,45 +1062,61 @@ public function unblockCustomer(Request $request)
 
     return back()->with('success', 'Customer unblocked successfully');
 }
-public function export(Request $request)
-{
-    if ($request->has('all_filtered')) {
-        $orders = Order::query()
-            ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered'])
-            ->when($request->status !== 'all', fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
-            ->when($request->district, fn($q) => $q->where('district', $request->district))
-            ->when($request->thana, fn($q) => $q->where('thana', $request->thana))
-            ->with(['items.product', 'courier'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-    } else {
-        $request->validate([
-            'order_ids' => 'required|array',
-            'order_ids.*' => 'exists:orders,id',
-        ]);
+    public function export(Request $request)
+    {
+        // DEBUG (optional - check once)
+        // dd($request->all());
 
-        $orders = Order::whereIn('id', $request->order_ids)
-            ->with(['items.product', 'courier'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        if ($request->filled('all_filtered')) {
+
+            $query = Order::query()
+                ->whereIn('status', ['processing', 'shipped', 'courier_delivered', 'delivered']);
+
+            if ($request->filled('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            if ($request->filled('district')) {
+                $query->where('district', $request->district);
+            }
+
+            if ($request->filled('thana')) {
+                $query->where('thana', $request->thana);
+            }
+
+            $orders = $query->with(['items.product', 'courier'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+        } else {
+
+            if (!$request->filled('order_ids')) {
+                return back()->with('error', 'No valid orders selected for export.');
+            }
+
+            $orders = Order::whereIn('id', $request->order_ids)
+                ->with(['items.product', 'courier'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        if ($orders->isEmpty()) {
+            return back()->with('error', 'No data found for export.');
+        }
+
+        return Excel::download(
+            new OrdersExport($orders),
+            'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
+        );
     }
-
-    if ($orders->isEmpty()) {
-        return back()->with('error', 'No valid orders selected for export.');
-    }
-
-    $fileName = 'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
-    $status = $request->status ?? 'all';
-
-return Excel::download(
-    new OrdersExport($orders, $status, $request->date_from, $request->date_to),
-    'orders-export-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
-);
-
-}
 
 
 
@@ -1126,6 +1241,53 @@ public function exportCustomers(Request $request)
 
         return response($mpdf->Output('orders_report.pdf', 'I'))
             ->header('Content-Type', 'application/pdf');
+    }
+
+
+    public function orderCheck(Request $request)
+    {
+        $phone = $request->phone;
+
+        $apiPhone = ltrim($phone, '+');
+
+        if (str_starts_with($apiPhone, '01')) {
+            $apiPhone = '880' . substr($apiPhone, 1);
+        }
+
+        try {
+
+            $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
+                ])
+                ->timeout(30)
+                ->retry(3, 2000)
+                ->post(config('bd_courier.base_url') . '/courier-check', [
+                    'phone' => $apiPhone
+                ]);
+
+            if ($response->successful()) {
+
+                $data = $response->json();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $data['data']['summary'] ?? null
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $response->body()
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
 }

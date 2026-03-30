@@ -134,7 +134,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
-                                Today's Order Confirmed</div>
+                                Today's Order Processing</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $todayConfirmedOrders }}</div>
                         </div>
                         <div class="col-auto">

@@ -64,7 +64,7 @@
                                                 @endphp
                                                 {{ $sku }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price,0) }}</td>
                                             <td><input type="number" name="items[{{ $index }}][quantity]" value="{{ $item->quantity }}" class="form-control form-control-sm" style="width:60px;"></td>
                                             <td>
                                                 {{ $item->variantOption?->size?->name ?? $item->product->size?->name ?? '-' }}
@@ -72,7 +72,7 @@
                                             <td>
                                                 {{ $item->variantOption?->variant?->color?->name ?? '-' }}
                                             </td>
-                                            <td>&#2547;{{ number_format($item->price * $item->quantity,2) }}</td>
+                                            <td>&#2547;{{ number_format($item->price * $item->quantity,0) }}</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
                                         </tr>
                                     @endforeach
@@ -86,7 +86,7 @@
                         <div class="input-group mb-3 position-relative">
                             <input type="text" id="search-product" class="form-control" placeholder="Type name, SKU or Variant SKU" autocomplete="off">
                             <input type="number" id="search-quantity" class="form-control" placeholder="Qty" value="1" style="max-width:100px;">
-                            <div id="sku-suggestions" class="position-absolute bg-white border" style="z-index:1000;width:100%;display:none;"></div>
+                            <div id="sku-suggestions" class="position-absolute bg-white border" style="z-index:1000;width:100%;display:none; margin-top: 6%;"></div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Update Order Items</button>
@@ -289,19 +289,66 @@
                         <button type="submit" class="btn btn-primary">Update Status</button>
                     </form>
 
-                    @if($order->courier_service_id && in_array($order->status, ['shipped', 'courier_delivered', 'delivered']))
-                        <div class="mt-4 p-3 bg-light rounded">
-                            <h6>Courier Information</h6>
-                            <p><strong>Courier:</strong> {{ $order->courier->name ?? 'N/A' }}</p>
-                            <p><strong>Tracking Code:</strong> {{ $order->tracking_code }}</p>
-                            <p><strong>Consignment ID:</strong> {{ $order->consignment_id ?? 'N/A' }}</p>
-                            <a href="https://steadfast.com.bd/t/{{ $order->tracking_code }}"
-                            target="_blank"
-                            class="btn btn-sm btn-info">
-                            Track Order
-                            </a>
-                        </div>
-                    @endif
+@if(
+    $order->courier_service_id &&
+    in_array($order->status, ['shipped', 'courier_delivered', 'delivered'])
+)
+@php
+    $trackingUrl = null;
+
+    if ($order->courier) {
+        switch ($order->courier->type) {
+
+            case 'steadfast':
+                if ($order->tracking_code) {
+                    $trackingUrl = 'https://steadfast.com.bd/t/' . $order->tracking_code;
+                }
+                break;
+
+            case 'pathao':
+                if ($order->tracking_code && $order->phone) {
+                    $phone = preg_replace('/\D/', '', $order->phone);
+
+                    $trackingUrl = 'https://merchant.pathao.com/tracking?' . http_build_query([
+                        'consignment_id' => $order->tracking_code,
+                        'phone'          => $phone,
+                    ]);
+                }
+                break;
+        }
+    }
+@endphp
+
+<div class="mt-4 p-3 bg-light rounded">
+    <h6>Courier Information</h6>
+
+    {{-- Courier --}}
+    @if($order->courier?->name)
+        <p><strong>Courier:</strong> {{ $order->courier->name }}</p>
+    @endif
+
+    {{-- Tracking Code --}}
+    @if($order->tracking_code)
+        <p><strong>Tracking Code:</strong> {{ $order->tracking_code }}</p>
+    @endif
+
+    {{-- Consignment ID --}}
+    @if($order->consignment_id)
+        <p><strong>Consignment ID:</strong> {{ $order->consignment_id }}</p>
+    @endif
+
+    {{-- Track Button --}}
+    @if($trackingUrl)
+        <a href="{{ $trackingUrl }}"
+           target="_blank"
+           class="btn btn-sm btn-info">
+            Track Order
+        </a>
+    @endif
+</div>
+@endif
+
+
 
                 </div>
             </div>
@@ -482,7 +529,7 @@
             'incomplete': ['pending','hold','processing','cancelled'],
             'pending': ['hold','processing','cancelled'],
             'hold': ['processing','cancelled'],
-            'processing': ['shipped','courier_delivered','cancelled'],
+            'processing': ['hold','shipped','courier_delivered','cancelled'],
             'shipped': ['courier_delivered','courier_cancelled','cancelled'],
             'courier_delivered': ['courier_cancelled','delivered'],
             'courier_cancelled': ['shipped','courier_delivered','cancelled'],
@@ -602,97 +649,143 @@
 </script>
 
 
+@php
+    $allProducts = \App\Models\Product::select('id','name','sku','main_image','regular_price','discount_price')->get();
+    $allVariants = \App\Models\ProductVariantOption::with([
+        'variant.product:id,name,sku,main_image,regular_price,discount_price',
+        'variant.color:id,name',
+        'size:id,name'
+    ])->get();
+@endphp
+
 <script>
-    $(document).ready(function(){
-        let selectedProducts = {};
+$(document).ready(function(){
 
-        function renderRow(product, variant = null, quantity = 1){
-            let id = variant ? 'v'+variant.id : 'p'+product.id;
-            if(selectedProducts[id]) return;
-            selectedProducts[id] = true;
+    let allProducts = @json($allProducts);
+    let allVariants = @json($allVariants);
 
-            let img = variant?.image ?? product.main_image ?? '';
-            let sku = variant?.sku ?? product.sku ?? '';
-            let name = product.name;
-            let price = variant?.price ?? (product.discount_price ?? product.regular_price);
-            let index = $('#order-items-table tbody tr').length;
+    let selectedProducts = {};
 
-            let row = `
-                <tr data-item-id="">
-                    <td>${img ? `<img src="/storage/${img}" width="50" class="img-thumbnail">` : '<span class="text-muted">No image</span>'}</td>
-                    <td>
-                        ${name}
-                        <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
-                        ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
-                    </td>
-                    <td>${product.sku}${variant ? ' / '+variant.sku : ''}</td>
-                    <td>&#2547;${price.toFixed(2)}</td>
-                    <td><input type="number" name="items[${index}][quantity]" value="${quantity}" class="form-control form-control-sm" style="width:60px;"></td>
-                    <td>&#2547;${(price*quantity).toFixed(2)}</td>
-                    <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
-                </tr>
-            `;
-            $('#order-items-table tbody').append(row);
+    function updateSubtotal(row) {
+        let qty = parseInt(row.find('.quantity-input').val()) || 0;
+        let price = parseFloat(row.find('.price-cell').data('price')) || 0;
+        row.find('.subtotal-cell').text('৳' + (qty * price));
+    }
+
+    function renderRow(product, variant, quantity) {
+
+        let key = product.id + '-' + (variant ? variant.id : 'null');
+
+        if (selectedProducts[key] !== undefined) {
+            let row = $('#order-items-table tbody tr').eq(selectedProducts[key]);
+            let qtyInput = row.find('.quantity-input');
+            qtyInput.val(parseInt(qtyInput.val()) + quantity);
+            updateSubtotal(row);
+            return;
         }
 
-        // Remove row
-        $(document).on('click','.remove-item',function(){
-            $(this).closest('tr').remove();
-        });
+        let img   = variant?.image || product.main_image || '';
+        let sku   = variant?.sku ? product.sku + ' / ' + variant.sku : product.sku;
+        let price = variant?.price ?? product.discount_price ?? product.regular_price ?? 0;
+        let size  = variant?.size?.name ?? '-';
+        let color = variant?.variant?.color?.name ?? '-';
 
-        // Client-side search without extra route
-        let allProducts = @json(\App\Models\Product::with('variants.options')->get());
-        let allVariants = @json(\App\Models\ProductVariantOption::with('variant.product')->get());
+        let index = $('#order-items-table tbody tr').length;
 
-        $('#search-product').on('input',function(){
-            let query = $(this).val().toLowerCase();
-            if(query.length < 1){
-                $('#sku-suggestions').hide();
-                return;
+        let row = `
+        <tr>
+            <td>${img ? `<img src="/storage/${img}" width="50">` : 'No image'}</td>
+            <td>
+                ${product.name}
+                <input type="hidden" name="items[${index}][product_id]" value="${product.id}">
+                ${variant ? `<input type="hidden" name="items[${index}][variant_option_id]" value="${variant.id}">` : ''}
+            </td>
+            <td>${sku}</td>
+            <td class="price-cell" data-price="${price}">৳${price}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm quantity-input"
+                       name="items[${index}][quantity]" value="${quantity}" style="width:60px;">
+            </td>
+            <td>${size}</td>
+            <td>${color}</td>
+            <td class="subtotal-cell">৳${price * quantity}</td>
+            <td><button type="button" class="btn btn-danger btn-sm remove-item"><i class="fas fa-trash"></i></button></td>
+        </tr>
+        `;
+
+        $('#order-items-table tbody').append(row);
+        selectedProducts[key] = index;
+    }
+
+    // Search
+    $('#search-product').on('input', function(){
+        let q = $(this).val().toLowerCase();
+        if(!q){ $('#sku-suggestions').hide(); return; }
+
+        let html = '';
+
+        allProducts.forEach(p=>{
+            if(p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)){
+                html += `
+                <div class="suggestion-item p-2"
+                     data-product-id="${p.id}" data-variant-id="">
+                    ${p.main_image ? `<img src="/storage/${p.main_image}" width="40">` : ''}
+                    ${p.name} <small>(${p.sku})</small>
+                </div>`;
             }
-
-            let matches = [];
-
-            allProducts.forEach(p=>{
-                if(p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query)){
-                    matches.push({product:p, variant:null});
-                }
-            });
-
-            allVariants.forEach(v=>{
-                let prodName = v.variant.product.name.toLowerCase();
-                if(prodName.includes(query) || v.sku.toLowerCase().includes(query) || v.variant.product.sku.toLowerCase().includes(query)){
-                    matches.push({product:v.variant.product, variant:v});
-                }
-            });
-
-            let html = '';
-            matches.forEach(m=>{
-                let image = m.variant?.image ?? m.product.main_image ?? '';
-                let sku = m.variant?.sku ?? m.product.sku ?? '';
-                html += `<div class="p-2 border-bottom suggestion-item" data-product='${JSON.stringify(m.product)}' data-variant='${JSON.stringify(m.variant ?? null)}'>
-                            <img src="/storage/${image}" width="40" class="me-2">${m.product.name} <small>(${sku})</small>
-                        </div>`;
-            });
-
-            $('#sku-suggestions').html(html).show();
         });
 
-        // Click suggestion to add
-        $(document).on('click','.suggestion-item',function(){
-            let product = JSON.parse($(this).attr('data-product'));
-            let variant = $(this).attr('data-variant') ? JSON.parse($(this).attr('data-variant')) : null;
-            let qty = parseInt($('#search-quantity').val() || 1);
-            renderRow(product, variant, qty);
-            $('#sku-suggestions').hide();
-            $('#search-product').val('');
-        });
-
-        $(document).click(function(e){
-            if(!$(e.target).closest('#sku-suggestions,#search-product').length){
-                $('#sku-suggestions').hide();
+        allVariants.forEach(v=>{
+            let p = v.variant?.product;
+            if(!p) return;
+            if(p.name.toLowerCase().includes(q) || v.sku?.toLowerCase().includes(q)){
+                let img = v.image || p.main_image;
+                html += `
+                <div class="suggestion-item p-2"
+                     data-product-id="${p.id}"
+                     data-variant-id="${v.id}">
+                    ${img ? `<img src="/storage/${img}" width="40">` : ''}
+                    ${p.name} <small>(${v.sku})</small>
+                </div>`;
             }
+        });
+
+        $('#sku-suggestions').html(html).show();
+    });
+
+    // Select
+    $(document).on('click','.suggestion-item',function(){
+        let pid = $(this).data('product-id');
+        let vid = $(this).data('variant-id');
+
+        let product = allProducts.find(p=>p.id==pid);
+        let variant = vid ? allVariants.find(v=>v.id==vid) : null;
+        let qty = parseInt($('#search-quantity').val()) || 1;
+
+        renderRow(product, variant, qty);
+
+        $('#sku-suggestions').hide();
+        $('#search-product').val('');
+        $('#search-quantity').val(1);
+    });
+
+    //  Remove
+    $(document).on('click','.remove-item',function(){
+        let row = $(this).closest('tr');
+        row.remove();
+        selectedProducts = {};
+        $('#order-items-table tbody tr').each(function(i){
+            let pid = $(this).find('[name*="[product_id]"]').val();
+            let vid = $(this).find('[name*="[variant_option_id]"]').val() || 'null';
+            selectedProducts[pid+'-'+vid] = i;
         });
     });
+
+    $(document).on('input','.quantity-input',function(){
+        updateSubtotal($(this).closest('tr'));
+    });
+
+});
 </script>
+
 

@@ -147,110 +147,193 @@
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const input = document.getElementById('productInput');
-        const results = document.getElementById('searchResults');
-        const selected = document.getElementById('selectedProducts');
-        let index = 0;
+document.addEventListener("DOMContentLoaded", function () {
 
-        input.addEventListener('input', function() {
-            const query = this.value.trim();
-            if (query.length < 2) {
-                results.innerHTML = '';
-                return;
-            }
+    const input    = document.getElementById('productInput');
+    const results  = document.getElementById('searchResults');
+    const selected = document.getElementById('selectedProducts');
+    let index = 0;
 
-            fetch(`/admin/product/search?q=${encodeURIComponent(query)}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
+    // 🔍 SEARCH
+    input.addEventListener('input', function () {
+
+        let q = this.value.trim();
+        if (q.length < 2) {
+            results.innerHTML = '';
+            return;
+        }
+
+        fetch(`/admin/product/search?q=${encodeURIComponent(q)}`)
             .then(res => res.json())
             .then(products => {
-                if (products.length === 0) {
-                    results.innerHTML = '<p class="text-muted">No products found.</p>';
+
+                if (!products.length) {
+                    results.innerHTML = '<div class="text-muted">No products found</div>';
                     return;
                 }
 
                 let html = '';
-                products.forEach(product => {
-                    const price = product.discount_price ?? product.regular_price ?? product.price ?? 0;
-                    const hasVariants = product.has_variants ? true : false;
-                    html += `<div class="p-1 border mb-1" style="cursor:pointer;"onclick="addProduct(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${price}, '${product.sku}', ${hasVariants})"><strong>${product.name}</strong> - ${product.sku} (৳${price})</div>`;
+
+                products.forEach(p => {
+
+                    let price = p.discount_price ?? p.regular_price ?? p.price ?? 0;
+                    let img   = p.main_image
+                        ? `/storage/${p.main_image}`
+                        : 'https://via.placeholder.com/40x40?text=N/A';
+
+                    html += `
+                    <div class="border p-2 mb-1 d-flex align-items-center"
+                         style="cursor:pointer"
+                         onclick="addProduct(
+                             ${p.id},
+                             '${p.name.replace(/'/g, "\\'")}',
+                             '${p.sku}',
+                             ${price},
+                             '${p.main_image ?? ''}',
+                             ${p.has_variants ? 1 : 0}
+                         )">
+
+                        <img src="${img}" width="40" height="40"
+                             style="object-fit:cover;border-radius:4px;margin-right:10px"
+                             onerror="this.src='https://via.placeholder.com/40x40?text=N/A'">
+
+                        <div>
+                            <strong>${p.name}</strong><br>
+                            <small>${p.sku}</small> - ৳${price}
+                        </div>
+                    </div>`;
                 });
+
                 results.innerHTML = html;
-            })
-
-            .catch(e => {
-                console.error(e);
-                results.innerHTML = '<p class="text-danger">Error fetching products.</p>';
             });
-        });
+    });
 
-    window.addProduct = function(id, name, price, sku, hasVariants = false) {
+    // ➕ ADD PRODUCT
+    window.addProduct = function (id, name, sku, price, image, hasVariants) {
+
         if (hasVariants) {
             fetch(`/admin/product/${id}/variants`)
                 .then(res => res.json())
                 .then(variants => {
-                    if (variants.length === 0) return;
 
-                    let options = variants.map((v, i) => {
-                        return `<option value="${v.id}" data-price="${v.price}" data-sku="${v.sku}">${v.size ?? ''} ${v.color ?? ''} (৳${v.price})</option>`;
-                    }).join('');
+                    if (!variants.length) return;
 
-                    const productHtml = `
-                        <div class="border p-2 mb-2 d-flex flex-column">
+                    let options = variants.map(v =>
+                        `<option value="${v.id}"
+                                 data-price="${v.price}"
+                                 data-image="${v.image ?? image}">
+                            ${v.size ?? ''} ${v.color ?? ''} (৳${v.price})
+                        </option>`
+                    ).join('');
+
+                    let img = variants[0].image || image;
+
+                    selected.insertAdjacentHTML('beforeend', `
+                    <div class="border p-2 mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <img src="/storage/${img}" width="40"
+                                 onerror="this.src='https://via.placeholder.com/40x40?text=N/A'"
+                                 style="margin-right:10px">
+
                             <strong>${name}</strong>
-                            <select name="products[${index}][variant_option_id]" class="form-select variant-select" data-index="${index}">
-                                ${options}
-                            </select>
-                            <input type="hidden" name="products[${index}][product_id]" value="${id}">
-                            <div class="d-flex mt-2">
-                                <input type="number" name="products[${index}][quantity]" class="form-control me-2" value="1" min="1" style="width:70px;">
-                                <input type="number" name="products[${index}][price]" class="form-control" value="${variants[0].price}" readonly style="width:100px;">
-                                <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.closest('div.border').remove()"><i class="fas fa-trash"></i></button>
-                            </div>
                         </div>
-                    `;
-                    selected.insertAdjacentHTML('beforeend', productHtml);
-                    index++;
-                    results.innerHTML = '';
-                    input.value = '';
-                });
-        } else {
-            const productHtml = `
-                <div class="border p-2 mb-2 d-flex align-items-center">
-                    <input type="hidden" name="products[${index}][product_id]" value="${id}">
-                    <div class="flex-grow-1">
-                        <strong>${name}</strong><br><small>SKU: ${sku}</small>
-                    </div>
-                    <div class="me-2">
-                        <input type="number" name="products[${index}][quantity]" class="form-control" value="1" min="1" required style="width:70px;">
-                    </div>
-                    <div>
-                        <input type="number" name="products[${index}][price]" class="form-control" value="${price}" readonly style="width:90px;">
-                    </div>
-                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
-                </div>
-            `;
-            selected.insertAdjacentHTML('beforeend', productHtml);
-            index++;
-            results.innerHTML = '';
-            input.value = '';
-        }
-    };
-});
 
-// onchange for variant dropdown
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('variant-select')) {
-        const price = e.target.selectedOptions[0].getAttribute('data-price');
-        const container = e.target.closest('.border');
-        container.querySelector(`input[name="products[${e.target.dataset.index}][price]"]`).value = price;
-    }
+                        <input type="hidden" name="products[${index}][product_id]" value="${id}">
+
+                        <select name="products[${index}][variant_option_id]"
+                                class="form-select variant-select mb-2"
+                                data-index="${index}">
+                            ${options}
+                        </select>
+
+                        <div class="d-flex">
+                            <input type="number"
+                                   name="products[${index}][quantity]"
+                                   value="1"
+                                   class="form-control me-2"
+                                   style="width:70px">
+
+                            <input type="number"
+                                   name="products[${index}][price]"
+                                   value="${variants[0].price}"
+                                   class="form-control"
+                                   readonly
+                                   style="width:100px">
+
+                            <button type="button"
+                                    class="btn btn-danger btn-sm ms-2"
+                                    onclick="this.closest('.border').remove()">
+                                🗑
+                            </button>
+                        </div>
+                    </div>`);
+
+                    index++;
+                });
+
+        } else {
+
+            let img = image
+                ? `/storage/${image}`
+                : 'https://via.placeholder.com/40x40?text=N/A';
+
+            selected.insertAdjacentHTML('beforeend', `
+            <div class="border p-2 mb-2 d-flex align-items-center">
+
+                <img src="${img}" width="40"
+                     onerror="this.src='https://via.placeholder.com/40x40?text=N/A'"
+                     style="margin-right:10px">
+
+                <input type="hidden"
+                       name="products[${index}][product_id]"
+                       value="${id}">
+
+                <div class="flex-grow-1">
+                    <strong>${name}</strong><br>
+                    <small>${sku}</small>
+                </div>
+
+                <input type="number"
+                       name="products[${index}][quantity]"
+                       value="1"
+                       class="form-control me-2"
+                       style="width:70px">
+
+                <input type="number"
+                       name="products[${index}][price]"
+                       value="${price}"
+                       class="form-control"
+                       readonly
+                       style="width:90px">
+
+                <button type="button"
+                        class="btn btn-danger btn-sm ms-2"
+                        onclick="this.parentElement.remove()">🗑</button>
+            </div>`);
+
+            index++;
+        }
+
+        results.innerHTML = '';
+        input.value = '';
+    };
+
+    // 🔄 VARIANT CHANGE
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('variant-select')) {
+
+            let price = e.target.selectedOptions[0].dataset.price;
+            let img   = e.target.selectedOptions[0].dataset.image;
+            let box   = e.target.closest('.border');
+
+            box.querySelector('input[name$="[price]"]').value = price;
+            box.querySelector('img').src = `/storage/${img}`;
+        }
+    });
+
 });
 </script>
+
 
 
 {{-- <script>

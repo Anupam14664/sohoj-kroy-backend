@@ -11,6 +11,7 @@ class GeneralSetting extends Model
 
     protected $fillable = [
         'app_name',
+        'domain_url',
         'logo',
         'favicon',
         'facebook_url',

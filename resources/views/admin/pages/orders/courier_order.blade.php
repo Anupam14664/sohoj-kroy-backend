@@ -18,18 +18,20 @@
                             <!-- Combined Filter Form -->
                             <form style="width: 700px; background:none; border:none;" action="{{ route('admin.orders.shipped') }}" method="GET" class="mb-0 d-flex flex-wrap align-items-end gap-2">
                                 <!-- Courier Select -->
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Courier</label>
-                                    <select name="courier_service_id" class="form-control form-control-sm">
-                                        <option value="">All Couriers</option>
-                                        @foreach($couriers as $courier)
-                                            <option value="{{ $courier->id }}" {{ request('courier_service_id') == $courier->id ? 'selected' : '' }}>
-                                                {{ $courier->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
+                            <div class="form-group mb-0">
+                                <label class="form-label">Courier</label>
+                                <select name="courier_service_id" class="form-control form-control-sm">
+                                    <option value="">All Couriers</option>
+                                    @foreach($couriers as $courier)
+                                        <option value="{{ $courier->id }}" {{ request('courier_service_id') == $courier->id ? 'selected' : '' }}>
+                                            {{ $courier->name }}
+                                        </option>
+                                    @endforeach
+                                    <option value="custom" {{ request('courier_service_id') === 'custom' ? 'selected' : '' }}>
+                                        Custom Link
+                                    </option>
+                                </select>
+                            </div>
                                 <!-- Date From -->
                                 <div class="form-group mb-0">
                                     <label class="form-label">From</label>
@@ -54,11 +56,11 @@
                             <form style="width: 200px; background:none; border:none;" action="{{ route('admin.orders.shipped') }}" method="GET" class="mb-2 d-flex">
                                 <div class="input-group input-group-sm" style="width: 180px;">
                                     <input type="text"
-                                           name="tracking_code"
+                                           name="keyword"
                                            class="form-control"
-                                           placeholder="Tracking #"
-                                           value="{{ request('tracking_code') }}"
-                                           aria-label="Search by tracking code">
+                                           placeholder="Search..."
+                                           value="{{ $keyword }}"
+                                           aria-label="Search...">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-outline-secondary">
                                             <i class="fas fa-search"></i>
@@ -102,7 +104,7 @@
                                         <small>{{ $order->delivery_status_description }}</small> --}}
                                     </td>
 
-                                    <td>
+                                    {{-- <td>
                                         @if($order->tracking_code)
                                             <a href="https://steadfast.com.bd/t/{{ $order->tracking_code }}"
                                             target="_blank"
@@ -112,7 +114,57 @@
                                         @else
                                             <span class="text-muted">No tracking</span>
                                         @endif
+                                    </td> --}}
+                                    <td>
+                                        @if($order->tracking_code && $order->courier)
+                                            @php
+                                                $courier = $order->courier;
+                                                $trackUrl = null;
+                                            @endphp
+
+                                            @switch($courier->type)
+
+                                                @case('steadfast')
+                                                    @php
+                                                        $trackUrl = 'https://steadfast.com.bd/t/' . $order->tracking_code;
+                                                    @endphp
+                                                    @break
+
+                                                @case('pathao')
+                                                    @php
+                                                        if ($order->phone) {
+                                                            $phone = preg_replace('/\D/', '', $order->phone);
+
+                                                            $trackUrl = 'https://merchant.pathao.com/tracking?' . http_build_query([
+                                                                'consignment_id' => $order->tracking_code,
+                                                                'phone'          => $phone,
+                                                            ]);
+                                                        }
+                                                    @endphp
+                                                    @break
+
+                                            @endswitch
+
+                                            @if($trackUrl)
+                                                <a href="{{ $trackUrl }}"
+                                                target="_blank"
+                                                class="btn btn-sm btn-info">
+                                                    Track
+                                                </a>
+                                            @else
+                                                <span class="text-muted">No tracking</span>
+                                            @endif
+                                        @elseif($order->custom_link)
+                                            <a href="{{ $order->custom_link }}"
+                                            target="_blank"
+                                            class="btn btn-sm btn-secondary">
+                                                Track
+                                            </a>
+                                        @else
+                                            <span class="text-muted">No tracking</span>
+                                        @endif
                                     </td>
+
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-primary  p-1 mx-1">

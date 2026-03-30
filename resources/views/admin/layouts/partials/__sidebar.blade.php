@@ -31,6 +31,13 @@
 				</li>
 				{{-- @endcan --}}
 
+                <li class="nav-item">
+                    <a href="{{ route('admin.courier.fraud.check') }}">
+                        <i class="fas fa-shield-alt"></i>
+                        <p>Fraud Checker</p>
+                    </a>
+                </li>
+
 				{{-- Orders --}}
 				@can('manage orders')
 				<li class="nav-item">
@@ -253,6 +260,7 @@
 				</li>
 				@endcan
 
+
 				{{-- Settings (Super Admin Only) --}}
 
 				@role('Super Admin')
@@ -264,7 +272,7 @@
 					</a>
 				</li>
                  @endcan
-                 @can('manage roles')
+                 {{-- @can('manage roles')
 				<li class="nav-item">
 					<a href="{{ route('admin.roles.index') }}">
 						<i class="fas fa-user-shield"></i>
@@ -279,7 +287,40 @@
 						<p>Admin Management</p>
 					</a>
 				</li>
-                @endcan
+                @endcan --}}
+
+
+                @canany(['manage roles','manage admins'])
+                    <li class="nav-item">
+                        <a data-bs-toggle="collapse" href="#admin_settings">
+                            <i class="fas fa-users-cog"></i>
+                            <p>Role Management</p>
+                            <span class="caret"></span>
+                        </a>
+
+                        <div class="collapse" id="admin_settings">
+                            <ul class="nav nav-collapse">
+
+                                @can('manage roles')
+                                <li>
+                                    <a href="{{ route('admin.roles.index') }}">
+                                        <span class="sub-item">Roles & Permissions</span>
+                                    </a>
+                                </li>
+                                @endcan
+
+                                @can('manage admins')
+                                <li>
+                                    <a href="{{ route('admin.admins.index') }}">
+                                        <span class="sub-item">Admin Management</span>
+                                    </a>
+                                </li>
+                                @endcan
+
+                            </ul>
+                        </div>
+                    </li>
+                    @endcanany
 
                 @can('manage downloadDB')
                 <li class="nav-item mt-4 pt-4">

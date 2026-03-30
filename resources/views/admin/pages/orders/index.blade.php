@@ -233,285 +233,12 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 
-{{-- <script>
-$(document).ready(function() {
-
-    // ===========================
-    // Select / Deselect All
-    // ===========================
-    $('#selectAllCheckbox').on('change', function() {
-        const checked = $(this).prop('checked');
-
-        // Select/deselect all order checkboxes
-        $('.order-checkbox:not(:disabled)').prop('checked', checked);
-
-        // Add or remove the hidden all_filtered input
-        if(checked) {
-            if($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: true
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-    $('.order-checkbox').on('change', function() {
-        const allChecked = $('.order-checkbox:not(:disabled)').length === $('.order-checkbox:checked:not(:disabled)').length;
-        $('#selectAllCheckbox').prop('checked', allChecked);
-
-        if (allChecked) {
-            if ($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: 1
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-    // ===========================
-    // Export Excel / PDF
-    // ===========================
-    function exportOrders(url, type) {
-
-        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
-
-        const params = new URLSearchParams(window.location.search);
-
-        const dateFrom = params.get('date_from');
-        const dateTo = params.get('date_to');
-        const status = params.get('status');
-        const district = params.get('district');
-        const thana = params.get('thana');
-        const productSearch = params.get('product_search');
-
-        const form = $('<form>', {
-            method: 'POST',
-            action: url,
-            target: '_blank'
-        });
-
-        form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
-
-        if ($('#allFilteredInput').length) {
-
-            form.append(`<input type="hidden" name="all_filtered" value="1">`);
-
-            if (dateFrom) form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
-            if (dateTo) form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
-            if (status) form.append(`<input type="hidden" name="status" value="${status}">`);
-            if (district) form.append(`<input type="hidden" name="district" value="${district}">`);
-            if (thana) form.append(`<input type="hidden" name="thana" value="${thana}">`);
-            if (productSearch) form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
-
-        } else {
-
-            if (selectedOrders.length === 0) {
-                alert(`Please select at least one order to export ${type}.`);
-                return;
-            }
-
-            selectedOrders.each(function() {
-                form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
-            });
-        }
-
-        $('body').append(form);
-        form.submit();
-    }
-        $('#selectAllCheckbox').on('change', function() {
-        const checked = $(this).prop('checked');
-
-        // Select/deselect all order checkboxes
-        $('.order-checkbox:not(:disabled)').prop('checked', checked);
-
-        // Add or remove the hidden all_filtered input
-        if(checked) {
-            if($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: true
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-    $('.order-checkbox').on('change', function() {
-        const allChecked = $('.order-checkbox:not(:disabled)').length === $('.order-checkbox:checked:not(:disabled)').length;
-        $('#selectAllCheckbox').prop('checked', allChecked);
-
-        if (allChecked) {
-            if ($('#allFilteredInput').length === 0) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'allFilteredInput',
-                    name: 'all_filtered',
-                    value: 1
-                }).appendTo('#bulkActionForm');
-            }
-        } else {
-            $('#allFilteredInput').remove();
-        }
-    });
-
-    // ===========================
-    // Export Excel / PDF
-    // ===========================
-    function exportOrders(url, type) {
-        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
-
-        const dateFrom = $('input[name="date_from"]').val();
-        const dateTo = $('input[name="date_to"]').val();
-        const status = $('select[name="status"]').val();
-        const district = $('input[name="district"]').val();
-        const thana = $('input[name="thana"]').val();
-        const productSearch = $('input[name="product_search"]').val();
-
-        const form = $('<form>', {
-            method: 'POST',
-            action: url,
-            target: '_blank'
-        });
-
-        form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
-
-        // If "Select All Filtered" is active
-        if ($('#allFilteredInput').length) {
-            form.append(`<input type="hidden" name="all_filtered" value="1">`);
-            form.append(`<input type="hidden" name="date_from" value="${dateFrom}">`);
-            form.append(`<input type="hidden" name="date_to" value="${dateTo}">`);
-            form.append(`<input type="hidden" name="status" value="${status}">`);
-            form.append(`<input type="hidden" name="district" value="${district}">`);
-            form.append(`<input type="hidden" name="thana" value="${thana}">`);
-            form.append(`<input type="hidden" name="product_search" value="${productSearch}">`);
-        } else {
-            // If no orders selected, alert
-            if (selectedOrders.length === 0) {
-                alert(`Please select at least one order to export ${type}.`);
-                return;
-            }
-            selectedOrders.each(function() {
-                form.append(`<input type="hidden" name="order_ids[]" value="${$(this).val()}">`);
-            });
-        }
-
-        $('body').append(form);
-        form.submit();
-    }
-
-    $('#exportXlsBtn').on('click', function() {
-        exportOrders("{{ route('admin.orders.export') }}", 'Excel');
-    });
-
-    $('#exportPdfBtn').on('click', function() {
-        exportOrders("{{ route('admin.orders.export.order') }}", 'PDF');
-    });
-
-    // ===========================
-    // Bulk Delete
-    // ===========================
-    $('#bulkDeleteBtn').on('click', function() {
-        const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
-
-        if (selectedOrders.length === 0) {
-            alert('Please select at least one order to delete');
-            return;
-        }
-
-        $('#confirmModal').modal('show');
-        $('#confirmModal .modal-title').text('Are You Sure?');
-        $('#confirmModal .modal-body p').html(`Do you really want to delete <strong>${selectedOrders.length}</strong> orders? This process cannot be undone.`);
-
-        $('#confirmButton').off('click').on('click', function() {
-            const orderIds = selectedOrders.map(function() { return $(this).val(); }).get();
-
-            $.ajax({
-                url: "{{ route('admin.orders.bulk-delete') }}",
-                method: 'POST',
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    order_ids: orderIds
-                },
-                beforeSend: function() {
-                    $('#confirmButton').html('<i class="fas fa-spinner fa-spin"></i> Deleting...');
-                },
-                success: function(response) {
-                    $('#confirmModal').modal('hide');
-                    alert('Selected orders have been deleted successfully.');
-                    setTimeout(() => location.reload(), 1000);
-                },
-                error: function(xhr) {
-                    $('#confirmModal').modal('hide');
-                    alert('Error deleting orders: ' + (xhr.responseJSON?.message || 'Unknown error'));
-                    $('#confirmButton').html('Delete');
-                }
-            });
-        });
-    });
-
-    // ===========================
-    // Courier Check (AJAX)
-    // ===========================
-    document.querySelectorAll('.courier-check').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-
-            let phone = this.dataset.phone;
-            let tdContainer = this.parentElement.querySelector('div[id^="courier-"]');
-            tdContainer.innerHTML = '<span class="text-info">Checking...</span>';
-
-            fetch("{{ route('admin.order.check') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                },
-                body: JSON.stringify({ phone: phone })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
-                    let s = data.data;
-                    tdContainer.innerHTML = `
-                        <span class="badge bg-info text-white me-1" title="Total Parcel">P: ${s.total_parcel}</span>
-                        <span class="badge bg-success text-white me-1" title="Success Parcel">S: ${s.success_parcel}</span>
-                        <span class="badge bg-danger text-white me-1" title="Cancelled Parcel">C: ${s.cancelled_parcel}</span>
-                        <span class="badge bg-warning text-dark" title="Success Ratio">R: ${s.success_ratio}%</span>
-                    `;
-                } else {
-                    tdContainer.innerHTML = `<span class="badge bg-secondary text-white">No Data</span>`;
-                }
-            })
-            .catch(err => {
-                tdContainer.innerHTML = `<span class="badge bg-secondary text-white">Error</span>`;
-                console.error(err);
-            });
-        });
-    });
-
-});
-</script> --}}
-
 
 <script>
 $(document).ready(function () {
 
-    // ===========================
     // Select All Checkbox
-    // ===========================
+
     $('#selectAllCheckbox').on('change', function () {
         const checked = $(this).is(':checked');
 
@@ -531,9 +258,8 @@ $(document).ready(function () {
         }
     });
 
-    // ===========================
     // Individual Checkbox Change
-    // ===========================
+
     $('.order-checkbox').on('change', function () {
 
         const total = $('.order-checkbox:not(:disabled)').length;
@@ -555,9 +281,7 @@ $(document).ready(function () {
         }
     });
 
-    // ===========================
     // EXPORT EXCEL
-    // ===========================
     $('#exportXlsBtn').on('click', function () {
 
         const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
@@ -570,7 +294,7 @@ $(document).ready(function () {
 
         form.append(`<input type="hidden" name="_token" value="{{ csrf_token() }}">`);
 
-        // ✅ Select All (Filtered Export)
+        // Select All (Filtered Export)
         if ($('#selectAllCheckbox').is(':checked')) {
 
             form.append(`<input type="hidden" name="all_filtered" value="1">`);
@@ -583,7 +307,7 @@ $(document).ready(function () {
             form.append(`<input type="hidden" name="product_search" value="${$('input[name="product_search"]').val() || ''}">`);
 
         }
-        // ✅ Selected Only
+        // Selected Only
         else {
 
             if (selectedOrders.length === 0) {
@@ -600,9 +324,7 @@ $(document).ready(function () {
         form.submit();
     });
 
-    // ===========================
     // EXPORT PDF
-    // ===========================
     $('#exportPdfBtn').on('click', function () {
 
         const selectedOrders = $('.order-checkbox:checked:not(:disabled)');
@@ -840,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.courier-check').forEach(function (btn) {
 
         btn.addEventListener('click', function (e) {
-            e.preventDefault(); // Prevent page reload
+            e.preventDefault(); 
 
             let phone = this.dataset.phone;
             let tdContainer = this.parentElement.querySelector('div[id^="courier-"]');

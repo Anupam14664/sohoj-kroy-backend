@@ -1244,50 +1244,50 @@ public function exportCustomers(Request $request)
     }
 
 
-public function orderCheck(Request $request)
-{
-    $phone = $request->phone;
+    public function orderCheck(Request $request)
+    {
+        $phone = $request->phone;
 
-    $apiPhone = ltrim($phone, '+');
+        $apiPhone = ltrim($phone, '+');
 
-    if (str_starts_with($apiPhone, '01')) {
-        $apiPhone = '880' . substr($apiPhone, 1);
-    }
-
-    try {
-
-        $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
-            ])
-            ->timeout(30)
-            ->retry(3, 2000)
-            ->post(config('bd_courier.base_url') . '/courier-check', [
-                'phone' => $apiPhone
-            ]);
-
-        if ($response->successful()) {
-
-            $data = $response->json();
-
-            return response()->json([
-                'success' => true,
-                'data' => $data['data']['summary'] ?? null
-            ]);
+        if (str_starts_with($apiPhone, '01')) {
+            $apiPhone = '880' . substr($apiPhone, 1);
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => $response->body()
-        ]);
+        try {
 
-    } catch (\Exception $e) {
+            $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
+                ])
+                ->timeout(30)
+                ->retry(3, 2000)
+                ->post(config('bd_courier.base_url') . '/courier-check', [
+                    'phone' => $apiPhone
+                ]);
 
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
+            if ($response->successful()) {
+
+                $data = $response->json();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $data['data']['summary'] ?? null
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $response->body()
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
-}
 
 }

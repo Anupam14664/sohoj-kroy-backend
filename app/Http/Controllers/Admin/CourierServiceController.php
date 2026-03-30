@@ -127,27 +127,43 @@ class CourierServiceController extends Controller
 
         $phone = $request->phone;
 
-        if (str_starts_with($phone, '01')) {
-            $phone = '+88' . $phone;
+        $apiPhone = ltrim($phone, '+');
+
+        if (str_starts_with($apiPhone, '01')) {
+            $apiPhone = '880' . substr($apiPhone, 1);
         }
 
-        $response = Http::withHeaders([
-            'Accept'        => 'application/json',
-            'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
-        ])
-        ->timeout(config('bd_courier.timeout'))
-        ->post(
-            config('bd_courier.base_url') . '/courier-check',
-            ['phone' => $phone]
-        );
+        try {
 
-        if ($response->failed()) {
-            return back()->with('error', 'Courier Insight API failed');
+            $response = Http::withHeaders([
+                    'Accept'        => 'application/json',
+                    'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
+                ])
+                ->timeout(30)
+                ->retry(3, 2000)
+                ->post(
+                    config('bd_courier.base_url') . '/courier-check',
+                    ['phone' => $apiPhone]
+                );
+
+            if ($response->failed()) {
+                return back()->with('error', 'Courier API failed: ' . $response->body());
+            }
+
+            $data = $response->json();
+
+            if (!isset($data['data'])) {
+                return back()->with('error', 'No data found from courier API');
+            }
+
+            return view('admin.pages.couriers.fraud_checker', [
+                'response' => $data,
+                'phone'    => $apiPhone
+            ]);
+
+        } catch (\Exception $e) {
+
+            return back()->with('error', 'Request failed: ' . $e->getMessage());
         }
-
-        return view('admin.pages.couriers.fraud_checker', [
-            'response' => $response->json(),
-            'phone'    => $phone
-        ]);
     }
 }

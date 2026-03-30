@@ -1244,36 +1244,50 @@ public function exportCustomers(Request $request)
     }
 
 
-    public function orderCheck(Request $request)
-    {
-        $phone = $request->phone;
+public function orderCheck(Request $request)
+{
+    $phone = $request->phone;
 
-        $apiPhone = str_starts_with($phone,'01') ? '+88'.$phone : $phone;
+    $apiPhone = ltrim($phone, '+');
 
-        try {
+    if (str_starts_with($apiPhone, '01')) {
+        $apiPhone = '880' . substr($apiPhone, 1);
+    }
 
-            $response = Http::withHeaders([
+    try {
+
+        $response = Http::withHeaders([
                 'Accept' => 'application/json',
-                'Authorization' => 'Bearer '.config('bd_courier.api_key'),
+                'Authorization' => 'Bearer ' . config('bd_courier.api_key'),
             ])
-            ->timeout(config('bd_courier.timeout'))
-            ->post(config('bd_courier.base_url').'/courier-check',[
-                'phone'=>$apiPhone
+            ->timeout(30)
+            ->retry(3, 2000)
+            ->post(config('bd_courier.base_url') . '/courier-check', [
+                'phone' => $apiPhone
             ]);
 
-            if($response->successful()){
-                return response()->json([
-                    'success'=>true,
-                    'data'=>$response->json()['data']['summary'] ?? null
-                ]);
-            }
+        if ($response->successful()) {
 
-        } catch(\Exception $e){
+            $data = $response->json();
+
             return response()->json([
-                'success'=>false
+                'success' => true,
+                'data' => $data['data']['summary'] ?? null
             ]);
         }
 
+        return response()->json([
+            'success' => false,
+            'message' => $response->body()
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
+}
 
 }

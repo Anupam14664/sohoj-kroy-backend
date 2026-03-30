@@ -165,7 +165,7 @@
                                         data-phone="{{ $order->phone }}"
                                         style="padding:2px 6px; border:none;"
                                         title="Click to check courier status">
-                                        <i class="fas fa-shield-alt text-primary"></i>
+                                        <i class="fas fa-shield-alt text-primary d-block"></i>
                                     </button>
                                     <div id="courier-{{ $order->id }}" class="mt-1">
                                         <span class="badge bg-secondary text-white">No Data</span>

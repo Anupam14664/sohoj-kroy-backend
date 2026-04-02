@@ -28,7 +28,7 @@ use App\Http\Controllers\API\HomepageSectionController;
 
 // Public routes
 
-Route::middleware(['throttle:60,1'])->group(function () {
+Route::middleware(['throttle:1000,1'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 // Categories

@@ -17,7 +17,8 @@ class HomepageSectionController extends Controller
                         ->with('images')
                         ->withCount('reviews')          // total reviews
                         ->withAvg('reviews', 'rating')  // avg rating (1–5)
-                        ->orderBy('created_at', 'desc');
+                        ->orderBy('created_at', 'desc')
+                        ->limit(10);
                 }]);
             }])
             ->where('is_active', true)
@@ -39,7 +40,8 @@ class HomepageSectionController extends Controller
                             ->with('images')
                             ->withCount('reviews')
                             ->withAvg('reviews', 'rating')
-                            ->orderBy('created_at', 'desc');
+                            ->orderBy('created_at', 'desc')
+                             ->limit(10);
                     }]);
                 }])
                 ->where('is_active', true)

@@ -14,7 +14,7 @@
         <i class="fas fa-file-pdf"></i>
         </a>
     @endif
-        {{-- @if($order->status == 'cancelled')
+        @if($order->status == 'cancelled')
         <form action="{{ route('admin.orders.destroy', ['order' => $order->id]) }}"
             method="POST"
             class="d-inline m-0 p-0">
@@ -22,12 +22,12 @@
             @method('DELETE')
 
             <button type="submit"
-                    class="btn btn-danger btn-sm"
+                    class="btn btn-danger btn-sm p-1"
                     onclick="return confirm('Are you sure?')"
                     title="Delete">
                 <i class="fas fa-trash"></i>
             </button>
         </form>
-        @endif --}}
+        @endif
 
 </div>

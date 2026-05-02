@@ -204,7 +204,7 @@
                                     </td>
                                 @endif
                                 <td>
-                                    @include('admin.pages.orders.partials.__actions')
+                                    @include('admin.pages.orders.partials.__actions', ['order' => $order])
                                 </td>
                             </tr>
                             @empty
@@ -608,5 +608,48 @@
 
         });
 
+    });
+</script>
+
+<script>
+    $(document).on('click', '.delete-btn', function () {
+        if (!confirm('Are you sure?')) return;
+
+        let url = $(this).data('url');
+
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            data: {
+                _token: "{{ csrf_token() }}"
+            },
+            success: function () {
+                location.reload();
+            }
+        });
+    });
+</script>
+
+<script>
+    $(document).on('click', '#bulkDeleteBtn', function () {
+
+        let selected = $('.order-checkbox:checked:not(:disabled)');
+
+        if (selected.length === 0) {
+            alert('Please select at least one order');
+            return;
+        }
+
+        if (!confirm('Are you sure to delete selected orders?')) {
+            return;
+        }
+
+        let form = $('#bulkActionForm');
+
+        // Set action & method
+        form.attr('action', "{{ route('admin.orders.bulk-delete') }}");
+        form.attr('method', 'POST');
+
+        form.submit();
     });
 </script>

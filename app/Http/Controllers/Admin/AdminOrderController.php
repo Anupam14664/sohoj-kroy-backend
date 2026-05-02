@@ -243,302 +243,178 @@ class AdminOrderController extends Controller
 
         return view('admin.pages.orders.show', compact('order', 'couriers'));
     }
+public function customerList(Request $request)
+{
+    // ===============================
+    // Step 1: Customer Base (Unique Phone)
+    // ===============================
+    $customerBase = Order::select([
+            'phone',
+            DB::raw('MIN(name) as name'),
+            DB::raw('MIN(created_at) as first_order_at')
+        ])
+        ->where('status', 'delivered')
+        ->groupBy('phone')
+        ->orderBy('first_order_at')
+        ->get();
 
-    // public function customerList(Request $request)
-    // {
-    //     $customerBase = Order::select([
-    //             'phone',
-    //             DB::raw('MIN(name) as name'),
-    //             DB::raw('MIN(created_at) as first_order_at')
-    //         ])
-    //         ->where('status', 'delivered')
-    //         ->groupBy('phone')
-    //         ->orderBy('first_order_at')
-    //         ->get();
+    $customerIdMap = [];
+    $startingId = 101;
 
-    //     $customerIdMap = [];
-    //     $startingId = 101;
-
-    //     foreach ($customerBase as $customer) {
-    //         $customerIdMap[$customer->phone] = $startingId++;
-    //     }
-
-    //     $query = Order::select([
-    //             'orders.name',
-    //             'orders.phone',
-    //             DB::raw('MIN(orders.address) as primary_address'),
-    //             DB::raw('MIN(orders.district) as district'),
-    //             DB::raw('MIN(orders.thana) as thana'),
-    //             DB::raw('COUNT(DISTINCT orders.id) as order_count'),
-    //             DB::raw('SUM(order_items.quantity) as total_products'),
-    //             DB::raw('MAX(order_totals.total_spent) as total_spent'),
-    //             DB::raw('MAX(orders.created_at) as last_order_at')
-    //         ])
-    //         ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-    //         ->join('products', 'order_items.product_id', '=', 'products.id')
-    //         ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
-    //         ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
-    //         ->leftJoin(DB::raw('
-    //             (
-    //                 SELECT phone, SUM(total) as total_spent
-    //                 FROM orders
-    //                 WHERE status = "delivered"
-    //                 GROUP BY phone
-    //             ) as order_totals
-    //         '), 'orders.phone', '=', 'order_totals.phone')
-    //         ->where('orders.status', 'delivered')
-    //         ->groupBy('orders.name', 'orders.phone');
-
-    //     // Filters
-    //     if ($request->filled('phone') && !$request->filled('search')) {
-
-    //         $phone = preg_replace('/\D/', '', $request->phone);
-
-    //         if (str_starts_with($phone, '880')) {
-    //             $phone = '0' . substr($phone, 3);
-    //         }
-
-    //         if (strlen($phone) === 11) {
-    //             $query->where('orders.phone', $phone);
-    //         } else {
-    //             $query->whereRaw('1 = 0');
-    //         }
-    //     }
-
-    //     if ($request->filled('district')) {
-    //         $query->where('orders.district', 'like', '%' . $request->district . '%');
-    //     }
-    //     if ($request->filled('thana')) {
-    //         $query->where('orders.thana', 'like', '%' . $request->thana . '%');
-    //     }
-
-    //     if ($request->filled('search')) {
-
-    //         $searchTerm = trim($request->search);
-
-    //         if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
-
-    //             $normalized = preg_replace('/\D/', '', $searchTerm);
-    //             if (str_starts_with($normalized, '880')) {
-    //                 $normalized = '0' . substr($normalized, 3);
-    //             }
-    //             if (strlen($normalized) === 11) {
-    //                 $query->where('orders.phone', $normalized);
-    //             } else {
-    //                 $query->whereRaw('1 = 0');
-    //             }
-
-    //         }
-    //         else {
-
-    //             $search = strtolower($searchTerm);
-
-    //             $query->where(function ($q) use ($search) {
-    //                 $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
-    //                 ->orWhereIn('orders.phone', function ($sub) use ($search) {
-    //                     $sub->select('orders.phone')
-    //                         ->from('orders')
-    //                         ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-    //                         ->join('products', 'order_items.product_id', '=', 'products.id')
-    //                         ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
-    //                         ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
-    //                         ->whereRaw('LOWER(products.name) LIKE ?', ["%{$search}%"])
-    //                         ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$search}%"])
-    //                         ->orWhereRaw('LOWER(product_variant_options.sku) LIKE ?', ["%{$search}%"]);
-    //                 });
-    //             });
-    //         }
-    //     }
-
-    //     $allCustomers = $query->orderBy('orders.phone')->get();
-
-    //     $customersWithIds = $allCustomers->map(function ($customer) use ($customerIdMap) {
-    //         return [
-    //             'customer_id' => $customerIdMap[$customer->phone] ?? null,
-    //             'name' => $customer->name,
-    //             'phone' => $customer->phone,
-    //             'district' => $customer->district,
-    //             'thana' => $customer->thana,
-    //             'primary_address' => $customer->primary_address,
-    //             'order_count' => $customer->order_count,
-    //             'total_products' => $customer->total_products,
-    //             'total_spent' => round($customer->total_spent),
-    //             'last_order_at' => Carbon::parse($customer->last_order_at)->format('M d, Y'),
-    //         ];
-    //     })->filter(function ($customer) {
-    //         return !is_null($customer['customer_id']);
-    //     });
-
-    //     $customersWithIds = $customersWithIds->sortBy('customer_id')->values();
-
-    //     // Pagination
-    //     $page = LengthAwarePaginator::resolveCurrentPage();
-    //     $perPage = 20;
-    //     $currentPageItems = $customersWithIds->slice(($page - 1) * $perPage, $perPage)->values();
-
-    //     $customers = new LengthAwarePaginator(
-    //         $currentPageItems,
-    //         $customersWithIds->count(),
-    //         $perPage,
-    //         $page,
-    //         ['path' => LengthAwarePaginator::resolveCurrentPath()]
-    //     );
-
-    //     return view('admin.pages.customers.index', [
-    //         'customers' => $customers,
-    //         'phone' => $request->phone,
-    //         'district' => $request->district,
-    //         'thana' => $request->thana,
-    //         'search' => $request->search,
-    //     ]);
-    // }
-
-
-
-    public function customerList(Request $request)
-    {
-
-        $customerBase = Order::select([
-                'phone',
-                DB::raw('MIN(name) as name'),
-                DB::raw('MIN(created_at) as first_order_at')
-            ])
-            ->where('status', 'delivered')
-            ->groupBy('phone')
-            ->orderBy('first_order_at')
-            ->get();
-
-        $customerIdMap = [];
-        $startingId = 101;
-
-        foreach ($customerBase as $customer) {
-            $customerIdMap[$customer->phone] = $startingId++;
-        }
-
-        $query = Order::select([
-                'orders.name',
-                'orders.phone',
-                DB::raw('MIN(orders.address) as primary_address'),
-                DB::raw('MIN(orders.district) as district'),
-                DB::raw('MIN(orders.thana) as thana'),
-                DB::raw('COUNT(DISTINCT orders.id) as order_count'),
-                DB::raw('SUM(order_items.quantity) as total_products'),
-                DB::raw('MAX(order_totals.total_spent) as total_spent'),
-                DB::raw('MAX(orders.created_at) as last_order_at')
-            ])
-            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
-            ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
-            ->leftJoin(DB::raw('
-                (
-                    SELECT phone, SUM(total) as total_spent
-                    FROM orders
-                    WHERE status = "delivered"
-                    GROUP BY phone
-                ) as order_totals
-            '), 'orders.phone', '=', 'order_totals.phone')
-            ->where('orders.status', 'delivered')
-            ->groupBy('orders.name', 'orders.phone');
-
-        if ($request->filled('phone') && !$request->filled('search')) {
-            $phone = preg_replace('/\D/', '', $request->phone);
-            if (str_starts_with($phone, '880')) $phone = '0' . substr($phone, 3);
-            if (strlen($phone) === 11) $query->where('orders.phone', $phone);
-            else $query->whereRaw('1 = 0');
-        }
-
-        if ($request->filled('district')) $query->where('orders.district', 'like', '%' . $request->district . '%');
-        if ($request->filled('thana')) $query->where('orders.thana', 'like', '%' . $request->thana . '%');
-
-        if ($request->filled('search')) {
-            $searchTerm = trim($request->search);
-
-            if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
-                $normalized = preg_replace('/\D/', '', $searchTerm);
-                if (str_starts_with($normalized, '880')) $normalized = '0' . substr($normalized, 3);
-                if (strlen($normalized) === 11) $query->where('orders.phone', $normalized);
-                else $query->whereRaw('1 = 0');
-            } else {
-                $search = strtolower($searchTerm);
-                $query->where(function ($q) use ($search) {
-                    $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
-                    ->orWhereIn('orders.phone', function ($sub) use ($search) {
-                        $sub->select('orders.phone')
-                            ->from('orders')
-                            ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                            ->join('products', 'order_items.product_id', '=', 'products.id')
-                            ->leftJoin('product_variants', 'products.id', '=', 'product_variants.product_id')
-                            ->leftJoin('product_variant_options', 'product_variants.id', '=', 'product_variant_options.variant_id')
-                            ->whereRaw('LOWER(products.name) LIKE ?', ["%{$search}%"])
-                            ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$search}%"])
-                            ->orWhereRaw('LOWER(product_variant_options.sku) LIKE ?', ["%{$search}%"]);
-                    });
-                });
-            }
-        }
-
-        $allCustomers = $query->orderBy('orders.phone')->get();
-
-        $customersWithIds = $allCustomers->map(function ($customer) use ($customerIdMap) {
-            return [
-                'customer_id' => $customerIdMap[$customer->phone] ?? null,
-                'name' => $customer->name,
-                'phone' => $customer->phone,
-                'district' => $customer->district,
-                'thana' => $customer->thana,
-                'primary_address' => $customer->primary_address,
-                'order_count' => $customer->order_count,
-                'total_products' => $customer->total_products,
-                'total_spent' => round($customer->total_spent),
-                'last_order_at' => Carbon::parse($customer->last_order_at)->format('M d, Y'),
-            ];
-        })->filter(fn($c) => !is_null($c['customer_id']));
-
-        $customersWithIds = $customersWithIds->sortBy('customer_id')->values();
-
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 20;
-        $currentPageItems = $customersWithIds->slice(($page - 1) * $perPage, $perPage)->values();
-        $customers = new LengthAwarePaginator(
-            $currentPageItems,
-            $customersWithIds->count(),
-            $perPage,
-            $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
-        );
-
-        // --- Step 6: Get Courier Summary for each customer ---
-        // $courierReports = [];
-        // foreach ($customers as $customer) {
-        //     $phone = $customer['phone'];
-        //     $apiPhone = str_starts_with($phone, '01') ? '+88' . $phone : $phone;
-
-        //     try {
-        //         $response = Http::withHeaders([
-        //             'Accept' => 'application/json',
-        //             'Authorization' => 'Bearer '.config('bd_courier.api_key'),
-        //         ])->timeout(config('bd_courier.timeout'))
-        //         ->post(config('bd_courier.base_url') . '/courier-check', ['phone' => $apiPhone]);
-
-        //         $courierReports[$phone] = $response->successful() ? ($response->json()['data']['summary'] ?? null) : null;
-
-        //     } catch (\Exception $e) {
-        //         $courierReports[$phone] = null;
-        //     }
-        // }
-
-        // --- Step 7: Return view ---
-        return view('admin.pages.customers.index', [
-            'customers' => $customers,
-            // 'courierReports' => $courierReports, // Blade এ show করা যাবে
-            'phone' => $request->phone,
-            'district' => $request->district,
-            'thana' => $request->thana,
-            'search' => $request->search,
-            'districts' => config('bd_location')
-        ]);
+    foreach ($customerBase as $customer) {
+        $customerIdMap[$customer->phone] = $startingId++;
     }
+
+    // ===============================
+    // Step 2: Subquery (Order ভিত্তিক product count)
+    // ===============================
+    $orderProductCounts = DB::table('order_items')
+        ->select([
+            'order_id',
+            DB::raw('SUM(quantity) as order_product_count')
+        ])
+        ->groupBy('order_id');
+
+    // ===============================
+    // Step 3: Main Query (NO DUPLICATE)
+    // ===============================
+    $query = Order::select([
+            'orders.phone',
+            DB::raw('MIN(orders.name) as name'),
+            DB::raw('MIN(orders.address) as primary_address'),
+            DB::raw('MIN(orders.district) as district'),
+            DB::raw('MIN(orders.thana) as thana'),
+
+            DB::raw('COUNT(DISTINCT orders.id) as order_count'),
+
+            // FIXED PRODUCT COUNT
+            DB::raw('SUM(order_product_counts.order_product_count) as total_products'),
+
+            DB::raw('SUM(orders.total) as total_spent'),
+
+            DB::raw('MAX(orders.created_at) as last_order_at')
+        ])
+        ->joinSub($orderProductCounts, 'order_product_counts', function ($join) {
+            $join->on('orders.id', '=', 'order_product_counts.order_id');
+        })
+        ->where('orders.status', 'delivered')
+        ->groupBy('orders.phone');
+
+    // ===============================
+    // Step 4: Filters
+    // ===============================
+    if ($request->filled('phone') && !$request->filled('search')) {
+        $phone = preg_replace('/\D/', '', $request->phone);
+        if (str_starts_with($phone, '880')) $phone = '0' . substr($phone, 3);
+
+        if (strlen($phone) === 11) {
+            $query->where('orders.phone', $phone);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
+    if ($request->filled('district')) {
+        $query->where('orders.district', 'like', '%' . $request->district . '%');
+    }
+
+    if ($request->filled('thana')) {
+        $query->where('orders.thana', 'like', '%' . $request->thana . '%');
+    }
+
+    // ===============================
+    // Step 5: Search (SAFE VERSION)
+    // ===============================
+    if ($request->filled('search')) {
+
+        $searchTerm = trim($request->search);
+
+        if (preg_match('/^[\+0-9]+$/', $searchTerm)) {
+
+            $normalized = preg_replace('/\D/', '', $searchTerm);
+
+            if (str_starts_with($normalized, '880')) {
+                $normalized = '0' . substr($normalized, 3);
+            }
+
+            if (strlen($normalized) === 11) {
+                $query->where('orders.phone', $normalized);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+
+        } else {
+
+            $search = strtolower($searchTerm);
+
+            $query->where(function ($q) use ($search) {
+
+                $q->whereRaw('LOWER(orders.name) LIKE ?', ["%{$search}%"])
+                  ->orWhereIn('orders.phone', function ($sub) use ($search) {
+
+                      $sub->select('orders.phone')
+                          ->from('orders')
+                          ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+                          ->join('products', 'order_items.product_id', '=', 'products.id')
+                          ->whereRaw('LOWER(products.name) LIKE ?', ["%{$search}%"])
+                          ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$search}%"]);
+                  });
+            });
+        }
+    }
+
+    // ===============================
+    // Step 6: Get Data
+    // ===============================
+    $allCustomers = $query->orderByRaw('MIN(orders.created_at) ASC')->get();
+
+    // ===============================
+    // Step 7: Map + Fix Missing IDs
+    // ===============================
+    $customersWithIds = $allCustomers->map(function ($customer) use ($customerIdMap) {
+
+        return [
+            'customer_id'     => $customerIdMap[$customer->phone] ?? null,
+            'name'            => $customer->name,
+            'phone'           => $customer->phone,
+            'district'        => $customer->district,
+            'thana'           => $customer->thana,
+            'primary_address' => $customer->primary_address,
+            'order_count'     => $customer->order_count,
+            'total_products'  => $customer->total_products ?? 0,
+            'total_spent'     => round($customer->total_spent),
+            'last_order_at'   => Carbon::parse($customer->last_order_at)->format('M d, Y'),
+        ];
+    })
+    ->filter(fn($c) => !is_null($c['customer_id']))
+    ->values();
+
+    // ===============================
+    // Step 8: Pagination (FIXED)
+    // ===============================
+    $page = LengthAwarePaginator::resolveCurrentPage();
+    $perPage = 20;
+
+    $customers = new LengthAwarePaginator(
+        $customersWithIds->forPage($page, $perPage)->values(),
+        $customersWithIds->count(),
+        $perPage,
+        $page,
+        ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    );
+
+    // ===============================
+    // Final Return
+    // ===============================
+    return view('admin.pages.customers.index', [
+        'customers' => $customers,
+        'phone'     => $request->phone,
+        'district'  => $request->district,
+        'thana'     => $request->thana,
+        'search'    => $request->search,
+        'districts' => config('bd_location')
+    ]);
+}
 
     public function customerOrdersDetail($phone)
     {
@@ -1148,10 +1024,7 @@ public function bulkDelete(Request $request)
         }
     }
 
-    return response()->json([
-        'status' => true,
-        'message' => "Successfully deleted $deletedCount order(s)."
-    ]);
+    return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
 }
 
 

@@ -153,64 +153,64 @@ class AdminProductController extends Controller
     // }
 
 
+    public function index(Request $request)
+    {
+        $generalSettings =GeneralSetting::first();
+        $domain = $generalSettings->domain_url ?? config('app.url');
+        $query = Product::with(['category','variants.color']);
 
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
 
-public function index(Request $request)
-{
-    $query = Product::with(['category','variants.color']);
-
-    // Search
-    if ($request->filled('search')) {
-        $search = $request->search;
-
-        $query->where(function ($q) use ($search) {
-            $q->where('name','like',"%{$search}%")
-              ->orWhere('slug','like',"%{$search}%")
-              ->orWhere('sku','like',"%{$search}%");
-        });
-    }
-
-    // Category filter
-    if ($request->filled('category')) {
-        $query->where('category_id',$request->category);
-    }
-
-    // Status filter
-    if ($request->filled('filter')) {
-
-        switch ($request->filter) {
-
-            case 'stock_out':
-                $query->where('total_stock','<=',0);
-                break;
-
-            case 'active':
-                $query->where('status',1);
-                break;
-
-            case 'inactive':
-                $query->where('status',0);
-                break;
-
-            case 'best_sale':
-                $query->where('is_featured',1);
-                break;
-
-            case 'offer':
-                $query->where('is_offer',1);
-                break;
-
-            case 'campaign':
-                $query->where('is_campaign',1);
-                break;
+            $query->where(function ($q) use ($search) {
+                $q->where('name','like',"%{$search}%")
+                ->orWhere('slug','like',"%{$search}%")
+                ->orWhere('sku','like',"%{$search}%");
+            });
         }
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->where('category_id',$request->category);
+        }
+
+        // Status filter
+        if ($request->filled('filter')) {
+
+            switch ($request->filter) {
+
+                case 'stock_out':
+                    $query->where('total_stock','<=',0);
+                    break;
+
+                case 'active':
+                    $query->where('status',1);
+                    break;
+
+                case 'inactive':
+                    $query->where('status',0);
+                    break;
+
+                case 'best_sale':
+                    $query->where('is_featured',1);
+                    break;
+
+                case 'offer':
+                    $query->where('is_offer',1);
+                    break;
+
+                case 'campaign':
+                    $query->where('is_campaign',1);
+                    break;
+            }
+        }
+
+        $products = $query->latest()->paginate(15);
+        $categories = Category::orderBy('name')->get();
+
+        return view('admin.pages.products.index', compact('products','categories', 'domain'));
     }
-
-    $products = $query->latest()->paginate(15);
-    $categories = Category::orderBy('name')->get();
-
-    return view('admin.pages.products.index', compact('products','categories'));
-}
     public function create()
     {
         $categories = Category::all();

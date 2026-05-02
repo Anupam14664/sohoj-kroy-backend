@@ -83,7 +83,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
     // Orders
 
     Route::get('orders/incomplete', [AdminOrderController::class, 'incompleteOrders'])->middleware('can:manage orders')->name('admin.orders.incomplete');
-    Route::get('/orders/couriers', [AdminOrderController::class, 'shippedOrders'])->middleware('can:manage orders')->name('admin.orders.shipped');
+    Route::get('orders/couriers', [AdminOrderController::class, 'shippedOrders'])->middleware('can:manage orders')->name('admin.orders.shipped');
     Route::resource('orders', AdminOrderController::class)->middleware('can:manage orders')->names([
        'index' => 'admin.orders.index',
        'create' => 'admin.orders.create',
@@ -91,7 +91,7 @@ Route::prefix('admin')->middleware(['auth:admin'])->group(function () {
         'show' => 'admin.orders.show',
         'edit' => 'admin.orders.edit',
         'update' => 'admin.orders.update',
-        'destroy' => 'admin.orders.destroy',
+        'destroy' => 'admin.orders.destroy'
     ]);
     Route::put('orders/{order}/update-items', [AdminOrderController::class, 'updateItems'])->name('admin.orders.update.items');
     Route::put('orders/{order}/update-delivery', [AdminOrderController::class, 'updateDeliveryCharge'])->name('admin.orders.update.delivery');

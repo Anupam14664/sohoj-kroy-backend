@@ -565,40 +565,95 @@
             }
 
             if(type==='why_choose_us'){
-                const list=document.getElementById('whyList');
-                card._settings.items=card._settings.items||[];
+                const list = document.getElementById('whyList');
+                const addBtn = document.getElementById('addWhy');
+
+                card._settings.items = card._settings.items || [];
+
                 list.innerHTML = '';
+
                 card._settings.items.forEach((i, idx)=>{
-                    const div=document.createElement('div');
+                    const div = document.createElement('div');
+
                     div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 border rounded';
+
                     div.innerHTML = `
                         <div class="d-flex align-items-center gap-2 flex-grow-1 me-2">
                             <img src="${i.image}" style="height:40px; width:40px; object-fit:cover; border-radius:4px;">
                             <span class="text-break">${i.desc}</span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger remove-why flex-shrink-0" data-idx="${idx}">Remove</button>
+
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger remove-why flex-shrink-0"
+                            data-idx="${idx}">
+                            Remove
+                        </button>
                     `;
-                    div.querySelector('button').onclick = function() {
+
+                    div.querySelector('button').onclick = function () {
                         card._settings.items.splice(this.dataset.idx, 1);
                         openSettings(card);
                     };
+
                     list.appendChild(div);
                 });
-                document.getElementById('addWhy').onclick=async()=>{
-                    const f=document.getElementById('whyImage').files[0];
-                    const d=document.getElementById('whyDesc').value;
-                    if(!f||!d)return;
-                    const fd=new FormData(); fd.append('file',f);
-                    const res=await fetch(uploadUrl,{method:'POST',headers:{'X-CSRF-TOKEN':csrf},body:fd});
-                    const j=await res.json();
-                    if(j.success){
-                        card._settings.items.push({image:j.url,desc:d});
-                        openSettings(card);
-                        document.getElementById('whyDesc').value='';
+
+                addBtn.onclick = async () => {
+
+                    const f = document.getElementById('whyImage').files[0];
+                    const d = document.getElementById('whyDesc').value.trim();
+
+                    // IMPORTANT
+                    // heading যেন remove না হয়
+                    card._settings.heading =
+                        document.getElementById('heading')?.value || '';
+
+                    if(!f || !d) return;
+
+                    // loading start
+                    addBtn.disabled = true;
+                    addBtn.innerHTML = `
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                        Uploading...
+                    `;
+
+                    try {
+
+                        const fd = new FormData();
+                        fd.append('file', f);
+
+                        const res = await fetch(uploadUrl,{
+                            method:'POST',
+                            headers:{'X-CSRF-TOKEN':csrf},
+                            body:fd
+                        });
+
+                        const j = await res.json();
+
+                        if(j.success){
+
+                            card._settings.items.push({
+                                image:j.url,
+                                desc:d
+                            });
+
+                            openSettings(card);
+                        }
+
+                    } catch(error){
+
+                        console.error(error);
+
+                        alert('Upload failed');
+
+                    } finally {
+
+                        addBtn.disabled = false;
+                        addBtn.innerHTML = 'Add Item';
                     }
                 };
             }
-
             if (type === 'premium_product_promotion') {
                 const input = document.getElementById('featuredImage');
                 input.onchange = async (e)=>{

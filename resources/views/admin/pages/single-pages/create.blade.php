@@ -572,32 +572,70 @@
                     if (e.target.classList.contains('remove-why')) {
                         const index = parseInt(e.target.getAttribute('data-index'));
                         card._settings.items.splice(index, 1);
+
+                        // SAVE HEADING BEFORE REFRESH
+                        const headingInput = document.getElementById('heading');
+                        if(headingInput){
+                            card._settings.heading = headingInput.value;
+                        }
+
                         openSettings(card);
                     }
                 });
 
                 document.getElementById('addWhy').onclick = async () => {
+
+                    const addBtn = document.getElementById('addWhy');
+
+                    // SAVE HEADING BEFORE UPLOAD
+                    const headingInput = document.getElementById('heading');
+                    if(headingInput){
+                        card._settings.heading = headingInput.value;
+                    }
+
                     const f = document.getElementById('whyImage').files[0];
                     const d = document.getElementById('whyDesc').value.trim();
+
                     if(!f || !d) return;
 
                     const fd = new FormData();
                     fd.append('file', f);
 
                     try {
+
+                        // LOADING STATE
+                        addBtn.disabled = true;
+                        addBtn.innerHTML = `
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            Uploading...
+                        `;
+
                         const res = await fetch(uploadUrl, {
                             method: 'POST',
                             headers: {'X-CSRF-TOKEN': csrf},
                             body: fd
                         });
+
                         const j = await res.json();
 
                         if(j.success){
-                            card._settings.items.push({image: j.url, desc: d});
+
+                            card._settings.items.push({
+                                image: j.url,
+                                desc: d
+                            });
+
                             openSettings(card);
                         }
+
                     } catch (error) {
+
                         console.error('Upload failed:', error);
+
+                    } finally {
+
+                        addBtn.disabled = false;
+                        addBtn.innerHTML = 'Add Item';
                     }
                 };
             }

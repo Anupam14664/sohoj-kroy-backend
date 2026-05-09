@@ -11,9 +11,18 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::with(['children' => function($query) {
-            $query->withCount('products')->orderBy('updated_at', 'desc');
+            $query->withCount([
+                'products' => function ($q) {
+                    $q->where('status', 1);
+                }
+            ])->orderBy('updated_at', 'desc');
         }])
-        ->withCount('products')
+        ->withCount([
+            'products' => function ($query) {
+                $query->where('status', 1);
+            }
+        ])
+
         ->whereNull('parent_id')->orderBy('updated_at', 'desc')
         ->get();
 
@@ -73,6 +82,7 @@ class CategoryController extends Controller
         $perPage = $request->input('per_page', 12);
 
         $products = $category->products()
+            ->where('status', 1)
             ->with(['category', 'variants.color', 'variants.options.size'])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')->orderBy('updated_at', 'desc')

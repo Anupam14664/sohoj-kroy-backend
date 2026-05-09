@@ -91,6 +91,7 @@
                         </table>
                          <div class="mt-3">
                             <p><strong>Delivery Method:</strong> {{ $order->deliveryOption->name ?? 'N/A' }}</p>
+                            <p><strong>Couri:</strong> {{ $order->delivery_address ?? 'N/A' }}</p>
                             <p><strong>Delivery Charge:</strong> &#2547;{{ number_format($order->delivery_charge ?? 0, 0) }}</p>
                             <p><strong>Discount:</strong> &#2547;{{ number_format($order->discount ?? 0, 0) }}</p>
                             <p><strong>Coupon Amount:</strong> &#2547;{{ number_format($order->coupon_amount ?? 0, 0) }}</p>

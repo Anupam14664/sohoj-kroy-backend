@@ -96,6 +96,51 @@
                             <p><strong>Coupon Amount:</strong> &#2547;{{ number_format($order->coupon_amount ?? 0, 0) }}</p>
                             <hr>
                             <p class="text-right"><strong>Grand Total: &#2547;{{ number_format($order->total + ($order->delivery_charge ?? 0) - ($order->discount ?? 0) - ($order->coupon_amount ?? 0), 0) }}</strong></p>
+
+
+                            @php
+                                $trackingLink = null;
+
+                                if ($order->courier && $order->tracking_code) {
+
+                                    switch ($order->courier->type) {
+
+                                        case 'steadfast':
+                                            $trackingLink = 'https://steadfast.com.bd/t/' . $order->tracking_code;
+                                            break;
+
+                                        case 'pathao':
+                                            $trackingLink = 'https://merchant.pathao.com/tracking?tracking_number=' . $order->tracking_code;
+                                            break;
+                                    }
+                                }
+
+                                if (!$trackingLink && !empty($order->custom_link)) {
+                                    $trackingLink = $order->custom_link;
+                                }
+                            @endphp
+
+                            @if($trackingLink)
+                                <p>
+                                    <strong>Courier Tracking:</strong>
+
+                                    <a href="{{ $trackingLink }}" target="_blank">
+                                        {{ $trackingLink }}
+                                    </a>
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 ms-2"
+                                        onclick="copyTrackingLink('{{ $trackingLink }}', this)"
+                                        title="Copy Link">
+                                        <i class="far fa-copy"></i>
+                                    </button>
+
+                                    <span class="copy-msg text-success ms-2" style="display:none;">
+                                        Copied!
+                                    </span>
+                                </p>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -106,3 +151,17 @@
     </div>
 </div>
 @endsection
+
+
+<script>
+function copyTrackingLink(link, button) {
+    navigator.clipboard.writeText(link).then(function () {
+        const msg = button.parentElement.querySelector('.copy-msg');
+        msg.style.display = 'inline';
+
+        setTimeout(() => {
+            msg.style.display = 'none';
+        }, 2000);
+    });
+}
+</script>

@@ -26,7 +26,7 @@ class SearchController extends Controller
                   ->orWhere('short_description', 'LIKE', "%{$query}%")
                   ->orWhere('description', 'LIKE', "%{$query}%")
                   ->orWhereJsonContains('keyword_tags', $query);
-            })
+            })->where('status', 1)
             ->take(10)
             ->get(['id', 'name', 'slug', 'main_image', 'regular_price', 'discount_price']);
 

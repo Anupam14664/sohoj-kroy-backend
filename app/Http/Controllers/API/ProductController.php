@@ -192,7 +192,7 @@ class ProductController extends Controller
             $perPage = $request->input('per_page', 30);
 
             $products = Product::with(['category', 'variants.color', 'variants.options.size'])
-                ->where('category_id', $category->id)
+                ->where('category_id', $category->id)->where('status', 1)
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')->orderBy('updated_at', 'desc')
                 ->latest()
@@ -263,7 +263,7 @@ class ProductController extends Controller
 public function featured()
 {
     $products = Product::where('is_featured', true)
-        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])->withAvg('reviews', 'rating')->latest()->get();
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])->where('status', 1)->withAvg('reviews', 'rating')->latest()->get();
 
     // Add full URL to all images
     $products->transform(function ($product) {
@@ -303,7 +303,7 @@ public function featured()
 public function offer()
 {
     $products = Product::where('is_offer', true)
-        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true); }])->withAvg('reviews', 'rating')->latest()->get();
+        ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')->withCount(['reviews' => function ($q) { $q->where('is_approved', true); }])->where('status', 1)->withAvg('reviews', 'rating')->latest()->get();
 
     // Add full URL to all images
     $products->transform(function ($product) {
@@ -344,7 +344,7 @@ public function campaign()
 {
     $products = Product::where('is_campaign', true)
         ->with(['category', 'images', 'variants'])->orderBy('updated_at', 'desc')
-        ->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])
+        ->withCount(['reviews' => function ($q) { $q->where('is_approved', true);}])->where('status', 1)
         ->withAvg('reviews', 'rating')
         ->latest()
         ->get();
